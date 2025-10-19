@@ -44,7 +44,7 @@ export async function generateQueryEmbedding(query: string): Promise<number[]> {
 
     try {
         console.log(`[Semantic Search] Generating embedding for query: "${query.substring(0, 50)}..."`);
-        
+
         const response = await axios.post(
             DEEPINFRA_EMBEDDING_API_URL,
             {
@@ -61,14 +61,14 @@ export async function generateQueryEmbedding(query: string): Promise<number[]> {
         );
 
         const embedding = response.data.embeddings[0];
-        
+
         if (!Array.isArray(embedding) || embedding.length !== EMBEDDING_DIMENSIONS) {
             throw new Error(`Invalid embedding dimensions: expected ${EMBEDDING_DIMENSIONS}, got ${embedding?.length}`);
         }
 
         console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}-dimensional embedding`);
         return embedding;
-        
+
     } catch (error: any) {
         console.error('[Semantic Search] Error generating embedding:', error.message);
         throw new Error(`Failed to generate embedding: ${error.message}`);
@@ -85,7 +85,7 @@ async function semanticSearchOnly(
     offset: number
 ): Promise<ScoredMember[]> {
     console.log('[Semantic Search] Executing vector similarity search...');
-    
+
     // Build filter conditions
     const conditions: string[] = ['m.is_active = TRUE'];
     const params: any[] = [`[${embedding.join(',')}]`]; // $1 - embedding vector
@@ -171,7 +171,7 @@ async function semanticSearchOnly(
     `;
 
     const result = await query(queryText, params);
-    
+
     return result.rows.map(row => ({
         id: row.id,
         name: row.name,
@@ -206,7 +206,7 @@ async function keywordSearchOnly(
     offset: number
 ): Promise<ScoredMember[]> {
     console.log('[Semantic Search] Executing full-text search...');
-    
+
     // Build filter conditions
     const conditions: string[] = [
         'm.is_active = TRUE',
@@ -285,10 +285,10 @@ async function keywordSearchOnly(
     `;
 
     const result = await query(queryText, params);
-    
+
     // Normalize rank scores to 0-1 range
     const maxRank = result.rows[0]?.rank || 1;
-    
+
     return result.rows.map(row => ({
         id: row.id,
         name: row.name,
@@ -322,43 +322,43 @@ export async function hybridSearch(
     options: SearchOptions = {}
 ): Promise<{ members: ScoredMember[]; totalCount: number }> {
     const startTime = Date.now();
-    
+
     const page = options.page || DEFAULT_PAGE;
     const limit = Math.min(options.limit || DEFAULT_LIMIT, MAX_LIMIT);
     const offset = (page - 1) * limit;
-    
+
     console.log(`[Semantic Search] Starting hybrid search for: "${searchQuery}"`);
     console.log(`[Semantic Search] Filters:`, filters);
     console.log(`[Semantic Search] Page: ${page}, Limit: ${limit}`);
-    
+
     // Generate embedding for the query
     const embedding = await generateQueryEmbedding(searchQuery);
-    
+
     // Execute both searches in parallel
     const [semanticResults, keywordResults] = await Promise.all([
         semanticSearchOnly(embedding, filters, limit * 2, 0), // Get more results for merging
         keywordSearchOnly(searchQuery, filters, limit * 2, 0)
     ]);
-    
+
     console.log(`[Semantic Search] Semantic results: ${semanticResults.length}`);
     console.log(`[Semantic Search] Keyword results: ${keywordResults.length}`);
-    
+
     // Merge and score results
     const mergedResults = mergeResults(semanticResults, keywordResults);
-    
+
     // Get total count for pagination
     const totalCount = await getTotalCount(searchQuery, embedding, filters);
-    
+
     // Apply sorting
     const sortedResults = sortResults(mergedResults, options.sortBy, options.sortOrder);
-    
+
     // Apply pagination
     const paginatedResults = sortedResults.slice(0, limit);
-    
+
     const duration = Date.now() - startTime;
     console.log(`[Semantic Search] Hybrid search completed in ${duration}ms`);
     console.log(`[Semantic Search] Returning ${paginatedResults.length} results (total: ${totalCount})`);
-    
+
     return {
         members: paginatedResults,
         totalCount
@@ -370,7 +370,7 @@ export async function hybridSearch(
  */
 function mergeResults(semanticResults: ScoredMember[], keywordResults: ScoredMember[]): ScoredMember[] {
     const memberMap = new Map<string, ScoredMember>();
-    
+
     // Add semantic results
     for (const member of semanticResults) {
         memberMap.set(member.id, {
@@ -378,13 +378,13 @@ function mergeResults(semanticResults: ScoredMember[], keywordResults: ScoredMem
             relevanceScore: (member.semanticScore || 0) * SEMANTIC_WEIGHT
         });
     }
-    
+
     // Merge keyword results
     for (const member of keywordResults) {
         const existing = memberMap.get(member.id);
         if (existing) {
             // Combine scores
-            existing.relevanceScore = 
+            existing.relevanceScore =
                 (existing.semanticScore || 0) * SEMANTIC_WEIGHT +
                 (member.keywordScore || 0) * KEYWORD_WEIGHT;
             existing.keywordScore = member.keywordScore;
@@ -401,7 +401,7 @@ function mergeResults(semanticResults: ScoredMember[], keywordResults: ScoredMem
             });
         }
     }
-    
+
     return Array.from(memberMap.values());
 }
 
@@ -414,10 +414,10 @@ function sortResults(
     sortOrder: string = 'desc'
 ): ScoredMember[] {
     const sorted = [...members];
-    
+
     sorted.sort((a, b) => {
         let comparison = 0;
-        
+
         switch (sortBy) {
             case 'name':
                 comparison = (a.name || '').localeCompare(b.name || '');
@@ -433,10 +433,10 @@ function sortResults(
                 comparison = a.relevanceScore - b.relevanceScore;
                 break;
         }
-        
+
         return sortOrder === 'asc' ? comparison : -comparison;
     });
-    
+
     return sorted;
 }
 
@@ -511,29 +511,29 @@ async function getTotalCount(
  */
 function identifyMatchedFields(row: any, filters: SearchFilters): string[] {
     const matched: string[] = [];
-    
+
     if (filters.city && row.city?.toLowerCase().includes(filters.city.toLowerCase())) {
         matched.push('city');
     }
-    
-    if (filters.skills && filters.skills.some(s => 
+
+    if (filters.skills && filters.skills.some(s =>
         row.skills?.toLowerCase().includes(s.toLowerCase())
     )) {
         matched.push('skills');
     }
-    
-    if (filters.services && filters.services.some(s => 
+
+    if (filters.services && filters.services.some(s =>
         row.products_services?.toLowerCase().includes(s.toLowerCase())
     )) {
         matched.push('services');
     }
-    
-    if (filters.degree && filters.degree.some(d => 
+
+    if (filters.degree && filters.degree.some(d =>
         row.degree?.toLowerCase().includes(d.toLowerCase())
     )) {
         matched.push('degree');
     }
-    
+
     return matched;
 }
 
@@ -543,12 +543,12 @@ function identifyMatchedFields(row: any, filters: SearchFilters): string[] {
 export async function searchMembers(params: SearchParams): Promise<{ members: ScoredMember[]; totalCount: number }> {
     const { query: searchQuery, filters = {}, options = {} } = params;
     const searchType = options.searchType || 'hybrid';
-    
+
     if (!searchQuery || searchQuery.trim() === '') {
         // No query - return all with filters only
         return await getAllWithFilters(filters, options);
     }
-    
+
     switch (searchType) {
         case 'semantic': {
             const embedding = await generateQueryEmbedding(searchQuery);
@@ -583,7 +583,7 @@ async function getAllWithFilters(
     const page = options.page || DEFAULT_PAGE;
     const limit = Math.min(options.limit || DEFAULT_LIMIT, MAX_LIMIT);
     const offset = (page - 1) * limit;
-    
+
     const conditions: string[] = ['m.is_active = TRUE'];
     const params: any[] = [];
     let paramIndex = 1;
@@ -644,7 +644,7 @@ async function getAllWithFilters(
     }
 
     const sortOrder = options.sortOrder === 'asc' ? 'ASC' : 'DESC';
-    
+
     const limitParam = `$${paramIndex}`;
     const offsetParam = `$${paramIndex + 1}`;
     params.push(limit, offset);
@@ -658,7 +658,7 @@ async function getAllWithFilters(
     `;
 
     const result = await query(queryText, params);
-    
+
     const members: ScoredMember[] = result.rows.map(row => ({
         id: row.id,
         name: row.name,

@@ -20,10 +20,10 @@ import {
  */
 export async function searchMembersHandler(req: Request, res: Response) {
     const startTime = Date.now();
-    
+
     try {
         const requestBody: SearchMembersRequest = req.body;
-        
+
         console.log('[Search Controller] Received search request:', {
             query: requestBody.query,
             filters: requestBody.filters,
@@ -31,7 +31,7 @@ export async function searchMembersHandler(req: Request, res: Response) {
             page: requestBody.page,
             limit: requestBody.limit
         });
-        
+
         // Validate request
         const validation = validateSearchRequest(requestBody);
         if (!validation.valid) {
@@ -45,7 +45,7 @@ export async function searchMembersHandler(req: Request, res: Response) {
             };
             return res.status(400).json(errorResponse);
         }
-        
+
         // Prepare search parameters
         const searchParams = {
             query: requestBody.query,
@@ -58,10 +58,10 @@ export async function searchMembersHandler(req: Request, res: Response) {
                 sortOrder: requestBody.sortOrder || 'desc'
             }
         };
-        
+
         // Execute search
         const { members, totalCount } = await searchMembers(searchParams);
-        
+
         // Format results
         const formattedMembers: MemberSearchResult[] = members.map(member => ({
             id: member.id,
@@ -80,12 +80,12 @@ export async function searchMembersHandler(req: Request, res: Response) {
             relevanceScore: member.relevanceScore,
             matchedFields: member.matchedFields
         }));
-        
+
         // Calculate pagination
         const page = searchParams.options.page!;
         const limit = searchParams.options.limit!;
         const totalPages = Math.ceil(totalCount / limit);
-        
+
         const pagination: PaginationInfo = {
             currentPage: page,
             totalPages,
@@ -94,9 +94,9 @@ export async function searchMembersHandler(req: Request, res: Response) {
             hasNextPage: page < totalPages,
             hasPreviousPage: page > 1
         };
-        
+
         const executionTime = Date.now() - startTime;
-        
+
         // Build response
         const response: SearchResponse = {
             success: true,
@@ -108,14 +108,14 @@ export async function searchMembersHandler(req: Request, res: Response) {
                 executionTime
             }
         };
-        
+
         console.log(`[Search Controller] Search completed in ${executionTime}ms - ${formattedMembers.length} results`);
-        
+
         res.json(response);
-        
+
     } catch (error: any) {
         console.error('[Search Controller] Error processing search:', error);
-        
+
         const errorResponse: ApiErrorResponse = {
             success: false,
             error: {
@@ -124,7 +124,7 @@ export async function searchMembersHandler(req: Request, res: Response) {
                 details: error.message
             }
         };
-        
+
         res.status(500).json(errorResponse);
     }
 }
@@ -134,60 +134,60 @@ export async function searchMembersHandler(req: Request, res: Response) {
  */
 function validateSearchRequest(request: SearchMembersRequest): { valid: boolean; errors?: any } {
     const errors: any = {};
-    
+
     // Validate page
     if (request.page !== undefined) {
         if (!Number.isInteger(request.page) || request.page < 1) {
             errors.page = 'Page must be a positive integer';
         }
     }
-    
+
     // Validate limit
     if (request.limit !== undefined) {
         if (!Number.isInteger(request.limit) || request.limit < 1 || request.limit > 50) {
             errors.limit = 'Limit must be between 1 and 50';
         }
     }
-    
+
     // Validate search type
     if (request.searchType !== undefined) {
         if (!['hybrid', 'semantic', 'keyword'].includes(request.searchType)) {
             errors.searchType = 'Search type must be one of: hybrid, semantic, keyword';
         }
     }
-    
+
     // Validate sortBy
     if (request.sortBy !== undefined) {
         if (!['relevance', 'name', 'turnover', 'year'].includes(request.sortBy)) {
             errors.sortBy = 'Sort by must be one of: relevance, name, turnover, year';
         }
     }
-    
+
     // Validate sortOrder
     if (request.sortOrder !== undefined) {
         if (!['asc', 'desc'].includes(request.sortOrder)) {
             errors.sortOrder = 'Sort order must be one of: asc, desc';
         }
     }
-    
+
     // Validate filters
     if (request.filters) {
         const { filters } = request;
-        
+
         if (filters.minTurnover !== undefined && filters.minTurnover < 0) {
             errors.minTurnover = 'Minimum turnover must be non-negative';
         }
-        
+
         if (filters.maxTurnover !== undefined && filters.maxTurnover < 0) {
             errors.maxTurnover = 'Maximum turnover must be non-negative';
         }
-        
+
         if (filters.minTurnover !== undefined && filters.maxTurnover !== undefined) {
             if (filters.minTurnover > filters.maxTurnover) {
                 errors.turnover = 'Minimum turnover cannot exceed maximum turnover';
             }
         }
-        
+
         if (filters.yearOfGraduation !== undefined) {
             if (!Array.isArray(filters.yearOfGraduation)) {
                 errors.yearOfGraduation = 'Year of graduation must be an array';
@@ -201,8 +201,8 @@ function validateSearchRequest(request: SearchMembersRequest): { valid: boolean;
             }
         }
     }
-    
+
     const valid = Object.keys(errors).length === 0;
-    
+
     return valid ? { valid: true } : { valid: false, errors };
 }

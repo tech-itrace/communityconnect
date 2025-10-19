@@ -22,9 +22,9 @@ import { ApiErrorResponse } from '../utils/types';
 export async function getMemberByIdHandler(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        
+
         console.log(`[Member Controller] Fetching member: ${id}`);
-        
+
         // Validate UUID format
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(id)) {
@@ -38,9 +38,9 @@ export async function getMemberByIdHandler(req: Request, res: Response) {
             };
             return res.status(400).json(errorResponse);
         }
-        
+
         const member = await getMemberById(id);
-        
+
         if (!member) {
             const errorResponse: ApiErrorResponse = {
                 success: false,
@@ -52,15 +52,15 @@ export async function getMemberByIdHandler(req: Request, res: Response) {
             };
             return res.status(404).json(errorResponse);
         }
-        
+
         res.json({
             success: true,
             member
         });
-        
+
     } catch (error: any) {
         console.error('[Member Controller] Error fetching member:', error);
-        
+
         const errorResponse: ApiErrorResponse = {
             success: false,
             error: {
@@ -69,7 +69,7 @@ export async function getMemberByIdHandler(req: Request, res: Response) {
                 details: error.message
             }
         };
-        
+
         res.status(500).json(errorResponse);
     }
 }
@@ -87,7 +87,7 @@ export async function getAllMembersHandler(req: Request, res: Response) {
         const city = req.query.city as string;
         const degree = req.query.degree as string;
         const yearOfGraduation = req.query.year ? parseInt(req.query.year as string) : undefined;
-        
+
         console.log('[Member Controller] Fetching members:', {
             page,
             limit,
@@ -97,7 +97,7 @@ export async function getAllMembersHandler(req: Request, res: Response) {
             degree,
             yearOfGraduation
         });
-        
+
         // Validate parameters
         if (page < 1) {
             const errorResponse: ApiErrorResponse = {
@@ -110,7 +110,7 @@ export async function getAllMembersHandler(req: Request, res: Response) {
             };
             return res.status(400).json(errorResponse);
         }
-        
+
         if (limit < 1 || limit > 100) {
             const errorResponse: ApiErrorResponse = {
                 success: false,
@@ -122,7 +122,7 @@ export async function getAllMembersHandler(req: Request, res: Response) {
             };
             return res.status(400).json(errorResponse);
         }
-        
+
         if (!['name', 'turnover', 'year'].includes(sortBy)) {
             const errorResponse: ApiErrorResponse = {
                 success: false,
@@ -134,7 +134,7 @@ export async function getAllMembersHandler(req: Request, res: Response) {
             };
             return res.status(400).json(errorResponse);
         }
-        
+
         const result = await getAllMembers({
             page,
             limit,
@@ -144,15 +144,15 @@ export async function getAllMembersHandler(req: Request, res: Response) {
             degree,
             yearOfGraduation
         });
-        
+
         res.json({
             success: true,
             ...result
         });
-        
+
     } catch (error: any) {
         console.error('[Member Controller] Error fetching members:', error);
-        
+
         const errorResponse: ApiErrorResponse = {
             success: false,
             error: {
@@ -161,7 +161,7 @@ export async function getAllMembersHandler(req: Request, res: Response) {
                 details: error.message
             }
         };
-        
+
         res.status(500).json(errorResponse);
     }
 }
@@ -173,17 +173,17 @@ export async function getAllMembersHandler(req: Request, res: Response) {
 export async function getMemberStatsHandler(req: Request, res: Response) {
     try {
         console.log('[Member Controller] Fetching member statistics');
-        
+
         const stats = await getMemberStats();
-        
+
         res.json({
             success: true,
             stats
         });
-        
+
     } catch (error: any) {
         console.error('[Member Controller] Error fetching stats:', error);
-        
+
         const errorResponse: ApiErrorResponse = {
             success: false,
             error: {
@@ -192,7 +192,7 @@ export async function getMemberStatsHandler(req: Request, res: Response) {
                 details: error.message
             }
         };
-        
+
         res.status(500).json(errorResponse);
     }
 }
@@ -204,11 +204,11 @@ export async function getMemberStatsHandler(req: Request, res: Response) {
 export async function getSuggestionsHandler(req: Request, res: Response) {
     try {
         const type = req.query.type as string;
-        
+
         console.log(`[Member Controller] Fetching suggestions for: ${type}`);
-        
+
         let suggestions: string[] = [];
-        
+
         switch (type) {
             case 'cities':
                 suggestions = await getUniqueCities();
@@ -226,7 +226,7 @@ export async function getSuggestionsHandler(req: Request, res: Response) {
                     getUniqueSkills(),
                     getUniqueServices()
                 ]);
-                
+
                 return res.json({
                     success: true,
                     suggestions: {
@@ -236,16 +236,16 @@ export async function getSuggestionsHandler(req: Request, res: Response) {
                     }
                 });
         }
-        
+
         res.json({
             success: true,
             type,
             suggestions
         });
-        
+
     } catch (error: any) {
         console.error('[Member Controller] Error fetching suggestions:', error);
-        
+
         const errorResponse: ApiErrorResponse = {
             success: false,
             error: {
@@ -254,7 +254,7 @@ export async function getSuggestionsHandler(req: Request, res: Response) {
                 details: error.message
             }
         };
-        
+
         res.status(500).json(errorResponse);
     }
 }
