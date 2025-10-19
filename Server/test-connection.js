@@ -70,7 +70,7 @@ async function testConnection() {
             AND table_name IN ('community_members', 'member_embeddings', 'search_queries', 'search_cache')
             ORDER BY table_name
         `);
-        
+
         if (tablesResult.rows.length > 0) {
             console.log('✅ Test 3: Database Tables');
             console.log('   Found tables:');
@@ -82,7 +82,7 @@ async function testConnection() {
             // Test 4: Check data
             const memberCount = await client.query('SELECT COUNT(*) FROM community_members');
             const embeddingCount = await client.query('SELECT COUNT(*) FROM member_embeddings');
-            
+
             console.log('✅ Test 4: Data Count');
             console.log(`   Members: ${memberCount.rows[0].count}`);
             console.log(`   Embeddings: ${embeddingCount.rows[0].count}`);
@@ -115,11 +115,11 @@ async function testConnection() {
         console.error('❌ Connection failed!\n');
         console.error('Error:', error.message);
         console.error('');
-        
+
         // Provide helpful troubleshooting
         console.log('🔧 Troubleshooting:');
         console.log('');
-        
+
         if (error.message.includes('password authentication failed')) {
             console.log('❌ Password is incorrect');
             console.log('   - Double-check your database password');
@@ -140,7 +140,7 @@ async function testConnection() {
             console.log('   - See SUPABASE-SETUP.md for detailed help');
         }
         console.log('');
-        
+
         process.exit(1);
     } finally {
         if (client) {

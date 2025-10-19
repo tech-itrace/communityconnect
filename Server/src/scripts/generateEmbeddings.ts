@@ -73,7 +73,7 @@ function buildSkillsText(member: Member): string {
 
 async function generateEmbedding(text: string): Promise<number[]> {
     const DEEPINFRA_API_KEY = process.env.DEEPINFRA_API_KEY;
-    
+
     if (!DEEPINFRA_API_KEY) {
         throw new Error('DEEPINFRA_API_KEY is not set');
     }
@@ -94,7 +94,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
         // DeepInfra returns embeddings in response.data.embeddings array
         const embedding = response.data?.embeddings?.[0];
-        
+
         if (!embedding || !Array.isArray(embedding)) {
             throw new Error('Invalid embedding response from DeepInfra');
         }
