@@ -4,17 +4,20 @@
 
 1. **Node.js** (v20 or higher)
 2. **PostgreSQL** (v15 or higher) with **pgvector** extension
-3. **OpenAI API Key** (for embeddings)
-4. **DeepInfra API Key** (already configured)
+3. **DeepInfra API Key** (for LLM and embeddings)
 
 ## Database Setup Options
 
 ### Option 1: Using Supabase (Recommended)
 
+**📖 See detailed guide**: `SUPABASE-SETUP.md`
+
+Quick steps:
 1. Create a free account at [https://supabase.com](https://supabase.com)
-2. Create a new project
-3. Get your database connection string from Settings → Database
-4. The pgvector extension is pre-installed on Supabase
+2. Create a new project (save your password!)
+3. Get connection string from Settings → Database → Connection String → **URI**
+4. Format: `postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres`
+5. The pgvector extension is pre-installed on Supabase
 
 ### Option 2: Local PostgreSQL
 
@@ -45,7 +48,6 @@
    
    # AI/LLM API Keys
    DEEPINFRA_API_KEY=your_deepinfra_key_here
-   OPENAI_API_KEY=your_openai_api_key_here
    
    # Database Configuration
    DATABASE_URL=postgresql://user:password@localhost:5432/community_connect
@@ -53,10 +55,11 @@
    # DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
    ```
 
-3. **Get an OpenAI API Key**:
-   - Go to [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-   - Create a new API key
+3. **Get a DeepInfra API Key** (if you don't have one):
+   - Go to [https://deepinfra.com](https://deepinfra.com)
+   - Sign up and create an API key
    - Add it to your `.env` file
+   - DeepInfra provides both LLM (Llama 3.1) and embeddings (BAAI/bge-base-en-v1.5)
 
 ## Installation Steps
 
@@ -108,7 +111,7 @@ Expected output:
 
 ### Step 4: Generate AI Embeddings
 
-This generates semantic embeddings for all members (takes 1-2 minutes):
+This generates semantic embeddings for all members using DeepInfra (takes 1-2 minutes):
 
 ```bash
 npm run generate:embeddings
@@ -117,6 +120,7 @@ npm run generate:embeddings
 Expected output:
 ```
 [Embeddings] Starting embeddings generation...
+[Embeddings] Using DeepInfra BAAI/bge-base-en-v1.5 model (768 dimensions)
 [Embeddings] Found 48 members to process
 [Embeddings] Processing: Mr. Udhayakumar Ulaganathan...
 [Embeddings] Processed 5/48 members...
@@ -127,7 +131,7 @@ Expected output:
   - Embeddings in database: 48
 ```
 
-**Note**: This step uses OpenAI API and will cost approximately $0.01
+**Note**: This step uses DeepInfra API and will cost approximately $0.005 (even cheaper than OpenAI!)
 
 ### Step 5: Start the Server
 
@@ -166,10 +170,10 @@ curl http://localhost:3000/api/messages/ \
 - For Supabase: pgvector is pre-installed
 - For local PostgreSQL: Install pgvector following [installation guide](https://github.com/pgvector/pgvector#installation)
 
-### "OpenAI API error"
+### "DeepInfra API error"
 
-- Verify your `OPENAI_API_KEY` is correct
-- Check you have credits in your OpenAI account
+- Verify your `DEEPINFRA_API_KEY` is correct
+- Check you have credits in your DeepInfra account
 - Rate limits: Script adds 100ms delay between requests
 
 ### "CSV file not found"
@@ -214,13 +218,18 @@ LIMIT 1;
 ## Cost Estimation
 
 ### One-time Setup Costs:
-- Generating 48 embeddings: ~$0.01
+- Generating 96 embeddings (48 members × 2 embeddings each): ~$0.005 with DeepInfra
 
 ### Monthly Operating Costs (1000 queries):
-- OpenAI embeddings: ~$0.01
+- DeepInfra embeddings: ~$0.005
 - DeepInfra LLM: ~$0.05
 - Database (Supabase): Free tier
-- **Total: ~$0.06/month**
+- **Total: ~$0.055/month**
+
+**Benefits of using DeepInfra**:
+- Single API key for both LLM and embeddings
+- More cost-effective than OpenAI
+- 768-dimensional embeddings (smaller, faster)
 
 ## Development Commands
 

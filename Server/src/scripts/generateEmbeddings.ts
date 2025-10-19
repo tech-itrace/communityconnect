@@ -1,9 +1,13 @@
-import OpenAI from 'openai';
+import dotenv from 'dotenv';
+import axios from 'axios';
 import pool, { query } from '../config/db';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Load environment variables
+dotenv.config();
+
+// DeepInfra embedding model - BAAI/bge-base-en-v1.5
+// More cost-effective than OpenAI and produces 768-dimensional embeddings
+const DEEPINFRA_EMBEDDING_API_URL = 'https://api.deepinfra.com/v1/inference/BAAI/bge-base-en-v1.5';
 
 interface Member {
     id: string;
@@ -68,24 +72,49 @@ function buildSkillsText(member: Member): string {
 }
 
 async function generateEmbedding(text: string): Promise<number[]> {
-    try {
-        const response = await openai.embeddings.create({
-            model: 'text-embedding-ada-002',
-            input: text,
-        });
+    const DEEPINFRA_API_KEY = process.env.DEEPINFRA_API_KEY;
+    
+    if (!DEEPINFRA_API_KEY) {
+        throw new Error('DEEPINFRA_API_KEY is not set');
+    }
 
-        return response.data[0].embedding;
-    } catch (error) {
-        console.error('[Embeddings] Error generating embedding:', error);
+    try {
+        const response = await axios.post(
+            DEEPINFRA_EMBEDDING_API_URL,
+            {
+                inputs: [text],
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${DEEPINFRA_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        // DeepInfra returns embeddings in response.data.embeddings array
+        const embedding = response.data?.embeddings?.[0];
+        
+        if (!embedding || !Array.isArray(embedding)) {
+            throw new Error('Invalid embedding response from DeepInfra');
+        }
+
+        return embedding;
+    } catch (error: any) {
+        console.error('[Embeddings] Error generating embedding:', error.message);
+        if (error.response) {
+            console.error('[Embeddings] API Error:', error.response.status, error.response.data);
+        }
         throw error;
     }
 }
 
 async function generateEmbeddings() {
     console.log('[Embeddings] Starting embeddings generation...');
+    console.log('[Embeddings] Using DeepInfra BAAI/bge-base-en-v1.5 model (768 dimensions)');
 
-    if (!process.env.OPENAI_API_KEY) {
-        console.error('[Embeddings] ❌ OPENAI_API_KEY is not set in environment variables');
+    if (!process.env.DEEPINFRA_API_KEY) {
+        console.error('[Embeddings] ❌ DEEPINFRA_API_KEY is not set in environment variables');
         process.exit(1);
     }
 

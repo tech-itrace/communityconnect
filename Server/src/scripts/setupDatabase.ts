@@ -1,4 +1,8 @@
+import dotenv from 'dotenv';
 import pool, { query } from '../config/db';
+
+// Load environment variables
+dotenv.config();
 
 async function setupDatabase() {
     console.log('[Setup] Starting database setup...');
@@ -57,12 +61,12 @@ async function setupDatabase() {
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 member_id UUID NOT NULL REFERENCES community_members(id) ON DELETE CASCADE,
                 
-                -- Embeddings for different fields
-                profile_embedding VECTOR(1536),
-                skills_embedding VECTOR(1536),
+                -- Embeddings for different fields (768 dimensions for DeepInfra BAAI/bge-base-en-v1.5)
+                profile_embedding VECTOR(768),
+                skills_embedding VECTOR(768),
                 
                 -- Metadata
-                embedding_model VARCHAR(100) DEFAULT 'text-embedding-ada-002',
+                embedding_model VARCHAR(100) DEFAULT 'BAAI/bge-base-en-v1.5',
                 created_at TIMESTAMP DEFAULT NOW(),
                 
                 UNIQUE(member_id)

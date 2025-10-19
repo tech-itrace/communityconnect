@@ -1,7 +1,11 @@
+import dotenv from 'dotenv';
 import { parse } from 'csv-parse';
 import * as fs from 'fs';
 import * as path from 'path';
 import pool, { query } from '../config/db';
+
+// Load environment variables
+dotenv.config();
 
 interface CSVRow {
     Name: string;
