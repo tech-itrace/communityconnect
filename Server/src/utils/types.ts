@@ -164,6 +164,77 @@ export interface GetMembersRequest {
 }
 
 // ============================================================================
+// Natural Language Processing Types
+// ============================================================================
+
+export interface ParsedQuery {
+    intent: 'find_member' | 'get_info' | 'list_members' | 'compare';
+    entities: ExtractedEntities;
+    searchQuery: string;
+    confidence: number;
+}
+
+export interface ExtractedEntities {
+    skills?: string[];
+    location?: string;
+    services?: string[];
+    turnoverRequirement?: 'high' | 'medium' | 'low';
+    graduationYear?: number[];
+    degree?: string;
+}
+
+export interface NLSearchRequest {
+    query: string;
+    context?: {
+        previousQuery?: string;
+        previousResults?: string[];
+    };
+    options?: {
+        includeResponse?: boolean;
+        includeSuggestions?: boolean;
+        maxResults?: number;
+    };
+}
+
+export interface NLSearchResult {
+    understanding: {
+        intent: string;
+        entities: ExtractedEntities;
+        confidence: number;
+        normalizedQuery: string;
+    };
+    results: {
+        members: MemberSearchResult[];
+        pagination: PaginationInfo;
+    };
+    response?: {
+        conversational: string;
+        suggestions?: string[];
+    };
+    executionTime: number;
+}
+
+export interface NLSearchResponse {
+    success: boolean;
+    query: string;
+    understanding: {
+        intent: string;
+        entities: ExtractedEntities;
+        confidence: number;
+        normalizedQuery: string;
+    };
+    results: {
+        members: MemberSearchResult[];
+        pagination: PaginationInfo;
+    };
+    response?: {
+        conversational: string;
+        suggestions?: string[];
+    };
+    executionTime: number;
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 

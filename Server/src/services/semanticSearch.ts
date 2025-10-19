@@ -99,7 +99,7 @@ async function semanticSearchOnly(
 
     if (filters.skills && filters.skills.length > 0) {
         const skillConditions = filters.skills.map(() => {
-            const cond = `m.skills ILIKE $${paramIndex}`;
+            const cond = `m.working_knowledge ILIKE $${paramIndex}`;
             paramIndex++;
             return cond;
         });
@@ -109,7 +109,7 @@ async function semanticSearchOnly(
 
     if (filters.services && filters.services.length > 0) {
         const serviceConditions = filters.services.map(() => {
-            const cond = `m.products_services ILIKE $${paramIndex}`;
+            const cond = `m.working_knowledge ILIKE $${paramIndex}`;
             paramIndex++;
             return cond;
         });
@@ -184,8 +184,8 @@ async function semanticSearchOnly(
         city: row.city,
         phone: row.phone,
         email: row.email,
-        skills: row.skills,
-        productsServices: row.products_services,
+        skills: row.working_knowledge,
+        productsServices: row.working_knowledge,
         annualTurnover: row.annual_turnover,
         isActive: row.is_active,
         createdAt: row.created_at,
@@ -224,7 +224,7 @@ async function keywordSearchOnly(
 
     if (filters.skills && filters.skills.length > 0) {
         const skillConditions = filters.skills.map(() => {
-            const cond = `m.skills ILIKE $${paramIndex}`;
+            const cond = `m.working_knowledge ILIKE $${paramIndex}`;
             paramIndex++;
             return cond;
         });
@@ -234,7 +234,7 @@ async function keywordSearchOnly(
 
     if (filters.services && filters.services.length > 0) {
         const serviceConditions = filters.services.map(() => {
-            const cond = `m.products_services ILIKE $${paramIndex}`;
+            const cond = `m.working_knowledge ILIKE $${paramIndex}`;
             paramIndex++;
             return cond;
         });
@@ -301,8 +301,8 @@ async function keywordSearchOnly(
         city: row.city,
         phone: row.phone,
         email: row.email,
-        skills: row.skills,
-        productsServices: row.products_services,
+        skills: row.working_knowledge,
+        productsServices: row.working_knowledge,
         annualTurnover: row.annual_turnover,
         isActive: row.is_active,
         createdAt: row.created_at,
@@ -464,13 +464,13 @@ async function getTotalCount(
     }
 
     if (filters.skills && filters.skills.length > 0) {
-        const skillConditions = filters.skills.map(() => `m.skills ILIKE $${paramIndex++}`);
+        const skillConditions = filters.skills.map(() => `m.working_knowledge ILIKE $${paramIndex++}`);
         conditions.push(`(${skillConditions.join(' OR ')})`);
         params.push(...filters.skills.map(s => `%${s}%`));
     }
 
     if (filters.services && filters.services.length > 0) {
-        const serviceConditions = filters.services.map(() => `m.products_services ILIKE $${paramIndex++}`);
+        const serviceConditions = filters.services.map(() => `m.working_knowledge ILIKE $${paramIndex++}`);
         conditions.push(`(${serviceConditions.join(' OR ')})`);
         params.push(...filters.services.map(s => `%${s}%`));
     }
@@ -517,13 +517,13 @@ function identifyMatchedFields(row: any, filters: SearchFilters): string[] {
     }
 
     if (filters.skills && filters.skills.some(s =>
-        row.skills?.toLowerCase().includes(s.toLowerCase())
+        row.working_knowledge?.toLowerCase().includes(s.toLowerCase())
     )) {
         matched.push('skills');
     }
 
     if (filters.services && filters.services.some(s =>
-        row.products_services?.toLowerCase().includes(s.toLowerCase())
+        row.working_knowledge?.toLowerCase().includes(s.toLowerCase())
     )) {
         matched.push('services');
     }
@@ -596,13 +596,13 @@ async function getAllWithFilters(
     }
 
     if (filters.skills && filters.skills.length > 0) {
-        const skillConditions = filters.skills.map(() => `m.skills ILIKE $${paramIndex++}`);
+        const skillConditions = filters.skills.map(() => `m.working_knowledge ILIKE $${paramIndex++}`);
         conditions.push(`(${skillConditions.join(' OR ')})`);
         params.push(...filters.skills.map(s => `%${s}%`));
     }
 
     if (filters.services && filters.services.length > 0) {
-        const serviceConditions = filters.services.map(() => `m.products_services ILIKE $${paramIndex++}`);
+        const serviceConditions = filters.services.map(() => `m.working_knowledge ILIKE $${paramIndex++}`);
         conditions.push(`(${serviceConditions.join(' OR ')})`);
         params.push(...filters.services.map(s => `%${s}%`));
     }
@@ -671,8 +671,8 @@ async function getAllWithFilters(
         city: row.city,
         phone: row.phone,
         email: row.email,
-        skills: row.skills,
-        productsServices: row.products_services,
+        skills: row.working_knowledge,
+        productsServices: row.working_knowledge,
         annualTurnover: row.annual_turnover,
         isActive: row.is_active,
         createdAt: row.created_at,
