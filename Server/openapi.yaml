@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: Community Connect Bot API
+  version: 0.1.0
+  description: "API for WhatsApp bot (Slice 1: Semantic Answering)"
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /messages:
+    post:
+      summary: Send a message to the bot and get a semantic answer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+      responses:
+        '200':
+          description: Bot response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+        '400':
+          description: Bad request (missing message)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+components:
+  schemas:
+    MessageRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "What are the amenities in my apartment?"
