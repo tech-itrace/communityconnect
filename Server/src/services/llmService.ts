@@ -51,11 +51,21 @@ async function callLLM(systemPrompt: string, userMessage: string, temperature: n
 /**
  * Parse natural language query into structured format
  */
-export async function parseQuery(naturalQuery: string): Promise<ParsedQuery> {
+export async function parseQuery(naturalQuery: string, conversationContext?: string): Promise<ParsedQuery> {
     const startTime = Date.now();
     console.log(`[LLM Service] Parsing query: "${naturalQuery}"`);
+    if (conversationContext) {
+        console.log(`[LLM Service] Using conversation context from previous queries`);
+    }
 
-    const systemPrompt = `You are a search query parser for a business community network. Parse the following natural language query and extract structured information.
+    // Build system prompt with conversation context if available
+    let systemPrompt = `You are a search query parser for a business community network. Parse the following natural language query and extract structured information.`;
+
+    if (conversationContext) {
+        systemPrompt += `\n\n${conversationContext}\n\nConsider the conversation history above when parsing. If the current query appears to be a follow-up question (e.g., "show me their profiles", "who are they", "what about their skills"), use the context from previous queries to understand what the user is referring to.`;
+    }
+
+    systemPrompt += `
 
 Extract the following in JSON format:
 {
@@ -125,7 +135,7 @@ Return ONLY valid JSON, no explanation or markdown formatting.`;
         return result;
     } catch (error: any) {
         console.error('[LLM Service] Failed to parse query:', error.message);
-        
+
         // Return fallback parsed query with higher confidence
         // Use the natural query as-is for semantic search
         return {

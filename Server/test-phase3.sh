@@ -6,6 +6,9 @@
 BASE_URL="http://localhost:3000"
 ENDPOINT="${BASE_URL}/api/search/query"
 
+# Test phone number (a valid member from the community)
+TEST_PHONE_NUMBER="919840930854"
+
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -39,7 +42,7 @@ run_test() {
     # Make the request
     response=$(curl -s -w "\n%{http_code}" -X POST "$ENDPOINT" \
         -H "Content-Type: application/json" \
-        -d "{\"query\": \"$query\", \"options\": {\"maxResults\": 5}}")
+        -d "{\"query\": \"$query\", \"phoneNumber\": \"$TEST_PHONE_NUMBER\", \"options\": {\"maxResults\": 5}}")
     
     local end_time=$(node -e "console.log(Date.now())")
     local duration=$((end_time - start_time))

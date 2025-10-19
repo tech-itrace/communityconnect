@@ -63,7 +63,8 @@ function entitiesToFilters(entities: ExtractedEntities): SearchFilters {
  */
 export async function processNaturalLanguageQuery(
     naturalQuery: string,
-    maxResults: number = 10
+    maxResults: number = 10,
+    conversationContext?: string
 ): Promise<NLSearchResult> {
     const startTime = Date.now();
     console.log(`\n[NL Search] ========================================`);
@@ -72,7 +73,7 @@ export async function processNaturalLanguageQuery(
     try {
         // Step 1: Parse the natural language query
         console.log(`[NL Search] Step 1: Parsing query with LLM...`);
-        const parsed: ParsedQuery = await parseQuery(naturalQuery);
+        const parsed: ParsedQuery = await parseQuery(naturalQuery, conversationContext);
 
         console.log(`[NL Search] ✓ Parsed - Intent: ${parsed.intent}, Confidence: ${parsed.confidence}`);
         console.log(`[NL Search] Entities:`, JSON.stringify(parsed.entities, null, 2));

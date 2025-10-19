@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { processNaturalLanguageQuery, createClarificationResponse } from '../services/nlSearchService';
+import { validateMember, getOrCreateSession, addToHistory, buildConversationContext } from '../services/conversationService';
 import { NLSearchRequest, NLSearchResponse, ApiErrorResponse } from '../utils/types';
 
 /**
@@ -11,6 +12,20 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
 
     try {
         const body: NLSearchRequest = req.body;
+
+        // Validate phone number (required)
+        if (!body.phoneNumber || typeof body.phoneNumber !== 'string' || body.phoneNumber.trim().length === 0) {
+            const errorResponse: ApiErrorResponse = {
+                success: false,
+                error: {
+                    code: 'PHONE_NUMBER_REQUIRED',
+                    message: 'Phone number is required for authentication',
+                    details: { phoneNumber: body.phoneNumber }
+                }
+            };
+            res.status(400).json(errorResponse);
+            return;
+        }
 
         // Validate required fields
         if (!body.query || typeof body.query !== 'string' || body.query.trim().length === 0) {
@@ -25,6 +40,30 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
             res.status(400).json(errorResponse);
             return;
         }
+
+        // Validate member authentication
+        console.log(`\n[NL Controller] ========================================`);
+        console.log(`[NL Controller] Authenticating user...`);
+
+        const memberValidation = await validateMember(body.phoneNumber);
+
+        if (!memberValidation.isValid) {
+            console.log(`[NL Controller] ✗ Authentication failed`);
+            const errorResponse: ApiErrorResponse = {
+                success: false,
+                error: {
+                    code: 'UNAUTHORIZED',
+                    message: 'Access denied. This service is only available to active community members.',
+                    details: {
+                        reason: 'Phone number not found in community members database or member is inactive'
+                    }
+                }
+            };
+            res.status(403).json(errorResponse);
+            return;
+        }
+
+        console.log(`[NL Controller] ✓ Authenticated: ${memberValidation.memberName}`);
 
         // Validate query length
         if (body.query.length > 500) {
@@ -59,13 +98,32 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
             return;
         }
 
-        console.log(`\n[NL Controller] ========================================`);
+        // Get or create conversation session
+        const session = getOrCreateSession(body.phoneNumber, memberValidation.memberName!);
+        const conversationContext = buildConversationContext(body.phoneNumber);
+
         console.log(`[NL Controller] Received natural language query`);
         console.log(`[NL Controller] Query: "${body.query}"`);
         console.log(`[NL Controller] Options:`, { includeResponse, includeSuggestions, maxResults });
+        if (conversationContext) {
+            console.log(`[NL Controller] Conversation history: ${session.history.length} previous queries`);
+        }
 
-        // Process the natural language query
-        const result = await processNaturalLanguageQuery(body.query, maxResults);
+        // Process the natural language query with conversation context
+        const result = await processNaturalLanguageQuery(
+            body.query,
+            maxResults,
+            conversationContext
+        );
+
+        // Add to conversation history
+        addToHistory(
+            body.phoneNumber,
+            body.query,
+            result.understanding.intent,
+            result.understanding.entities,
+            result.results.members.length
+        );
 
         // Check if confidence is too low - ask for clarification
         // Lower threshold to 0.3 - only ask for clarification if truly ambiguous

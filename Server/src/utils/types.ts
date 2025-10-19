@@ -185,6 +185,7 @@ export interface ExtractedEntities {
 
 export interface NLSearchRequest {
     query: string;
+    phoneNumber: string;  // Required: user's mobile number for validation
     context?: {
         previousQuery?: string;
         previousResults?: string[];
@@ -232,6 +233,25 @@ export interface NLSearchResponse {
         suggestions?: string[];
     };
     executionTime: number;
+}
+
+// ============================================================================
+// Conversation History Types
+// ============================================================================
+
+export interface ConversationEntry {
+    query: string;
+    timestamp: number;
+    intent: string;
+    entities: ExtractedEntities;
+    resultCount: number;
+}
+
+export interface ConversationSession {
+    phoneNumber: string;
+    memberName: string;
+    history: ConversationEntry[];
+    lastActivity: number;
 }
 
 // ============================================================================
