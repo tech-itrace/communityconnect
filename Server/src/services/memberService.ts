@@ -410,7 +410,7 @@ export async function updateMember(
     `;
 
     const result = await query(queryText, values);
-    
+
     if (result.rows.length === 0) {
         return null;
     }

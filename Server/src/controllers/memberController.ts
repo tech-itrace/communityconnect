@@ -270,12 +270,12 @@ export async function getSuggestionsHandler(req: Request, res: Response) {
  */
 export async function createMemberHandler(req: Request, res: Response) {
     try {
-        const { 
-            phone, 
-            name, 
-            email, 
-            city, 
-            working_knowledge, 
+        const {
+            phone,
+            name,
+            email,
+            city,
+            working_knowledge,
             degree,
             branch,
             organization_name,
@@ -349,11 +349,11 @@ export async function createMemberHandler(req: Request, res: Response) {
 export async function updateMemberHandler(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        const { 
-            name, 
-            email, 
-            city, 
-            working_knowledge, 
+        const {
+            name,
+            email,
+            city,
+            working_knowledge,
             degree,
             branch,
             organization_name,
