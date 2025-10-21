@@ -6,15 +6,17 @@ services:
     container_name: communityconnect
     restart: unless-stopped
     ports:
-      - "6000:5173"
+      - "6000:3000"
     networks:
       - grove-dev
 
     environment:
       - VIRTUAL_HOST=connectbees.drizzfit.com
       - LETSENCRYPT_HOST=connectbees.drizzfit.com
-      - VIRTUAL_PORT=5173
+      - VIRTUAL_PORT=3000
       - LETSENCRYPT_EMAIL=srilekha@candorbees.com
+    env_file:
+      - ./secret.env
       
 networks:
   grove-dev:
