@@ -78,10 +78,9 @@ router.post('/webhook', async (req: Request, res: Response) => {
         }
 
         // 5. Build conversation context from history
-        const conversationContext = session.conversationHistory.length > 0 ? {
-            previousQuery: session.conversationHistory[session.conversationHistory.length - 1]?.query,
-            previousResults: [] // Could add member IDs from previous results if needed
-        } : undefined;
+        const conversationContext = session.conversationHistory.length > 0
+            ? session.conversationHistory[session.conversationHistory.length - 1]?.query
+            : undefined;
 
         // 6. Process query with NL search
         const result = await processNaturalLanguageQuery(Body, 5, conversationContext);

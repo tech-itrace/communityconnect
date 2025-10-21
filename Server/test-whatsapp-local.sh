@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Test WhatsApp webhook locally
-# Usage: ./test-whatsapp-local.sh "find AI experts" "9876543210"
+# Usage: ./test-whatsapp-local.sh "find AI experts" "919876543210"
 
 QUERY="${1:-find AI experts}"
 PHONE="${2:-919943549835}"

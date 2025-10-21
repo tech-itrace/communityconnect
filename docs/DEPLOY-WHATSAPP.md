@@ -1,27 +1,41 @@
-# Quick Deploy to Railway + WhatsApp Setup
+# Quick Deploy to VPS + WhatsApp Setup
 
-## Step 1: Deploy to Railway (5 min)
+## Step 1: Deploy to VPS with CI/CD (Automated) ✅
 
-1. **Sign up & Connect**
-   ```
-   - Go to railway.app
-   - Sign up with GitHub
-   - New Project → Deploy from GitHub repo
-   - Select: tech-itrace/communityconnect
-   - Select folder: /Server
-   ```
+**Your setup uses:**
+- ✅ AWS ECR for Docker images
+- ✅ GitHub Actions for CI/CD
+- ✅ VPS with docker-compose
+- ✅ Redis included automatically
 
-2. **Add Environment Variables**
-   ```
-   NODE_ENV=production
-   PORT=8080
-   DATABASE_URL=<your_supabase_url>
-   DEEPINFRA_API_KEY=<your_key>
-   ```
+### Automatic Deployment (Already Configured!)
 
-3. **Deploy** - Railway auto-builds and deploys
+**Every push to `main` branch:**
+1. GitHub Actions builds Docker image
+2. Pushes to AWS ECR
+3. Updates docker-compose.yaml with new image
+4. Deploys to VPS at `connectbees.drizzfit.com`
+5. Redis deploys automatically alongside app
 
-4. **Get URL**: Copy your Railway URL (e.g., `communityconnect-production.up.railway.app`)
+**Your deployment URL:** `https://connectbees.drizzfit.com`
+
+### Manual Deployment (If Needed)
+
+```bash
+# On your VPS
+cd /root/communityconnect
+
+# Pull latest image
+docker-compose pull
+
+# Deploy with Redis
+docker-compose up -d
+
+# Check status
+docker-compose ps
+```
+
+**Environment Variables:** Managed via AWS Secrets Manager (`env-communityconnect`)
 
 ## Step 2: Setup Twilio WhatsApp (10 min)
 
@@ -42,7 +56,7 @@
 3. **Configure Webhook**
    ```
    - In Twilio Console → Messaging → Settings → WhatsApp Sandbox
-   - When a message comes in: https://your-railway-app.up.railway.app/api/whatsapp/webhook
+   - When a message comes in: https://connectbees.drizzfit.com/api/whatsapp/webhook
    - Method: POST
    - Save
    ```
@@ -74,6 +88,30 @@
 
 ## Production Setup (Optional)
 
+### Current VPS Setup ✅
+
+**What's Already Configured:**
+- ✅ Domain: `connectbees.drizzfit.com`
+- ✅ SSL/TLS: Let's Encrypt (auto-renewal)
+- ✅ Redis: Included in docker-compose
+- ✅ Reverse proxy: nginx (via VIRTUAL_HOST)
+- ✅ CI/CD: GitHub Actions → AWS ECR → VPS
+
+**Docker Compose Services:**
+```yaml
+services:
+  redis:
+    - Redis for sessions & rate limiting
+    - 256MB memory limit
+    - Persistent data storage
+  
+  communityconnect:
+    - Your Node.js app
+    - Port 6000:3000
+    - Connected to Redis
+    - Auto-deploys on push
+```
+
 ### Get Approved WhatsApp Business Number
 
 1. **Apply for WhatsApp Business API**
@@ -85,27 +123,74 @@
 
 ## Environment Variables Reference
 
+### Managed via AWS Secrets Manager
+
+Your environment variables are stored in AWS Secrets Manager (`env-communityconnect`) and automatically deployed:
+
 ```env
-# Required
+# Core
 NODE_ENV=production
-PORT=8080
+PORT=3000
+
+# Database
 DATABASE_URL=postgresql://...
 
 # LLM
 DEEPINFRA_API_KEY=...
 
+# Redis (auto-configured in docker-compose)
+REDIS_URL=redis://redis:6379
+
 # WhatsApp (Optional - for OTP)
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=...
+
+# Domain (auto-configured in docker-compose)
+VIRTUAL_HOST=connectbees.drizzfit.com
+LETSENCRYPT_HOST=connectbees.drizzfit.com
+LETSENCRYPT_EMAIL=srilekha@candorbees.com
+```
+
+### To Update Environment Variables
+
+```bash
+# Update in AWS Secrets Manager
+aws secretsmanager update-secret \
+  --secret-id env-communityconnect \
+  --secret-string '{"KEY":"value"}'
+
+# Redeploy (will fetch new values)
+cd /root/communityconnect
+docker-compose down
+docker-compose up -d
 ```
 
 ## Webhook Endpoints
 
-- `GET /api/whatsapp/webhook` - Verification
-- `POST /api/whatsapp/webhook` - Message handler
+**Base URL:** `https://connectbees.drizzfit.com`
 
-## Testing Locally
+- `GET /api/whatsapp/webhook` - Verification (returns "Webhook is active")
+- `POST /api/whatsapp/webhook` - Message handler (processes WhatsApp messages)
+
+## CI/CD Pipeline
+
+**Automatic deployment on every push to `main`:**
+
+1. **Build** - Docker image built in GitHub Actions
+2. **Push** - Image pushed to AWS ECR (`eu-north-1`)
+3. **Copy** - docker-compose.yaml updated and copied to VPS
+4. **Deploy** - VPS pulls image and restarts containers
+5. **Cleanup** - Old ECR images pruned (keeps latest 5)
+
+**Check deployment logs:**
+```bash
+# On VPS
+docker-compose logs -f communityconnect
+docker-compose logs -f redis
+```
+
+## Testing Locally with ngrok
 
 ```bash
 # Terminal 1: Start server
@@ -120,32 +205,84 @@ https://abc123.ngrok.io/api/whatsapp/webhook
 
 ## Troubleshooting
 
+### VPS Deployment Issues
+
+**Container not starting:**
+```bash
+# Check logs
+docker-compose logs communityconnect
+
+# Check Redis
+docker-compose logs redis
+
+# Restart services
+docker-compose restart
+```
+
 **Webhook not receiving messages:**
-- Check Railway logs: `railway logs`
-- Verify webhook URL has /api/whatsapp/webhook
-- Ensure method is POST
-- Check Twilio debugger
+- ✅ Check VPS logs: `docker-compose logs -f communityconnect`
+- ✅ Verify webhook URL: `https://connectbees.drizzfit.com/api/whatsapp/webhook`
+- ✅ Ensure method is POST in Twilio
+- ✅ Check Twilio debugger
+- ✅ Test endpoint: `curl https://connectbees.drizzfit.com/api/whatsapp/webhook`
+
+**Redis connection errors:**
+```bash
+# Check Redis is running
+docker-compose ps redis
+
+# Check Redis logs
+docker-compose logs redis
+
+# Test Redis connection
+docker exec -it connectbees-redis redis-cli ping
+# Should return: PONG
+```
 
 **Authentication errors:**
-- Phone must be in community_members table
-- Phone format: 10 digits (no +91)
+- Phone must be in `community_members` table
+- Phone format: 10 digits (no +91 prefix in DB)
+- Check DB: `SELECT phone FROM community_members WHERE phone = '9943549835';`
 
-**No response:**
-- Check Railway logs for errors
-- Verify DATABASE_URL is set
-- Test /health endpoint first
+**Environment variable issues:**
+```bash
+# Verify secrets fetched
+cat /root/communityconnect/secret.env
+
+# Update secrets in AWS
+aws secretsmanager update-secret \
+  --secret-id env-communityconnect \
+  --secret-string file://new-secrets.json
+
+# Redeploy
+docker-compose down && docker-compose up -d
+```
+
+**GitHub Actions failing:**
+- Check workflow logs in GitHub Actions tab
+- Verify AWS credentials in repository secrets
+- Ensure ECR repository exists: `communityconnect`
+- Check VPS SSH access
 
 ## Costs
 
-- Railway: FREE (then $5/month)
+### VPS Deployment (Your Setup)
+- VPS: $XX/month (your existing server)
+- AWS ECR: ~$0.10/month (storage)
+- Redis: FREE (included in docker-compose)
 - Twilio Sandbox: FREE
 - Twilio Production: $0.005/message
-- Total for 500 msgs/month: ~$7.50
+- **Total for 500 msgs/month: ~$2.50** (just Twilio messages)
+
+### Comparison with Railway
+- Railway: $5/month + $5/month for Redis
+- Your VPS: FREE (already paid) + Redis included
+- **Savings: ~$10/month**
 
 ## Next Steps
 
-1. Deploy to Railway ✅
-2. Configure Twilio webhook ✅
-3. Test with WhatsApp ✅
-4. Add OTP authentication (Week 2)
-5. Add admin dashboard (Week 3)
+1. ✅ Deploy to VPS (automated via GitHub Actions)
+2. ✅ Configure Twilio webhook
+3. ✅ Test with WhatsApp
+4. Week 3: Add admin dashboard
+5. Production: Apply for WhatsApp Business API
