@@ -1,6 +1,57 @@
 // Shared types/interfaces for the application
 
 // ============================================================================
+// Role & Permission Types
+// ============================================================================
+
+export type Role = 'member' | 'admin' | 'super_admin';
+
+export interface RolePermissions {
+    canSearch: boolean;
+    canViewProfile: boolean;
+    canUpdateOwnProfile: boolean;
+    canAddMembers: boolean;
+    canEditMembers: boolean;
+    canDeleteMembers: boolean;
+    canViewAnalytics: boolean;
+    canManageAdmins: boolean;
+}
+
+// Role permission matrix
+export const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
+    member: {
+        canSearch: true,
+        canViewProfile: true,
+        canUpdateOwnProfile: true,
+        canAddMembers: false,
+        canEditMembers: false,
+        canDeleteMembers: false,
+        canViewAnalytics: false,
+        canManageAdmins: false
+    },
+    admin: {
+        canSearch: true,
+        canViewProfile: true,
+        canUpdateOwnProfile: true,
+        canAddMembers: true,
+        canEditMembers: true,
+        canDeleteMembers: false,
+        canViewAnalytics: true,
+        canManageAdmins: false
+    },
+    super_admin: {
+        canSearch: true,
+        canViewProfile: true,
+        canUpdateOwnProfile: true,
+        canAddMembers: true,
+        canEditMembers: true,
+        canDeleteMembers: true,
+        canViewAnalytics: true,
+        canManageAdmins: true
+    }
+};
+
+// ============================================================================
 // Database Models
 // ============================================================================
 
@@ -19,6 +70,7 @@ export interface Member {
     skills: string | null;
     productsServices: string | null;
     annualTurnover: number | null;
+    role: Role;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

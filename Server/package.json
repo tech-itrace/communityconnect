@@ -14,6 +14,7 @@
         "test:ratelimit": "ts-node -r dotenv/config src/test-ratelimit.ts",
         "check:env": "./check-environment.sh",
         "db:setup": "ts-node -r dotenv/config src/scripts/setupDatabase.ts",
+        "db:add-roles": "ts-node -r dotenv/config src/scripts/addRoleColumn.ts",
         "import:members": "ts-node -r dotenv/config src/scripts/importMembers.ts",
         "generate:embeddings": "ts-node -r dotenv/config src/scripts/generateEmbeddings.ts"
     },

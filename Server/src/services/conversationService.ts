@@ -21,16 +21,21 @@ const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 /**
  * Validate if phone number belongs to an active community member
  */
-export async function validateMember(phoneNumber: string): Promise<{ isValid: boolean; memberName?: string; memberId?: string }> {
+export async function validateMember(phoneNumber: string): Promise<{ 
+    isValid: boolean; 
+    memberName?: string; 
+    memberId?: string;
+    role?: 'member' | 'admin' | 'super_admin';
+}> {
     console.log(`[Conversation Service] Validating phone number: ${phoneNumber.substring(0, 3)}***`);
 
     try {
         // Normalize phone number (remove spaces, dashes, etc.)
         const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
 
-        // Query database for member with this phone number
+        // Query database for member with this phone number (include role)
         const result = await query(
-            `SELECT id, name, phone, is_active 
+            `SELECT id, name, phone, role, is_active 
              FROM community_members 
              WHERE phone ILIKE $1 AND is_active = TRUE
              LIMIT 1`,
@@ -43,12 +48,13 @@ export async function validateMember(phoneNumber: string): Promise<{ isValid: bo
         }
 
         const member = result.rows[0];
-        console.log(`[Conversation Service] ✓ Valid member: ${member.name}`);
+        console.log(`[Conversation Service] ✓ Valid member: ${member.name} (${member.role})`);
 
         return {
             isValid: true,
             memberName: member.name,
-            memberId: member.id
+            memberId: member.id,
+            role: member.role || 'member'
         };
     } catch (error: any) {
         console.error(`[Conversation Service] Error validating member:`, error.message);

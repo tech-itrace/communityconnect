@@ -62,10 +62,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
             userId: memberValidation.memberId || phoneNumber,
             phoneNumber: phoneNumber,
             memberName: memberValidation.memberName || ProfileName || 'User',
-            role: 'member' // TODO: Get role from database
+            role: memberValidation.role || 'member' // Get role from database
         });
 
-        console.log(`[WhatsApp] Session: ${session.conversationHistory.length} messages in history`);
+        console.log(`[WhatsApp] Session: ${session.conversationHistory.length} messages in history, Role: ${session.role}`);
 
         // 4. Check search rate limit (if this is a search query)
         const searchRateLimit = await checkSearchRateLimit(phoneNumber);
