@@ -25,7 +25,8 @@ router.post('/webhook', async (req: Request, res: Response) => {
         }
 
         // Extract phone number (format: whatsapp:+919876543210)
-        const phoneNumber = From?.replace('whatsapp:+91', '').replace('whatsapp:+', '');
+        // Remove 'whatsapp:+' prefix but keep the country code (91)
+        const phoneNumber = From?.replace('whatsapp:+', '');
 
         console.log(`[WhatsApp] Message from ${ProfileName} (${phoneNumber}): "${Body}"`);
 
