@@ -12,7 +12,7 @@ const router = Router();
 // Health check endpoint (includes Redis status)
 router.get('/health', async (req, res) => {
     const redisHealth = await getRedisHealth();
-    
+
     res.status(200).json({
         status: 'ok',
         timestamp: new Date().toISOString(),

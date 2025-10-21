@@ -289,3 +289,164 @@ export async function getUniqueServices(): Promise<string[]> {
     // There is no products_services column, return empty array for now
     return [];
 }
+
+/**
+ * Create a new member
+ */
+export async function createMember(memberData: {
+    phone: string;
+    name: string;
+    email?: string;
+    city?: string;
+    working_knowledge?: string;
+    degree?: string;
+    branch?: string;
+    organization_name?: string;
+    designation?: string;
+    role?: string;
+}): Promise<Member> {
+    console.log(`[Member Service] Creating member: ${memberData.name}`);
+
+    const {
+        phone,
+        name,
+        email,
+        city,
+        working_knowledge,
+        degree,
+        branch,
+        organization_name,
+        designation,
+        role = 'member'
+    } = memberData;
+
+    const queryText = `
+        INSERT INTO community_members 
+        (phone, name, email, city, working_knowledge, degree, branch, organization_name, designation, role, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        RETURNING *
+    `;
+
+    const values = [phone, name, email, city, working_knowledge, degree, branch, organization_name, designation, role];
+    const result = await query(queryText, values);
+
+    return result.rows[0];
+}
+
+/**
+ * Update an existing member
+ */
+export async function updateMember(
+    id: string,
+    memberData: Partial<{
+        name: string;
+        email: string;
+        city: string;
+        working_knowledge: string;
+        degree: string;
+        branch: string;
+        organization_name: string;
+        designation: string;
+        role: string;
+    }>
+): Promise<Member | null> {
+    console.log(`[Member Service] Updating member ID: ${id}`);
+
+    // Build dynamic update query
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (memberData.name !== undefined) {
+        updates.push(`name = $${paramIndex++}`);
+        values.push(memberData.name);
+    }
+    if (memberData.email !== undefined) {
+        updates.push(`email = $${paramIndex++}`);
+        values.push(memberData.email);
+    }
+    if (memberData.city !== undefined) {
+        updates.push(`city = $${paramIndex++}`);
+        values.push(memberData.city);
+    }
+    if (memberData.working_knowledge !== undefined) {
+        updates.push(`working_knowledge = $${paramIndex++}`);
+        values.push(memberData.working_knowledge);
+    }
+    if (memberData.degree !== undefined) {
+        updates.push(`degree = $${paramIndex++}`);
+        values.push(memberData.degree);
+    }
+    if (memberData.branch !== undefined) {
+        updates.push(`branch = $${paramIndex++}`);
+        values.push(memberData.branch);
+    }
+    if (memberData.organization_name !== undefined) {
+        updates.push(`organization_name = $${paramIndex++}`);
+        values.push(memberData.organization_name);
+    }
+    if (memberData.designation !== undefined) {
+        updates.push(`designation = $${paramIndex++}`);
+        values.push(memberData.designation);
+    }
+    if (memberData.role !== undefined) {
+        updates.push(`role = $${paramIndex++}`);
+        values.push(memberData.role);
+    }
+
+    if (updates.length === 0) {
+        // No updates to perform, just return the existing member
+        return getMemberById(id);
+    }
+
+    updates.push(`updated_at = NOW()`);
+    values.push(id);
+
+    const queryText = `
+        UPDATE community_members 
+        SET ${updates.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING *
+    `;
+
+    const result = await query(queryText, values);
+    
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    return result.rows[0];
+}
+
+/**
+ * Delete a member
+ */
+export async function deleteMember(id: string): Promise<boolean> {
+    console.log(`[Member Service] Deleting member ID: ${id}`);
+
+    const queryText = 'DELETE FROM community_members WHERE id = $1 RETURNING id';
+    const result = await query(queryText, [id]);
+
+    return result.rows.length > 0;
+}
+
+/**
+ * Check if a member exists by phone number
+ */
+export async function getMemberByPhone(phoneNumber: string): Promise<Member | null> {
+    console.log(`[Member Service] Fetching member by phone: ${phoneNumber}`);
+
+    const queryText = `
+        SELECT * FROM community_members
+        WHERE phone = $1
+    `;
+
+    const result = await query(queryText, [phoneNumber]);
+
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    return result.rows[0];
+}
+

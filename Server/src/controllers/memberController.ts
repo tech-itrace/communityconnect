@@ -11,7 +11,11 @@ import {
     getMemberStats,
     getUniqueCities,
     getUniqueSkills,
-    getUniqueServices
+    getUniqueServices,
+    createMember,
+    updateMember,
+    deleteMember,
+    getMemberByPhone
 } from '../services/memberService';
 import { ApiErrorResponse } from '../utils/types';
 
@@ -258,3 +262,197 @@ export async function getSuggestionsHandler(req: Request, res: Response) {
         res.status(500).json(errorResponse);
     }
 }
+
+/**
+ * POST /api/members
+ * Create a new member
+ * Requires: Admin or Super Admin role
+ */
+export async function createMemberHandler(req: Request, res: Response) {
+    try {
+        const { 
+            phone, 
+            name, 
+            email, 
+            city, 
+            working_knowledge, 
+            degree,
+            branch,
+            organization_name,
+            designation,
+            role = 'member'
+        } = req.body;
+
+        // Validate required fields
+        if (!phone || !name) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Phone number and name are required'
+                }
+            });
+        }
+
+        console.log(`[Member Controller] Creating member: ${name} (${phone})`);
+
+        // Check if member already exists
+        const existingMember = await getMemberByPhone(phone);
+
+        if (existingMember) {
+            return res.status(409).json({
+                success: false,
+                error: {
+                    code: 'DUPLICATE_MEMBER',
+                    message: 'A member with this phone number already exists'
+                }
+            });
+        }
+
+        // Create the member
+        const newMember = await createMember({
+            phone,
+            name,
+            email,
+            city,
+            working_knowledge,
+            degree,
+            branch,
+            organization_name,
+            designation,
+            role
+        });
+
+        res.status(201).json({
+            success: true,
+            member: newMember
+        });
+
+    } catch (error: any) {
+        console.error('[Member Controller] Error creating member:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'SERVER_ERROR',
+                message: 'Failed to create member',
+                details: error.message
+            }
+        });
+    }
+}
+
+/**
+ * PUT /api/members/:id
+ * Update an existing member
+ * Requires: Admin or Super Admin role
+ */
+export async function updateMemberHandler(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const { 
+            name, 
+            email, 
+            city, 
+            working_knowledge, 
+            degree,
+            branch,
+            organization_name,
+            designation,
+            role
+        } = req.body;
+
+        console.log(`[Member Controller] Updating member ID: ${id}`);
+
+        // Check if member exists
+        const existingMember = await getMemberById(id);
+
+        if (!existingMember) {
+            return res.status(404).json({
+                success: false,
+                error: {
+                    code: 'MEMBER_NOT_FOUND',
+                    message: 'Member not found'
+                }
+            });
+        }
+
+        // Update the member
+        const updatedMember = await updateMember(id, {
+            name,
+            email,
+            city,
+            working_knowledge,
+            degree,
+            branch,
+            organization_name,
+            designation,
+            role
+        });
+
+        res.json({
+            success: true,
+            member: updatedMember
+        });
+
+    } catch (error: any) {
+        console.error('[Member Controller] Error updating member:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'SERVER_ERROR',
+                message: 'Failed to update member',
+                details: error.message
+            }
+        });
+    }
+}
+
+/**
+ * DELETE /api/members/:id
+ * Delete a member
+ * Requires: Super Admin role
+ */
+export async function deleteMemberHandler(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+
+        console.log(`[Member Controller] Deleting member ID: ${id}`);
+
+        // Check if member exists
+        const existingMember = await getMemberById(id);
+
+        if (!existingMember) {
+            return res.status(404).json({
+                success: false,
+                error: {
+                    code: 'MEMBER_NOT_FOUND',
+                    message: 'Member not found'
+                }
+            });
+        }
+
+        // Delete the member
+        const deleted = await deleteMember(id);
+
+        if (!deleted) {
+            throw new Error('Failed to delete member');
+        }
+
+        res.json({
+            success: true,
+            message: 'Member deleted successfully'
+        });
+
+    } catch (error: any) {
+        console.error('[Member Controller] Error deleting member:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'SERVER_ERROR',
+                message: 'Failed to delete member',
+                details: error.message
+            }
+        });
+    }
+}
+

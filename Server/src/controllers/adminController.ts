@@ -290,7 +290,7 @@ export async function getAuditLogsHandler(req: Request, res: Response) {
 export async function getAuditStatsHandler(req: Request, res: Response) {
     try {
         const days = req.query.days ? parseInt(req.query.days as string) : 7;
-        
+
         const stats = await getAuditStats(days);
         const activeUsers = await getMostActiveUsers(10, days);
 
