@@ -1,41 +1,420 @@
 openapi: 3.0.3
 info:
-  title: Community Connect Bot API
-  version: 0.1.0
-  description: "API for WhatsApp bot (Slice 1: Semantic Answering)"
+  title: Community Connect API
+  version: 2.0.0
+  description: |
+    API for Community Connect - A comprehensive member management and search system.
+    
+    Features:
+    - Natural language search with conversation context
+    - Semantic and keyword-based member search
+    - Member management and statistics
+    - Authentication via phone number
+    
+    The API supports three main categories:
+    1. **Bot/Messages**: Simple LLM-powered messaging
+    2. **Search**: Natural language and structured search capabilities
+    3. **Members**: Member retrieval, listing, and statistics
+  contact:
+    name: API Support
+    email: support@communityconnect.com
 servers:
   - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.communityconnect.com/api
+    description: Production server
+
 paths:
+  # ============================================================================
+  # Bot/Messages Endpoints
+  # ============================================================================
   /messages:
     post:
-      summary: Send a message to the bot and get a semantic answer
+      summary: Send a message to the bot
+      description: Send a message to the LLM-powered bot and receive a response
+      tags:
+        - Bot
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/MessageRequest'
+            example:
+              message: "What are the amenities in my apartment?"
       responses:
         '200':
           description: Bot response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  response:
-                    type: string
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                response: "Your apartment includes the following amenities: swimming pool, gym, parking, and 24/7 security."
         '400':
           description: Bad request (missing message)
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Message is required"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================================
+  # Search Endpoints
+  # ============================================================================
+  /search/query:
+    post:
+      summary: Process natural language search query
+      description: |
+        Process a natural language query to search for community members.
+        Requires phone number authentication. Maintains conversation context
+        for follow-up queries.
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NLSearchRequest'
+            example:
+              phoneNumber: "+919876543210"
+              query: "Find AI experts in Chennai"
+              options:
+                maxResults: 10
+                includeResponse: true
+                includeSuggestions: true
+      responses:
+        '200':
+          description: Search results with natural language understanding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NLSearchResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingPhone:
+                  summary: Missing phone number
+                  value:
+                    success: false
+                    error:
+                      code: "PHONE_NUMBER_REQUIRED"
+                      message: "Phone number is required for authentication"
+                      details:
+                        phoneNumber: null
+                invalidQuery:
+                  summary: Invalid query
+                  value:
+                    success: false
+                    error:
+                      code: "INVALID_QUERY"
+                      message: "Query is required and must be a non-empty string"
+                queryTooLong:
+                  summary: Query too long
+                  value:
+                    success: false
+                    error:
+                      code: "QUERY_TOO_LONG"
+                      message: "Query must be less than 500 characters"
+                      details:
+                        length: 550
+                        maxLength: 500
+        '403':
+          description: Unauthorized - phone number not found or member inactive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "UNAUTHORIZED"
+                  message: "Access denied. This service is only available to active community members."
+                  details:
+                    reason: "Phone number not found in community members database or member is inactive"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /search/members:
+    post:
+      summary: Search for members (structured search)
+      description: |
+        Search for community members using structured filters and search parameters.
+        Supports hybrid, semantic, and keyword search types.
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchMembersRequest'
+            example:
+              query: "software developer"
+              searchType: "hybrid"
+              filters:
+                city: "Chennai"
+                minTurnover: 1000000
+                skills: ["Python", "JavaScript"]
+              page: 1
+              limit: 10
+              sortBy: "relevance"
+              sortOrder: "desc"
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Invalid search parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Search error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /search/suggestions:
+    get:
+      summary: Get autocomplete suggestions
+      description: |
+        Get autocomplete suggestions for cities, skills, and services.
+        Can filter by type or return all types.
+      tags:
+        - Search
+      parameters:
+        - name: type
+          in: query
+          description: Type of suggestions to retrieve
+          required: false
+          schema:
+            type: string
+            enum: [cities, skills, services]
+          example: skills
+      responses:
+        '200':
+          description: Suggestions retrieved successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SuggestionsResponse'
+                  - $ref: '#/components/schemas/AllSuggestionsResponse'
+              examples:
+                typedSuggestions:
+                  summary: Suggestions for a specific type
+                  value:
+                    success: true
+                    type: "skills"
+                    suggestions: ["Python", "JavaScript", "React", "Node.js", "AI/ML"]
+                allSuggestions:
+                  summary: All suggestion types
+                  value:
+                    success: true
+                    suggestions:
+                      cities: ["Chennai", "Bangalore", "Mumbai", "Delhi"]
+                      skills: ["Python", "JavaScript", "React", "Node.js"]
+                      services: ["Consulting", "Development", "Training"]
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  # ============================================================================
+  # Members Endpoints
+  # ============================================================================
+  /members:
+    get:
+      summary: List all members with pagination
+      description: |
+        Retrieve a paginated list of all community members.
+        Supports filtering by city, degree, year and sorting options.
+      tags:
+        - Members
+      parameters:
+        - name: page
+          in: query
+          description: Page number (starts from 1)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          description: Number of results per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+        - name: sortBy
+          in: query
+          description: Field to sort by
+          required: false
+          schema:
+            type: string
+            enum: [name, turnover, year]
+            default: name
+          example: name
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          example: asc
+        - name: city
+          in: query
+          description: Filter by city
+          required: false
+          schema:
+            type: string
+          example: Chennai
+        - name: degree
+          in: query
+          description: Filter by degree
+          required: false
+          schema:
+            type: string
+          example: "B.E."
+        - name: year
+          in: query
+          description: Filter by year of graduation
+          required: false
+          schema:
+            type: integer
+          example: 2015
+      responses:
+        '200':
+          description: List of members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMembersResponse'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /members/{id}:
+    get:
+      summary: Get a single member by ID
+      description: Retrieve detailed information about a specific member
+      tags:
+        - Members
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Member UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Member details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '400':
+          description: Invalid ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "INVALID_ID"
+                  message: "Invalid member ID format"
+                  details: "Member ID must be a valid UUID"
+        '404':
+          description: Member not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "NOT_FOUND"
+                  message: "Member not found"
+                  details: "No member exists with ID: 123e4567-e89b-12d3-a456-426614174000"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /members/stats:
+    get:
+      summary: Get member statistics
+      description: Retrieve aggregated statistics about community members
+      tags:
+        - Members
+      responses:
+        '200':
+          description: Member statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberStatsResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+# ============================================================================
+# Components
+# ============================================================================
 components:
   schemas:
+    # ------------------------------------------------------------------------
+    # Bot/Message Schemas
+    # ------------------------------------------------------------------------
     MessageRequest:
       type: object
       required:
@@ -43,4 +422,647 @@ components:
       properties:
         message:
           type: string
+          description: The message to send to the bot
+          minLength: 1
           example: "What are the amenities in my apartment?"
+
+    MessageResponse:
+      type: object
+      properties:
+        response:
+          type: string
+          description: The bot's response
+          example: "Your apartment includes the following amenities: swimming pool, gym, parking, and 24/7 security."
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Message is required"
+
+    # ------------------------------------------------------------------------
+    # Search Schemas
+    # ------------------------------------------------------------------------
+    NLSearchRequest:
+      type: object
+      required:
+        - query
+        - phoneNumber
+      properties:
+        query:
+          type: string
+          description: Natural language search query
+          minLength: 1
+          maxLength: 500
+          example: "Find AI experts in Chennai with high turnover"
+        phoneNumber:
+          type: string
+          description: User's phone number for authentication
+          pattern: '^\+?[1-9]\d{1,14}$'
+          example: "+919876543210"
+        context:
+          type: object
+          description: Conversation context (optional)
+          properties:
+            previousQuery:
+              type: string
+              example: "Show me software developers"
+            previousResults:
+              type: array
+              items:
+                type: string
+              example: ["John Doe", "Jane Smith"]
+        options:
+          type: object
+          description: Search options
+          properties:
+            includeResponse:
+              type: boolean
+              default: true
+              description: Include conversational response
+            includeSuggestions:
+              type: boolean
+              default: true
+              description: Include search suggestions
+            maxResults:
+              type: integer
+              minimum: 1
+              maximum: 50
+              default: 10
+              description: Maximum number of results to return
+
+    NLSearchResponse:
+      type: object
+      required:
+        - success
+        - query
+        - understanding
+        - results
+        - executionTime
+      properties:
+        success:
+          type: boolean
+          example: true
+        query:
+          type: string
+          example: "Find AI experts in Chennai"
+        understanding:
+          type: object
+          description: How the system understood the query
+          properties:
+            intent:
+              type: string
+              example: "find_member"
+            entities:
+              $ref: '#/components/schemas/ExtractedEntities'
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              example: 0.95
+            normalizedQuery:
+              type: string
+              example: "members with AI skills in Chennai"
+        results:
+          type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/MemberSearchResult'
+            pagination:
+              $ref: '#/components/schemas/PaginationInfo'
+        response:
+          type: object
+          description: Natural language response (optional)
+          properties:
+            conversational:
+              type: string
+              example: "I found 5 AI experts in Chennai. Here are the top matches..."
+            suggestions:
+              type: array
+              items:
+                type: string
+              example:
+                - "Refine by graduation year"
+                - "Filter by annual turnover"
+                - "Search for specific AI technologies"
+        executionTime:
+          type: integer
+          description: Query execution time in milliseconds
+          example: 245
+
+    SearchMembersRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Search query text (optional)
+          example: "software developer"
+        searchType:
+          type: string
+          enum: [hybrid, semantic, keyword]
+          default: hybrid
+          description: Type of search to perform
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+          example: 10
+        sortBy:
+          type: string
+          enum: [relevance, name, turnover, year]
+          default: relevance
+          example: relevance
+        sortOrder:
+          type: string
+          enum: [asc, desc]
+          default: desc
+          example: desc
+
+    SearchFilters:
+      type: object
+      description: Filters to apply to search
+      properties:
+        skills:
+          type: array
+          items:
+            type: string
+          example: ["Python", "JavaScript", "React"]
+        services:
+          type: array
+          items:
+            type: string
+          example: ["Consulting", "Development"]
+        city:
+          type: string
+          example: "Chennai"
+        minTurnover:
+          type: number
+          minimum: 0
+          example: 1000000
+        maxTurnover:
+          type: number
+          minimum: 0
+          example: 10000000
+        yearOfGraduation:
+          type: array
+          items:
+            type: integer
+            minimum: 1950
+            maximum: 2100
+          example: [2010, 2011, 2012]
+        degree:
+          type: array
+          items:
+            type: string
+          example: ["B.E.", "B.Tech", "M.Tech"]
+
+    SearchResponse:
+      type: object
+      required:
+        - success
+        - searchType
+        - results
+      properties:
+        success:
+          type: boolean
+          example: true
+        query:
+          type: string
+          example: "software developer"
+        searchType:
+          type: string
+          enum: [hybrid, semantic, keyword]
+          example: "hybrid"
+        results:
+          type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/MemberSearchResult'
+            pagination:
+              $ref: '#/components/schemas/PaginationInfo'
+            executionTime:
+              type: integer
+              description: Search execution time in milliseconds
+              example: 156
+
+    ExtractedEntities:
+      type: object
+      description: Entities extracted from natural language query
+      properties:
+        skills:
+          type: array
+          items:
+            type: string
+          example: ["AI", "Machine Learning"]
+        location:
+          type: string
+          example: "Chennai"
+        services:
+          type: array
+          items:
+            type: string
+          example: ["Consulting"]
+        turnoverRequirement:
+          type: string
+          enum: [high, medium, low]
+          example: "high"
+        graduationYear:
+          type: array
+          items:
+            type: integer
+          example: [2010, 2011]
+        degree:
+          type: string
+          example: "B.E."
+
+    SuggestionsResponse:
+      type: object
+      required:
+        - success
+        - type
+        - suggestions
+      properties:
+        success:
+          type: boolean
+          example: true
+        type:
+          type: string
+          enum: [cities, skills, services]
+          example: "skills"
+        suggestions:
+          type: array
+          items:
+            type: string
+          example: ["Python", "JavaScript", "React", "Node.js", "AI/ML"]
+
+    AllSuggestionsResponse:
+      type: object
+      required:
+        - success
+        - suggestions
+      properties:
+        success:
+          type: boolean
+          example: true
+        suggestions:
+          type: object
+          properties:
+            cities:
+              type: array
+              items:
+                type: string
+              example: ["Chennai", "Bangalore", "Mumbai", "Delhi"]
+            skills:
+              type: array
+              items:
+                type: string
+              example: ["Python", "JavaScript", "React", "Node.js"]
+            services:
+              type: array
+              items:
+                type: string
+              example: ["Consulting", "Development", "Training"]
+
+    # ------------------------------------------------------------------------
+    # Member Schemas
+    # ------------------------------------------------------------------------
+    Member:
+      type: object
+      required:
+        - id
+        - name
+        - isActive
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique member identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: Member's full name
+          example: "John Doe"
+        yearOfGraduation:
+          type: integer
+          nullable: true
+          example: 2015
+        degree:
+          type: string
+          nullable: true
+          example: "B.E."
+        branch:
+          type: string
+          nullable: true
+          example: "Computer Science"
+        workingAs:
+          type: string
+          nullable: true
+          example: "Software Engineer"
+        organization:
+          type: string
+          nullable: true
+          example: "Tech Solutions Inc."
+        designation:
+          type: string
+          nullable: true
+          example: "Senior Developer"
+        city:
+          type: string
+          nullable: true
+          example: "Chennai"
+        phone:
+          type: string
+          nullable: true
+          example: "+919876543210"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "john.doe@example.com"
+        skills:
+          type: string
+          nullable: true
+          description: Comma-separated skills
+          example: "Python, JavaScript, React, Node.js"
+        productsServices:
+          type: string
+          nullable: true
+          description: Products and services offered
+          example: "Web Development, Consulting, Training"
+        annualTurnover:
+          type: number
+          nullable: true
+          description: Annual turnover in INR
+          example: 5000000
+        isActive:
+          type: boolean
+          description: Whether the member is active
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-10-15T14:20:00Z"
+
+    MemberSearchResult:
+      type: object
+      required:
+        - id
+        - name
+        - relevanceScore
+        - matchedFields
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          example: "john.doe@example.com"
+        phone:
+          type: string
+          example: "+919876543210"
+        city:
+          type: string
+          example: "Chennai"
+        organization:
+          type: string
+          example: "Tech Solutions Inc."
+        designation:
+          type: string
+          example: "Senior Developer"
+        skills:
+          type: string
+          example: "Python, JavaScript, React"
+        productsServices:
+          type: string
+          example: "Web Development, Consulting"
+        annualTurnover:
+          type: number
+          example: 5000000
+        yearOfGraduation:
+          type: integer
+          example: 2015
+        degree:
+          type: string
+          example: "B.E."
+        branch:
+          type: string
+          example: "Computer Science"
+        relevanceScore:
+          type: number
+          format: float
+          description: Relevance score (0-1)
+          example: 0.95
+        matchedFields:
+          type: array
+          items:
+            type: string
+          description: Fields that matched the search
+          example: ["skills", "city"]
+
+    PaginationInfo:
+      type: object
+      required:
+        - currentPage
+        - totalPages
+        - totalResults
+        - resultsPerPage
+        - hasNextPage
+        - hasPreviousPage
+      properties:
+        currentPage:
+          type: integer
+          minimum: 1
+          example: 1
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 5
+        totalResults:
+          type: integer
+          minimum: 0
+          example: 47
+        resultsPerPage:
+          type: integer
+          minimum: 1
+          example: 10
+        hasNextPage:
+          type: boolean
+          example: true
+        hasPreviousPage:
+          type: boolean
+          example: false
+
+    MemberStats:
+      type: object
+      required:
+        - totalMembers
+        - activeMembers
+        - uniqueCities
+        - uniqueDegrees
+        - averageTurnover
+        - topSkills
+        - topCities
+      properties:
+        totalMembers:
+          type: integer
+          description: Total number of members
+          example: 150
+        activeMembers:
+          type: integer
+          description: Number of active members
+          example: 142
+        uniqueCities:
+          type: integer
+          description: Number of unique cities
+          example: 25
+        uniqueDegrees:
+          type: integer
+          description: Number of unique degrees
+          example: 8
+        averageTurnover:
+          type: number
+          format: float
+          description: Average annual turnover
+          example: 3500000
+        topSkills:
+          type: array
+          items:
+            type: object
+            properties:
+              skill:
+                type: string
+                example: "Python"
+              count:
+                type: integer
+                example: 45
+        topCities:
+          type: array
+          items:
+            type: object
+            properties:
+              city:
+                type: string
+                example: "Chennai"
+              count:
+                type: integer
+                example: 35
+
+    MemberResponse:
+      type: object
+      required:
+        - success
+        - member
+      properties:
+        success:
+          type: boolean
+          example: true
+        member:
+          $ref: '#/components/schemas/Member'
+
+    PaginatedMembersResponse:
+      type: object
+      required:
+        - success
+        - members
+        - pagination
+      properties:
+        success:
+          type: boolean
+          example: true
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    MemberStatsResponse:
+      type: object
+      required:
+        - success
+        - stats
+      properties:
+        success:
+          type: boolean
+          example: true
+        stats:
+          $ref: '#/components/schemas/MemberStats'
+
+    # ------------------------------------------------------------------------
+    # Error Schemas
+    # ------------------------------------------------------------------------
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: "INVALID_PARAMETERS"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid search parameters"
+        details:
+          description: Additional error details
+          oneOf:
+            - type: string
+            - type: object
+            - type: array
+          example:
+            page: "Page must be a positive integer"
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: '#/components/schemas/ApiError'
+
+  # --------------------------------------------------------------------------
+  # Security Schemes (for future use)
+  # --------------------------------------------------------------------------
+  securitySchemes:
+    phoneAuth:
+      type: apiKey
+      in: header
+      name: X-Phone-Number
+      description: Phone number authentication for natural language search
+
+tags:
+  - name: Bot
+    description: LLM-powered bot messaging endpoints
+  - name: Search
+    description: Natural language and structured search endpoints
+  - name: Members
+    description: Member management and retrieval endpoints
