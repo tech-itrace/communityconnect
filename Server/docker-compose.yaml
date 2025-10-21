@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  frontend:
+  communityconnect:
     image: <IMAGE_URI_PLACEHOLDER> # ← replace
     container_name: communityconnect
     restart: unless-stopped
