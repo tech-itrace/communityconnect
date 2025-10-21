@@ -1,6 +1,19 @@
 version: "3.8"
 
 services:
+  # Redis for sessions and rate limiting
+  redis:
+    image: redis:alpine
+    container_name: connectbees-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - grove-dev
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+
   communityconnect:
     image: <IMAGE_URI_PLACEHOLDER> # ← replace
     container_name: communityconnect
@@ -9,14 +22,19 @@ services:
       - "6000:3000"
     networks:
       - grove-dev
-
+    depends_on:
+      - redis
     environment:
       - VIRTUAL_HOST=connectbees.drizzfit.com
       - LETSENCRYPT_HOST=connectbees.drizzfit.com
       - VIRTUAL_PORT=3000
       - LETSENCRYPT_EMAIL=srilekha@candorbees.com
+      - REDIS_URL=redis://redis:6379
     env_file:
       - ./secret.env
+
+volumes:
+  redis-data:
       
 networks:
   grove-dev:
