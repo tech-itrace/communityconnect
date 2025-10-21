@@ -33,29 +33,24 @@
 - [x] Update health endpoint to include Redis status
 - [x] Update docker-compose.yaml with Redis service
 
-### Day 2: Session Service
-- [ ] Create `src/services/sessionService.ts`
-- [ ] Implement functions:
-  - [ ] `getOrCreateSession(phoneNumber)` - Get/create WhatsApp session
-  - [ ] `updateSession(phoneNumber, data)` - Update conversation history
-  - [ ] `getSession(phoneNumber)` - Retrieve existing session
-  - [ ] `deleteSession(phoneNumber)` - Clear session
-- [ ] Session structure:
-  ```typescript
-  {
-    userId: string,
-    phoneNumber: string,
-    role: 'member' | 'admin' | 'super_admin',
-    conversationHistory: Message[],
-    lastActivity: Date,
-    messageCount: number,
-    searchCount: number
-  }
-  ```
-- [ ] Redis keys with TTL:
-  - `session:whatsapp:{phone}` → 30 min TTL
-  - `rate:msg:{phone}` → 1 hour TTL
-  - `rate:search:{phone}` → 1 hour TTL
+### Day 2: Session Service ✅ COMPLETED
+- [x] Create `src/services/sessionService.ts`
+- [x] Implement functions:
+  - [x] `getOrCreateSession(phoneNumber)` - Get/create WhatsApp session
+  - [x] `updateSession(phoneNumber, data)` - Update conversation history
+  - [x] `getSession(phoneNumber)` - Retrieve existing session
+  - [x] `deleteSession(phoneNumber)` - Clear session
+  - [x] `addConversationEntry()` - Add to history (max 10)
+  - [x] `checkMessageRateLimit()` - Check 50/hour limit
+  - [x] `incrementMessageCounter()` - Track messages
+  - [x] `checkSearchRateLimit()` - Check 30/hour limit
+  - [x] `incrementSearchCounter()` - Track searches
+- [x] Session structure with TTL:
+  - [x] `session:whatsapp:{phone}` → 30 min TTL
+  - [x] `rate:msg:{phone}` → 1 hour TTL
+  - [x] `rate:search:{phone}` → 1 hour TTL
+- [x] Create test suite: `src/test-session.ts`
+- [x] All 13 tests passing ✓
 
 ### Day 3: WhatsApp Session Integration
 - [ ] Update `src/controllers/botController.ts`:

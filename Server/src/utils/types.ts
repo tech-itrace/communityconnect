@@ -255,6 +255,37 @@ export interface ConversationSession {
 }
 
 // ============================================================================
+// Session Management Types (Redis-based)
+// ============================================================================
+
+export interface WhatsAppSession {
+    userId: string;
+    phoneNumber: string;
+    memberName: string;
+    role: 'member' | 'admin' | 'super_admin';
+    conversationHistory: ConversationEntry[];
+    lastActivity: Date;
+    messageCount: number;
+    searchCount: number;
+    createdAt: Date;
+}
+
+export interface SessionData {
+    userId: string;
+    phoneNumber: string;
+    memberName: string;
+    role: 'member' | 'admin' | 'super_admin';
+}
+
+export interface SessionUpdateData {
+    lastMessage?: string;
+    lastResponse?: string;
+    messageCount?: number;
+    searchCount?: number;
+    conversationHistory?: ConversationEntry[];
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 

@@ -35,7 +35,8 @@ services:
 
 volumes:
   redis-data:
-      
+
+
 networks:
   grove-dev:
     external: true

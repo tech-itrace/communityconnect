@@ -1,6 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { processNaturalLanguageQuery } from '../services/nlSearchService';
-import { validateMember, getOrCreateSession, addToHistory, buildConversationContext } from '../services/conversationService';
+import { validateMember } from '../services/conversationService';
+import { 
+    getOrCreateSession, 
+    addConversationEntry,
+    checkMessageRateLimit,
+    incrementMessageCounter,
+    checkSearchRateLimit,
+    incrementSearchCounter
+} from '../services/sessionService';
+import { ConversationEntry } from '../utils/types';
 
 const router = Router();
 
@@ -30,7 +39,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
         console.log(`[WhatsApp] Message from ${ProfileName} (${phoneNumber}): "${Body}"`);
 
-        // Validate member
+        // 1. Validate member
         const memberValidation = await validateMember(phoneNumber);
         if (!memberValidation.isValid) {
             return res.status(200).send(
@@ -38,21 +47,58 @@ router.post('/webhook', async (req: Request, res: Response) => {
             );
         }
 
-        // Get conversation context
-        const session = getOrCreateSession(phoneNumber, memberValidation.memberName || ProfileName);
-        const conversationContext = buildConversationContext(phoneNumber);
+        // 2. Check message rate limit
+        const messageRateLimit = await checkMessageRateLimit(phoneNumber);
+        if (!messageRateLimit.allowed) {
+            console.log(`[WhatsApp] Rate limit exceeded for ${phoneNumber}`);
+            return res.status(200).send(
+                `⚠️ You've reached the hourly limit (${messageRateLimit.limit} messages). ` +
+                `Please try again in ${messageRateLimit.retryAfter} minutes. 🙏`
+            );
+        }
 
-        // Process query
+        // 3. Get or create session (Redis-based)
+        const session = await getOrCreateSession({
+            userId: memberValidation.memberId || phoneNumber,
+            phoneNumber: phoneNumber,
+            memberName: memberValidation.memberName || ProfileName || 'User',
+            role: 'member' // TODO: Get role from database
+        });
+
+        console.log(`[WhatsApp] Session: ${session.conversationHistory.length} messages in history`);
+
+        // 4. Check search rate limit (if this is a search query)
+        const searchRateLimit = await checkSearchRateLimit(phoneNumber);
+        if (!searchRateLimit.allowed) {
+            console.log(`[WhatsApp] Search rate limit exceeded for ${phoneNumber}`);
+            return res.status(200).send(
+                `⚠️ You've reached the hourly search limit (${searchRateLimit.limit} searches). ` +
+                `Please try again in ${searchRateLimit.retryAfter} minutes. 🙏`
+            );
+        }
+
+        // 5. Build conversation context from history
+        const conversationContext = session.conversationHistory.length > 0 ? {
+            previousQuery: session.conversationHistory[session.conversationHistory.length - 1]?.query,
+            previousResults: [] // Could add member IDs from previous results if needed
+        } : undefined;
+
+        // 6. Process query with NL search
         const result = await processNaturalLanguageQuery(Body, 5, conversationContext);
 
-        // Add to history
-        addToHistory(
-            phoneNumber,
-            Body,
-            result.understanding.intent,
-            result.understanding.entities,
-            result.results.members.length
-        );
+        // 7. Increment rate limit counters
+        await incrementMessageCounter(phoneNumber);
+        await incrementSearchCounter(phoneNumber);
+
+        // 8. Add to conversation history (Redis)
+        const conversationEntry: ConversationEntry = {
+            query: Body,
+            timestamp: Date.now(),
+            intent: result.understanding.intent,
+            entities: result.understanding.entities,
+            resultCount: result.results.members.length
+        };
+        await addConversationEntry(phoneNumber, conversationEntry);
 
         // Format response for WhatsApp
         const conversationalResponse = result.response?.conversational || 'Here are the results:';
