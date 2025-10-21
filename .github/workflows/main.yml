@@ -82,7 +82,7 @@ jobs:
           password: ${{ secrets.DEV_SSH_KEY }}
           port: 22
           source: "Server/docker-compose.yaml"
-          target: "/root/communityconnect/"
+          target: "/root/communityconnect/Server"
 
   deploy:
     name: Deploy to EC2
