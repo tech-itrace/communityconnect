@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  frontend:
+    image: <IMAGE_URI_PLACEHOLDER> # ← replace
+    container_name: communityconnect
+    restart: unless-stopped
+    ports:
+      - "6000:5173"
+    networks:
+      - grove-dev
+
+    environment:
+      - VIRTUAL_HOST=connectbees.drizzfit.com
+      - LETSENCRYPT_HOST=connectbees.drizzfit.com
+      - VIRTUAL_PORT=5173
+      - LETSENCRYPT_EMAIL=srilekha@candorbees.com
+      
+networks:
+  grove-dev:
+    external: true
