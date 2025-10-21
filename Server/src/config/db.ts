@@ -10,7 +10,8 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, // Increased to 10 seconds
+    query_timeout: 30000, // 30 seconds for query execution
 });
 
 // Test connection
@@ -43,17 +44,18 @@ export async function query(text: string, params?: any[]) {
 export async function getClient() {
     const client = await pool.connect();
     const query = client.query.bind(client);
-    const release = client.release.bind(client);
+    const originalRelease = client.release.bind(client);
 
-    // Set a timeout of 5 seconds for transactions
+    // Set a timeout of 30 seconds for transactions
     const timeout = setTimeout(() => {
         console.error('[DB] Client checkout timeout');
-        client.release();
-    }, 5000);
+        originalRelease();
+    }, 30000);
 
-    client.release = () => {
+    // Override release to clear timeout
+    const release = () => {
         clearTimeout(timeout);
-        client.release();
+        originalRelease();
     };
 
     return { query, release };
