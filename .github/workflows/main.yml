@@ -92,9 +92,6 @@ jobs:
     needs: copy
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.7
         env:
@@ -112,35 +109,19 @@ jobs:
             export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
             export AWS_DEFAULT_REGION="${{ env.AWS_REGION }}"
             
-            echo "Deploying image: $IMAGE_URI"
+            echo "Deploying API image: $IMAGE_URI"
             
-            # Create application directory
-            mkdir -p /root/communityconnect
+            # Navigate to API directory
             cd /root/communityconnect
             
-            # Install dependencies if missing
-            if ! command -v docker &>/dev/null; then
-              echo "Installing Docker..."
-              curl -fsSL https://get.docker.com | sudo sh
-              sudo usermod -aG docker $USER
-              # Need to reload session for group changes
-              newgrp docker
-            fi
+            # Fetch environment variables from AWS Secrets Manager
+            echo "Fetching environment variables from AWS Secrets Manager..."
+            aws secretsmanager get-secret-value \
+              --secret-id env-communityconnect \
+              --query SecretString \
+              --output text | jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]' > secret.env
             
-            if ! command -v docker-compose &>/dev/null; then
-              echo "Installing Docker Compose..."
-              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
-                -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
-            fi
-            
-            if ! command -v aws &>/dev/null; then
-              echo "Installing AWS CLI..."
-              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-              unzip -q awscliv2.zip
-              sudo ./aws/install
-              rm -rf awscliv2.zip aws/
-            fi
+            echo "Environment file created with $(wc -l < secret.env) variables"
             
             # Login to ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
@@ -152,9 +133,7 @@ jobs:
               exit 1
             fi
             
-            echo "Using docker-compose.yaml:"
-            cat docker-compose.yaml
-
+            
             echo "Pulling new image..."
             docker-compose pull
             
@@ -163,15 +142,14 @@ jobs:
             docker-compose down --remove-orphans || true
             
             echo "Starting new containers..."
-            docker-compose up -d
+            docker-compose up -d 
             
             echo "Checking deployment status..."
             docker-compose ps
             
-            echo "Cleaning up unused Docker images..."           
             # Remove unused images (not associated with any container)
             docker image prune -a -f
-          
+
 
   cleanup:
     name: Cleanup Old ECR Images
