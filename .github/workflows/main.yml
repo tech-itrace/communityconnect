@@ -1,0 +1,217 @@
+name: CI/CD for CommunityConnect
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_REPOSITORY: communityconnect
+
+jobs:
+  build:
+    name: Build and Push to ECR
+    runs-on: ubuntu-latest
+    
+    outputs:
+      image_uri: ${{ steps.build-image.outputs.image_uri }}
+      image_tag: ${{ steps.get-commit.outputs.sha_short }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get commit SHA and timestamp
+        id: get-commit
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.get-commit.outputs.sha_short }}
+        run: |
+          # Build image
+          docker build \
+            --build-arg VITE_APP_SERVERURL="${{ secrets.VITE_APP_SERVERURL }}" \
+            --build-arg VITE_APP_SESSION="${{ secrets.VITE_APP_SESSION }}" \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            .
+          
+          # Push image
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          # Set output
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "Built and pushed: $IMAGE_URI"
+
+  copy:
+    name: Copy docker-compose.yaml to DEV_HOST
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace image URI in docker-compose
+        run: |
+          sed -i "s|<IMAGE_URI_PLACEHOLDER>|${{ needs.build.outputs.image_uri }}|g" docker-compose.yaml
+
+      - name: Upload docker-compose.yaml to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          password: ${{ secrets.DEV_SSH_KEY }}
+          port: 22
+          source: "./docker-compose.yaml"
+          target: "/root/communityconnect/"
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: copy
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.7
+        env:
+          IMAGE_URI: ${{ needs.build.outputs.image_uri }}
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          password: ${{ secrets.DEV_SSH_KEY }}
+          envs: IMAGE_URI
+          script: |
+            set -e
+            
+            # Setup environment
+            export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
+            export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            export AWS_DEFAULT_REGION="${{ env.AWS_REGION }}"
+            
+            echo "Deploying image: $IMAGE_URI"
+            
+            # Create application directory
+            mkdir -p /root/communityconnect
+            cd /root/communityconnect
+            
+            # Install dependencies if missing
+            if ! command -v docker &>/dev/null; then
+              echo "Installing Docker..."
+              curl -fsSL https://get.docker.com | sudo sh
+              sudo usermod -aG docker $USER
+              # Need to reload session for group changes
+              newgrp docker
+            fi
+            
+            if ! command -v docker-compose &>/dev/null; then
+              echo "Installing Docker Compose..."
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+                -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+            
+            if ! command -v aws &>/dev/null; then
+              echo "Installing AWS CLI..."
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip -q awscliv2.zip
+              sudo ./aws/install
+              rm -rf awscliv2.zip aws/
+            fi
+            
+            # Login to ECR
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+            
+            # Verify docker-compose.yaml exists (transferred by copy job)
+            if [ ! -f docker-compose.yaml ]; then
+              echo "Error: docker-compose.yaml not found!"
+              exit 1
+            fi
+            
+            echo "Using docker-compose.yaml:"
+            cat docker-compose.yaml
+
+            echo "Pulling new image..."
+            docker-compose pull
+            
+            # Deploy application
+            echo "Stopping existing containers..."
+            docker-compose down --remove-orphans || true
+            
+            echo "Starting new containers..."
+            docker-compose up -d
+            
+            echo "Checking deployment status..."
+            docker-compose ps
+            
+            echo "Cleaning up unused Docker images..."           
+            # Remove unused images (not associated with any container)
+            docker image prune -a -f
+          
+
+  cleanup:
+    name: Cleanup Old ECR Images
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Cleanup old ECR images
+        run: |
+          echo "Cleaning up old images in $ECR_REPOSITORY repository..."
+          
+          # Get image digests to delete (keep latest 5)
+          IMAGES_TO_DELETE=$(aws ecr describe-images \
+            --repository-name $ECR_REPOSITORY \
+            --query 'sort_by(imageDetails,&imagePushedAt)[:-5].[imageDigest]' \
+            --output text)
+          
+          if [ -n "$IMAGES_TO_DELETE" ] && [ "$IMAGES_TO_DELETE" != "None" ]; then
+            echo "Found images to delete:"
+            echo "$IMAGES_TO_DELETE"
+            
+            echo "$IMAGES_TO_DELETE" | while read -r digest; do
+              if [ -n "$digest" ] && [ "$digest" != "None" ]; then
+                echo "Deleting image with digest: $digest"
+                aws ecr batch-delete-image \
+                  --repository-name $ECR_REPOSITORY \
+                  --image-ids imageDigest="$digest" || true
+              fi
+            done
+            
+            echo "Cleanup completed"
+          else
+            echo "No old images to delete"
+          fi
