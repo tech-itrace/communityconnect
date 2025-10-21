@@ -3,18 +3,21 @@ info:
   title: Community Connect API
   version: 2.0.0
   description: |
-    API for Community Connect - A comprehensive member management and search system.
+    API for Community Connect - A comprehensive member management and search system for business communities.
     
     Features:
-    - Natural language search with conversation context
-    - Semantic and keyword-based member search
-    - Member management and statistics
-    - Authentication via phone number
+    - Natural language search with conversation context to find business professionals
+    - Semantic and keyword-based member search for networking opportunities
+    - Member management and business statistics
+    - Authentication via phone number for secure access
     
     The API supports three main categories:
-    1. **Bot/Messages**: Simple LLM-powered messaging
-    2. **Search**: Natural language and structured search capabilities
-    3. **Members**: Member retrieval, listing, and statistics
+    1. **Bot/Messages**: Simple LLM-powered business query assistance
+    2. **Search**: Natural language and structured search capabilities for finding members with specific skills, services, or business profiles
+    3. **Members**: Member retrieval, listing, and community statistics
+    
+    Perfect for business communities, alumni networks, professional associations, and entrepreneur groups
+    looking to leverage their network for business growth, partnerships, and collaborations.
   contact:
     name: API Support
     email: support@communityconnect.com
@@ -26,12 +29,32 @@ servers:
 
 paths:
   # ============================================================================
+  # Health Check
+  # ============================================================================
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Check if the API is running and responsive
+      tags:
+        - System
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "ok"
+                timestamp: "2025-10-21T10:30:00.000Z"
+
+  # ============================================================================
   # Bot/Messages Endpoints
   # ============================================================================
   /messages:
     post:
       summary: Send a message to the bot
-      description: Send a message to the LLM-powered bot and receive a response
+      description: Send a message to the LLM-powered bot and receive a response about community members, business services, or networking opportunities
       tags:
         - Bot
       requestBody:
@@ -41,7 +64,7 @@ paths:
             schema:
               $ref: '#/components/schemas/MessageRequest'
             example:
-              message: "What are the amenities in my apartment?"
+              message: "Tell me about members offering cloud consulting services in Mumbai"
       responses:
         '200':
           description: Bot response
@@ -50,7 +73,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
               example:
-                response: "Your apartment includes the following amenities: swimming pool, gym, parking, and 24/7 security."
+                response: "I found several members offering cloud consulting services in Mumbai. They specialize in AWS, Azure, and Google Cloud solutions with expertise in cloud migration, DevOps, and infrastructure management."
         '400':
           description: Bad request (missing message)
           content:
@@ -73,9 +96,14 @@ paths:
     post:
       summary: Process natural language search query
       description: |
-        Process a natural language query to search for community members.
-        Requires phone number authentication. Maintains conversation context
-        for follow-up queries.
+        Process a natural language query to search for community members based on business needs.
+        Requires phone number authentication. Maintains conversation context for follow-up queries.
+        
+        Use cases:
+        - Find members with specific technical skills for collaboration
+        - Discover potential business partners in specific locations
+        - Identify service providers within the community
+        - Connect with members based on business turnover or industry experience
       tags:
         - Search
       requestBody:
@@ -86,7 +114,7 @@ paths:
               $ref: '#/components/schemas/NLSearchRequest'
             example:
               phoneNumber: "+919876543210"
-              query: "Find AI experts in Chennai"
+              query: "Find members who do consulting in Bangalore with high turnover"
               options:
                 maxResults: 10
                 includeResponse: true
@@ -157,6 +185,12 @@ paths:
       description: |
         Search for community members using structured filters and search parameters.
         Supports hybrid, semantic, and keyword search types.
+        
+        Ideal for:
+        - Finding members with specific skill sets for projects
+        - Discovering service providers within your budget range
+        - Connecting with alumni from specific graduation years
+        - Identifying potential business partners by location and expertise
       tags:
         - Search
       requestBody:
@@ -166,12 +200,13 @@ paths:
             schema:
               $ref: '#/components/schemas/SearchMembersRequest'
             example:
-              query: "software developer"
+              query: "software developer with cloud experience"
               searchType: "hybrid"
               filters:
-                city: "Chennai"
-                minTurnover: 1000000
-                skills: ["Python", "JavaScript"]
+                city: "Bangalore"
+                minTurnover: 5000000
+                skills: ["Python", "AWS", "Docker"]
+                services: ["Software Development", "Cloud Consulting"]
               page: 1
               limit: 10
               sortBy: "relevance"
@@ -200,8 +235,13 @@ paths:
     get:
       summary: Get autocomplete suggestions
       description: |
-        Get autocomplete suggestions for cities, skills, and services.
+        Get autocomplete suggestions for cities, skills, and services available within the community.
         Can filter by type or return all types.
+        
+        Useful for:
+        - Discovering what skills are available in the network
+        - Finding service categories offered by members
+        - Exploring geographic distribution of the community
       tags:
         - Search
       parameters:
@@ -234,15 +274,89 @@ paths:
                   value:
                     success: true
                     suggestions:
-                      cities: ["Chennai", "Bangalore", "Mumbai", "Delhi"]
-                      skills: ["Python", "JavaScript", "React", "Node.js"]
-                      services: ["Consulting", "Development", "Training"]
+                      cities: ["Chennai", "Bangalore", "Mumbai", "Delhi", "Hyderabad", "Pune"]
+                      skills: ["Python", "JavaScript", "React", "Node.js", "Java", "AWS"]
+                      services: ["Software Development", "Consulting", "IT Services", "Training", "Cloud Solutions"]
         '500':
           description: Server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+
+  # ============================================================================
+  # WhatsApp Integration
+  # ============================================================================
+  /whatsapp/webhook:
+    get:
+      summary: WhatsApp webhook verification
+      description: Webhook verification endpoint required by Twilio/WhatsApp for business messaging integration
+      tags:
+        - WhatsApp
+      responses:
+        '200':
+          description: Webhook is active
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Webhook is active"
+    
+    post:
+      summary: WhatsApp message handler
+      description: |
+        Handles incoming WhatsApp messages from Twilio for business community members.
+        Processes natural language queries and returns formatted responses with member search results.
+        
+        Members can:
+        - Search for business partners via WhatsApp
+        - Find service providers in the community
+        - Discover members with specific skills
+        - Get quick access to networking opportunities
+      tags:
+        - WhatsApp
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WhatsAppWebhookRequest'
+            example:
+              From: "whatsapp:+919876543210"
+              Body: "Find software developers in Chennai for a new project"
+              ProfileName: "Rajesh Kumar"
+              MessageSid: "SM1234567890abcdef"
+              AccountSid: "AC1234567890abcdef"
+      responses:
+        '200':
+          description: Message processed successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  🔍 *I found 3 software developers in Chennai with relevant experience. Here are the top matches:*
+                  
+                  Found 3 members:
+                  
+                  1. *Arun Sharma*
+                     📍 Chennai
+                     💼 Senior Software Engineer
+                     🏢 TechVision Solutions
+                  
+                  2. *Priya Menon*
+                     📍 Chennai
+                     💼 Full Stack Developer
+                     🏢 Digital Innovations Pvt Ltd
+                  
+                  3. *Karthik Reddy*
+                     📍 Chennai
+                     💼 Lead Developer
+                     🏢 CodeCraft Technologies
+                  
+                  💡 *Try asking:*
+                  - Filter by specific technology stack
+                  - Find developers with startup experience
 
   # ============================================================================
   # Members Endpoints
@@ -253,6 +367,12 @@ paths:
       description: |
         Retrieve a paginated list of all community members.
         Supports filtering by city, degree, year and sorting options.
+        
+        Perfect for:
+        - Browsing the community directory
+        - Filtering members by location for local meetups
+        - Finding alumni from specific years or programs
+        - Exploring member profiles for networking opportunities
       tags:
         - Members
       parameters:
@@ -337,7 +457,15 @@ paths:
   /members/{id}:
     get:
       summary: Get a single member by ID
-      description: Retrieve detailed information about a specific member
+      description: |
+        Retrieve detailed information about a specific member including their business profile,
+        skills, services offered, and contact information.
+        
+        Use this to:
+        - View complete member business profile
+        - Get contact details for networking
+        - Check member's expertise and service offerings
+        - Review business turnover and company information
       tags:
         - Members
       parameters:
@@ -390,7 +518,16 @@ paths:
   /members/stats:
     get:
       summary: Get member statistics
-      description: Retrieve aggregated statistics about community members
+      description: |
+        Retrieve aggregated statistics about the business community including member counts,
+        geographic distribution, popular skills, and average business metrics.
+        
+        Insights include:
+        - Total and active member count
+        - Number of cities and degrees represented
+        - Average annual turnover across members
+        - Most common skills in the network
+        - Geographic distribution of members
       tags:
         - Members
       responses:
@@ -413,6 +550,26 @@ paths:
 components:
   schemas:
     # ------------------------------------------------------------------------
+    # System Schemas
+    # ------------------------------------------------------------------------
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          description: Health status
+          example: "ok"
+        timestamp:
+          type: string
+          format: date-time
+          description: Current server timestamp
+          example: "2025-10-21T10:30:00.000Z"
+
+    # ------------------------------------------------------------------------
     # Bot/Message Schemas
     # ------------------------------------------------------------------------
     MessageRequest:
@@ -422,17 +579,17 @@ components:
       properties:
         message:
           type: string
-          description: The message to send to the bot
+          description: The message/question to send to the bot about community members or business services
           minLength: 1
-          example: "What are the amenities in my apartment?"
+          example: "Who are the top software development service providers in our community?"
 
     MessageResponse:
       type: object
       properties:
         response:
           type: string
-          description: The bot's response
-          example: "Your apartment includes the following amenities: swimming pool, gym, parking, and 24/7 security."
+          description: The bot's response about community members or business services
+          example: "We have several top software development service providers in the community, including TechVision Solutions, Digital Innovations Pvt Ltd, and CodeCraft Technologies. They offer full-stack development, cloud solutions, and mobile app development services."
 
     ErrorResponse:
       type: object
@@ -441,6 +598,47 @@ components:
           type: string
           description: Error message
           example: "Message is required"
+
+    # ------------------------------------------------------------------------
+    # WhatsApp Schemas
+    # ------------------------------------------------------------------------
+    WhatsAppWebhookRequest:
+      type: object
+      required:
+        - From
+        - Body
+      properties:
+        From:
+          type: string
+          description: Sender's WhatsApp number in format 'whatsapp:+[country_code][number]'
+          pattern: '^whatsapp:\+[1-9]\d{1,14}$'
+          example: "whatsapp:+919876543210"
+        Body:
+          type: string
+          description: Message text from the user about their business networking needs
+          minLength: 1
+          maxLength: 500
+          example: "Find software developers in Chennai for a new project"
+        ProfileName:
+          type: string
+          description: User's WhatsApp profile name
+          example: "Rajesh Kumar"
+        MessageSid:
+          type: string
+          description: Twilio message SID
+          example: "SM1234567890abcdef"
+        AccountSid:
+          type: string
+          description: Twilio account SID
+          example: "AC1234567890abcdef"
+        NumMedia:
+          type: string
+          description: Number of media files attached
+          example: "0"
+        MediaUrl0:
+          type: string
+          description: URL of first media attachment (if any)
+          example: "https://api.twilio.com/media/ME1234"
 
     # ------------------------------------------------------------------------
     # Search Schemas
@@ -453,13 +651,13 @@ components:
       properties:
         query:
           type: string
-          description: Natural language search query
+          description: Natural language search query for finding business professionals
           minLength: 1
           maxLength: 500
-          example: "Find AI experts in Chennai with high turnover"
+          example: "Find members who offer consulting services in Chennai with software development skills"
         phoneNumber:
           type: string
-          description: User's phone number for authentication
+          description: User's phone number for authentication as a community member
           pattern: '^\+?[1-9]\d{1,14}$'
           example: "+919876543210"
         context:
@@ -473,7 +671,7 @@ components:
               type: array
               items:
                 type: string
-              example: ["John Doe", "Jane Smith"]
+              example: ["Arun Sharma", "Priya Menon"]
         options:
           type: object
           description: Search options
@@ -481,17 +679,17 @@ components:
             includeResponse:
               type: boolean
               default: true
-              description: Include conversational response
+              description: Include conversational response about business matches
             includeSuggestions:
               type: boolean
               default: true
-              description: Include search suggestions
+              description: Include search suggestions for networking
             maxResults:
               type: integer
               minimum: 1
               maximum: 50
               default: 10
-              description: Maximum number of results to return
+              description: Maximum number of member results to return
 
     NLSearchResponse:
       type: object
@@ -507,10 +705,10 @@ components:
           example: true
         query:
           type: string
-          example: "Find AI experts in Chennai"
+          example: "Find members in Chennai"
         understanding:
           type: object
-          description: How the system understood the query
+          description: How the system understood the business query
           properties:
             intent:
               type: string
@@ -522,10 +720,10 @@ components:
               format: float
               minimum: 0
               maximum: 1
-              example: 0.95
+              example: 0.87
             normalizedQuery:
               type: string
-              example: "members with AI skills in Chennai"
+              example: "members offering consulting in Chennai with software development skills"
         results:
           type: object
           properties:
@@ -537,19 +735,19 @@ components:
               $ref: '#/components/schemas/PaginationInfo'
         response:
           type: object
-          description: Natural language response (optional)
+          description: Natural language response about business matches (optional)
           properties:
             conversational:
               type: string
-              example: "I found 5 AI experts in Chennai. Here are the top matches..."
+              example: "I found 5 members with consulting services in Chennai who have software development skills. Here are the top matches based on relevance and turnover..."
             suggestions:
               type: array
               items:
                 type: string
               example:
-                - "Refine by graduation year"
-                - "Filter by annual turnover"
-                - "Search for specific AI technologies"
+                - "Refine by specific year of graduation"
+                - "Filter by minimum annual turnover"
+                - "Search for specific technical skills"
         executionTime:
           type: integer
           description: Query execution time in milliseconds
@@ -560,8 +758,8 @@ components:
       properties:
         query:
           type: string
-          description: Search query text (optional)
-          example: "software developer"
+          description: Search query text for finding members (optional)
+          example: "software developer with cloud experience"
         searchType:
           type: string
           enum: [hybrid, semantic, keyword]
@@ -593,7 +791,7 @@ components:
 
     SearchFilters:
       type: object
-      description: Filters to apply to search
+      description: Filters to apply to search for targeting specific member profiles
       properties:
         skills:
           type: array
@@ -611,23 +809,25 @@ components:
         minTurnover:
           type: number
           minimum: 0
-          example: 1000000
+          description: Minimum annual business turnover in INR
+          example: 5000000
         maxTurnover:
           type: number
           minimum: 0
-          example: 10000000
+          description: Maximum annual business turnover in INR
+          example: 50000000
         yearOfGraduation:
           type: array
           items:
             type: integer
             minimum: 1950
             maximum: 2100
-          example: [2010, 2011, 2012]
+          example: [2015, 2016, 2017, 2018]
         degree:
           type: array
           items:
             type: string
-          example: ["B.E.", "B.Tech", "M.Tech"]
+          example: ["B.E.", "B.Tech", "M.Tech", "M.B.A."]
 
     SearchResponse:
       type: object
@@ -662,13 +862,13 @@ components:
 
     ExtractedEntities:
       type: object
-      description: Entities extracted from natural language query
+      description: Entities extracted from natural language business query
       properties:
         skills:
           type: array
           items:
             type: string
-          example: ["AI", "Machine Learning"]
+          example: ["Python", "JavaScript", "React", "Node.js", "AWS"]
         location:
           type: string
           example: "Chennai"
@@ -676,7 +876,7 @@ components:
           type: array
           items:
             type: string
-          example: ["Consulting"]
+          example: ["Software Development", "Consulting", "IT Services"]
         turnoverRequirement:
           type: string
           enum: [high, medium, low]
@@ -685,7 +885,7 @@ components:
           type: array
           items:
             type: integer
-          example: [2010, 2011]
+          example: [2015, 2016]
         degree:
           type: string
           example: "B.E."
@@ -708,7 +908,7 @@ components:
           type: array
           items:
             type: string
-          example: ["Python", "JavaScript", "React", "Node.js", "AI/ML"]
+          example: ["Python", "JavaScript", "React", "Node.js", "Java", "Angular", "AWS", "Docker"]
 
     AllSuggestionsResponse:
       type: object
@@ -726,17 +926,17 @@ components:
               type: array
               items:
                 type: string
-              example: ["Chennai", "Bangalore", "Mumbai", "Delhi"]
+              example: ["Chennai", "Bangalore", "Mumbai", "Delhi", "Hyderabad", "Pune"]
             skills:
               type: array
               items:
                 type: string
-              example: ["Python", "JavaScript", "React", "Node.js"]
+              example: ["Python", "JavaScript", "React", "Node.js", "Java", "AWS"]
             services:
               type: array
               items:
                 type: string
-              example: ["Consulting", "Development", "Training"]
+              example: ["Software Development", "Consulting", "IT Services", "Training", "Cloud Solutions"]
 
     # ------------------------------------------------------------------------
     # Member Schemas
@@ -756,7 +956,7 @@ components:
         name:
           type: string
           description: Member's full name
-          example: "John Doe"
+          example: "Rajesh Kumar"
         yearOfGraduation:
           type: integer
           nullable: true
@@ -772,15 +972,15 @@ components:
         workingAs:
           type: string
           nullable: true
-          example: "Software Engineer"
+          example: "Entrepreneur"
         organization:
           type: string
           nullable: true
-          example: "Tech Solutions Inc."
+          example: "TechVision Solutions Pvt Ltd"
         designation:
           type: string
           nullable: true
-          example: "Senior Developer"
+          example: "Founder & CEO"
         city:
           type: string
           nullable: true
@@ -793,22 +993,22 @@ components:
           type: string
           format: email
           nullable: true
-          example: "john.doe@example.com"
+          example: "rajesh.kumar@techvision.com"
         skills:
           type: string
           nullable: true
           description: Comma-separated skills
-          example: "Python, JavaScript, React, Node.js"
+          example: "Python, JavaScript, React, Node.js, AWS, Docker, Kubernetes"
         productsServices:
           type: string
           nullable: true
           description: Products and services offered
-          example: "Web Development, Consulting, Training"
+          example: "Software Development, Cloud Solutions, DevOps Consulting, IT Training"
         annualTurnover:
           type: number
           nullable: true
           description: Annual turnover in INR
-          example: 5000000
+          example: 15000000
         isActive:
           type: boolean
           description: Whether the member is active
@@ -816,11 +1016,11 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: "2024-01-15T10:30:00Z"
+          example: "2024-01-15T10:30:00.000Z"
         updatedAt:
           type: string
           format: date-time
-          example: "2024-10-15T14:20:00Z"
+          example: "2025-10-15T14:20:00.000Z"
 
     MemberSearchResult:
       type: object
@@ -836,10 +1036,10 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
-          example: "John Doe"
+          example: "Rajesh Kumar"
         email:
           type: string
-          example: "john.doe@example.com"
+          example: "rajesh.kumar@techvision.com"
         phone:
           type: string
           example: "+919876543210"
@@ -848,19 +1048,19 @@ components:
           example: "Chennai"
         organization:
           type: string
-          example: "Tech Solutions Inc."
+          example: "TechVision Solutions Pvt Ltd"
         designation:
           type: string
-          example: "Senior Developer"
+          example: "Founder & CEO"
         skills:
           type: string
           example: "Python, JavaScript, React"
         productsServices:
           type: string
-          example: "Web Development, Consulting"
+          example: "Software Development, Cloud Consulting, DevOps"
         annualTurnover:
           type: number
-          example: 5000000
+          example: 12000000
         yearOfGraduation:
           type: integer
           example: 2015
@@ -874,7 +1074,7 @@ components:
           type: number
           format: float
           description: Relevance score (0-1)
-          example: 0.95
+          example: 0.92
         matchedFields:
           type: array
           items:
@@ -899,11 +1099,11 @@ components:
         totalPages:
           type: integer
           minimum: 0
-          example: 5
+          example: 8
         totalResults:
           type: integer
           minimum: 0
-          example: 47
+          example: 78
         resultsPerPage:
           type: integer
           minimum: 1
@@ -929,24 +1129,24 @@ components:
         totalMembers:
           type: integer
           description: Total number of members
-          example: 150
+          example: 247
         activeMembers:
           type: integer
           description: Number of active members
-          example: 142
+          example: 238
         uniqueCities:
           type: integer
           description: Number of unique cities
-          example: 25
+          example: 42
         uniqueDegrees:
           type: integer
           description: Number of unique degrees
-          example: 8
+          example: 12
         averageTurnover:
           type: number
           format: float
           description: Average annual turnover
-          example: 3500000
+          example: 8750000
         topSkills:
           type: array
           items:
@@ -957,7 +1157,7 @@ components:
                 example: "Python"
               count:
                 type: integer
-                example: 45
+                example: 87
         topCities:
           type: array
           items:
@@ -968,7 +1168,7 @@ components:
                 example: "Chennai"
               count:
                 type: integer
-                example: 35
+                example: 68
 
     MemberResponse:
       type: object
@@ -1060,9 +1260,13 @@ components:
       description: Phone number authentication for natural language search
 
 tags:
+  - name: System
+    description: System health and status endpoints
   - name: Bot
-    description: LLM-powered bot messaging endpoints
+    description: LLM-powered bot for business community queries and member discovery
   - name: Search
-    description: Natural language and structured search endpoints
+    description: Natural language and structured search for finding business professionals and networking opportunities
   - name: Members
-    description: Member management and retrieval endpoints
+    description: Member directory, business profiles, and community statistics
+  - name: WhatsApp
+    description: WhatsApp business messaging integration via Twilio webhook for on-the-go member search
