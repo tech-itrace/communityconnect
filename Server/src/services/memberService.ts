@@ -55,6 +55,7 @@ export async function getMemberById(id: string): Promise<Member | null> {
         skills: row.skills,
         productsServices: row.products_services,
         annualTurnover: row.annual_turnover,
+        role: row.role,
         isActive: row.is_active,
         createdAt: row.created_at,
         updatedAt: row.updated_at
@@ -142,6 +143,7 @@ export async function getAllMembers(request: GetMembersRequest = {}): Promise<Pa
         skills: row.skills,
         productsServices: row.products_services,
         annualTurnover: row.annual_turnover,
+        role: row.role,
         isActive: row.is_active,
         createdAt: row.created_at,
         updatedAt: row.updated_at
