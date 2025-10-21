@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import logger from './middlewares/logger';
 import errorHandler from './middlewares/errorHandler';
-import routes from './routes';
+import { rateLimiters } from './middlewares/rateLimiter';
+import routes from './routes/index';
 
 // Load environment variables
 const envPath = path.resolve(__dirname, '../.env');
@@ -17,10 +18,19 @@ if (result.error) {
 }
 
 const app = express();
+
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Parse form data from Twilio
 app.use(logger);
+
+// Global rate limiting (1000 requests/hour per IP)
+app.use(rateLimiters.global);
+
+// Routes
 app.use('/api', routes);
+
+// Error handler
 app.use(errorHandler);
 
 export default app;

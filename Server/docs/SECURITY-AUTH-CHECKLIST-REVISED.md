@@ -52,40 +52,37 @@
 - [x] Create test suite: `src/test-session.ts`
 - [x] All 13 tests passing ✓
 
-### Day 3: WhatsApp Session Integration
-- [ ] Update `src/controllers/botController.ts`:
-  - [ ] Extract phone from `req.body.From` (Twilio webhook)
-  - [ ] Call `sessionService.getOrCreateSession()`
-  - [ ] Pass conversation history to LLM
-  - [ ] Update session after response
-- [ ] Test flow:
-  - [ ] Send WhatsApp message → Session created
-  - [ ] Send follow-up → History preserved
-  - [ ] Wait 30 min → Session expires
-  - [ ] Send again → New session
+### Day 3: WhatsApp Session Integration ✅ COMPLETED
+- [x] Update `src/controllers/botController.ts`:
+  - [x] Extract phone from `req.body.From` (Twilio webhook)
+  - [x] Call `sessionService.getOrCreateSession()`
+  - [x] Pass conversation history to LLM
+  - [x] Update session after response
+- [x] Test flow:
+  - [x] Send WhatsApp message → Session created
+  - [x] Send follow-up → History preserved
+  - [x] Wait 30 min → Session expires
+  - [x] Send again → New session
 
-### Day 4: Rate Limiting
-- [ ] Create `src/middlewares/rateLimiter.ts`
-- [ ] Implement rate limit checks:
-  ```typescript
-  checkWhatsAppRateLimit(phoneNumber) {
-    // Check Redis counters
-    // messages: 50/hour
-    // searches: 30/hour
-    // Return: { exceeded: boolean, retryAfter: number }
-  }
-  ```
-- [ ] Add to WhatsApp webhook:
-  - [ ] Check rate limit before processing
-  - [ ] Increment counter after processing
-  - [ ] Return friendly message if exceeded:
-    ```
-    "You've reached the hourly limit (50 messages). 
-     Please try again in 30 minutes. 🙏"
-    ```
-- [ ] Test:
-  - [ ] Send 55 messages → Should block after 50
-  - [ ] Check Redis: `redis-cli GET rate:msg:{phone}`
+### Day 4: Rate Limiting ✅ COMPLETED
+- [x] Create `src/middlewares/rateLimiter.ts`
+- [x] Implement rate limit checks:
+  - [x] WhatsApp: 50 messages/hour
+  - [x] Search API: 30/hour
+  - [x] Global: 1000/hour per IP
+  - [x] Auth (future): 10/15min per IP
+- [x] Add to WhatsApp webhook:
+  - [x] Check rate limit before processing
+  - [x] Increment counter after processing
+  - [x] Return friendly message if exceeded
+- [x] Apply to routes:
+  - [x] `src/app.ts` - Global rate limiter
+  - [x] `src/routes/search.ts` - Search rate limiter
+  - [x] WhatsApp already has rate limiting
+- [x] Test:
+  - [x] Send 55 messages → Should block after 50
+  - [x] Check Redis: `redis-cli GET rate:msg:{phone}`
+  - [x] All tests passing ✓
 
 ### Day 5: Role-Based Access Control
 - [ ] Add `role` column to database:

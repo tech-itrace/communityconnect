@@ -4,8 +4,8 @@
  * Tests all session management functions
  */
 
-import { 
-    getOrCreateSession, 
+import {
+    getOrCreateSession,
     getSession,
     updateSession,
     addConversationEntry,
@@ -64,7 +64,7 @@ async function runTests() {
             resultCount: 5
         };
         await addConversationEntry(TEST_PHONE, entry1);
-        
+
         const entry2: ConversationEntry = {
             query: 'Who are the software engineers?',
             timestamp: Date.now(),

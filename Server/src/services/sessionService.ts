@@ -48,11 +48,11 @@ export async function getOrCreateSession(data: SessionData): Promise<WhatsAppSes
             // Parse and return existing session
             const session: WhatsAppSession = JSON.parse(sessionJson);
             console.log(`[Session Service] ✓ Existing session found (${session.conversationHistory.length} messages)`);
-            
+
             // Update last activity and reset TTL
             session.lastActivity = new Date();
             await client.setEx(key, SESSION_TTL_SECONDS, JSON.stringify(session));
-            
+
             return session;
         }
 
@@ -105,7 +105,7 @@ export async function getSession(phoneNumber: string): Promise<WhatsAppSession |
  * Update session data
  */
 export async function updateSession(
-    phoneNumber: string, 
+    phoneNumber: string,
     updates: SessionUpdateData
 ): Promise<WhatsAppSession | null> {
     console.log(`[Session Service] Updating session for: ${phoneNumber.substring(0, 5)}***`);
@@ -216,7 +216,7 @@ export async function deleteSession(phoneNumber: string): Promise<boolean> {
         const client = await getRedisClient();
         const key = getSessionKey(phoneNumber);
         const result = await client.del(key);
-        
+
         if (result > 0) {
             console.log('[Session Service] ✓ Session deleted');
             return true;

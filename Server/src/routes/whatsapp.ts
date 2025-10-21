@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { processNaturalLanguageQuery } from '../services/nlSearchService';
 import { validateMember } from '../services/conversationService';
-import { 
-    getOrCreateSession, 
+import {
+    getOrCreateSession,
     addConversationEntry,
     checkMessageRateLimit,
     incrementMessageCounter,

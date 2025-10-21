@@ -11,6 +11,7 @@
         "test:whatsapp": "./test-whatsapp-local.sh",
         "test:redis": "ts-node -r dotenv/config src/test-redis.ts",
         "test:session": "ts-node -r dotenv/config src/test-session.ts",
+        "test:ratelimit": "ts-node -r dotenv/config src/test-ratelimit.ts",
         "check:env": "./check-environment.sh",
         "db:setup": "ts-node -r dotenv/config src/scripts/setupDatabase.ts",
         "import:members": "ts-node -r dotenv/config src/scripts/importMembers.ts",
