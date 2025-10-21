@@ -8,6 +8,8 @@
         "build": "tsc",
         "start": "node dist/server.js",
         "test": "jest",
+        "test:whatsapp": "./test-whatsapp-local.sh",
+        "check:env": "./check-environment.sh",
         "db:setup": "ts-node -r dotenv/config src/scripts/setupDatabase.ts",
         "import:members": "ts-node -r dotenv/config src/scripts/importMembers.ts",
         "generate:embeddings": "ts-node -r dotenv/config src/scripts/generateEmbeddings.ts"

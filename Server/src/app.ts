@@ -18,6 +18,7 @@ if (result.error) {
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Parse form data from Twilio
 app.use(logger);
 app.use('/api', routes);
 app.use(errorHandler);

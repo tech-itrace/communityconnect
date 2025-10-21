@@ -15,6 +15,15 @@ router.post('/webhook', async (req: Request, res: Response) => {
     try {
         const { From, Body, ProfileName } = req.body;
 
+        // Log raw request for debugging
+        console.log('[WhatsApp] Raw request body:', req.body);
+
+        // Validate required fields
+        if (!From || !Body) {
+            console.error('[WhatsApp] Missing required fields:', { From, Body });
+            return res.status(200).send('Missing required fields: From or Body');
+        }
+
         // Extract phone number (format: whatsapp:+919876543210)
         const phoneNumber = From?.replace('whatsapp:+91', '').replace('whatsapp:+', '');
 

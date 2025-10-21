@@ -8,7 +8,7 @@ const router = Router();
 
 // Health check endpoint
 router.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Existing bot routes
