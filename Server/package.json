@@ -12,9 +12,12 @@
         "test:redis": "ts-node -r dotenv/config src/test-redis.ts",
         "test:session": "ts-node -r dotenv/config src/test-session.ts",
         "test:ratelimit": "ts-node -r dotenv/config src/test-ratelimit.ts",
+        "test:rbac": "ts-node -r dotenv/config src/test-rbac.ts",
+        "test:audit": "ts-node -r dotenv/config src/test-audit.ts",
         "check:env": "./check-environment.sh",
         "db:setup": "ts-node -r dotenv/config src/scripts/setupDatabase.ts",
         "db:add-roles": "ts-node -r dotenv/config src/scripts/addRoleColumn.ts",
+        "db:create-audit": "ts-node -r dotenv/config src/scripts/createAuditTable.ts",
         "import:members": "ts-node -r dotenv/config src/scripts/importMembers.ts",
         "generate:embeddings": "ts-node -r dotenv/config src/scripts/generateEmbeddings.ts"
     },

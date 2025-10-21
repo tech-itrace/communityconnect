@@ -3,6 +3,8 @@ import botRouter from './bot';
 import searchRouter from './search';
 import membersRouter from './members';
 import whatsappRouter from './whatsapp';
+import adminRouter from './admin';
+import analyticsRouter from './analytics';
 import { getRedisHealth } from '../config/redis';
 
 const router = Router();
@@ -24,6 +26,12 @@ router.use('/messages', botRouter);
 // Phase 2: Search and member routes
 router.use('/search', searchRouter);
 router.use('/members', membersRouter);
+
+// Admin routes (Phase 2: Day 5)
+router.use('/admin', adminRouter);
+
+// Analytics routes (Phase 2: Day 5)
+router.use('/analytics', analyticsRouter);
 
 // WhatsApp webhook
 router.use('/whatsapp', whatsappRouter);
