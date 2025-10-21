@@ -47,20 +47,16 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ steps.get-commit.outputs.sha_short }}
         run: |
-          # Build image
+          cd Server
           docker build \
-            --build-arg VITE_APP_SERVERURL="${{ secrets.VITE_APP_SERVERURL }}" \
-            --build-arg VITE_APP_SESSION="${{ secrets.VITE_APP_SESSION }}" \
-            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             .
-          
-          # Push image
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-          # Set output
+      
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
           echo "Built and pushed: $IMAGE_URI"
+
 
   copy:
     name: Copy docker-compose.yaml to DEV_HOST
@@ -75,6 +71,7 @@ jobs:
 
       - name: Replace image URI in docker-compose
         run: |
+          cd Server
           sed -i "s|<IMAGE_URI_PLACEHOLDER>|${{ needs.build.outputs.image_uri }}|g" docker-compose.yaml
 
       - name: Upload docker-compose.yaml to server
@@ -84,7 +81,7 @@ jobs:
           username: ${{ secrets.DEV_USERNAME }}
           password: ${{ secrets.DEV_SSH_KEY }}
           port: 22
-          source: "./docker-compose.yaml"
+          source: "Server/docker-compose.yaml"
           target: "/root/communityconnect/"
 
   deploy:
