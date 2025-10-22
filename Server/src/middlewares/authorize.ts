@@ -43,7 +43,7 @@ export function requireRole(requiredRole: Role) {
             // If no user object exists, try to get phone number from request
             if (!user) {
                 const phoneNumber = req.body.phoneNumber || req.query.phoneNumber || req.body.From?.replace('whatsapp:+', '');
-                
+
                 if (!phoneNumber) {
                     return res.status(401).json({
                         success: false,
@@ -152,7 +152,7 @@ export function requireAnyRole(allowedRoles: Role[]) {
             // If no user object exists, try to get phone number from request
             if (!user) {
                 const phoneNumber = req.body.phoneNumber || req.query.phoneNumber || req.body.From?.replace('whatsapp:+', '');
-                
+
                 if (!phoneNumber) {
                     return res.status(401).json({
                         success: false,
@@ -261,7 +261,7 @@ export function requirePermission(permission: keyof typeof ROLE_PERMISSIONS['mem
             // If no user object exists, try to get phone number from request
             if (!user) {
                 const phoneNumber = req.body.phoneNumber || req.query.phoneNumber || req.body.From?.replace('whatsapp:+', '');
-                
+
                 if (!phoneNumber) {
                     return res.status(401).json({
                         success: false,
@@ -415,7 +415,7 @@ export async function setUserFromSession(req: Request, res: Response, next: Next
         // For WhatsApp webhook
         if (req.body.From) {
             const phoneNumber = req.body.From.replace('whatsapp:+', '');
-            
+
             // Get user from session (simplified - in production would query DB)
             // For now, we'll check if there's a session in Redis via sessionService
             const { getSession } = await import('../services/sessionService');
@@ -435,7 +435,7 @@ export async function setUserFromSession(req: Request, res: Response, next: Next
         // For API requests with phoneNumber in body/query
         if (!req.user && (req.body.phoneNumber || req.query.phoneNumber)) {
             const phoneNumber = req.body.phoneNumber || req.query.phoneNumber;
-            
+
             const { getSession } = await import('../services/sessionService');
             const session = await getSession(phoneNumber);
 

@@ -5,6 +5,9 @@ import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
 import { MemberForm } from './pages/MemberForm';
 import { Settings } from './pages/Settings';
+import { PhoneSetter } from './components/PhoneSetter';
+import { useState } from 'react';
+import { getUserPhone } from './lib/auth';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,9 +19,14 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const [hasPhone, setHasPhone] = useState(!!getUserPhone());
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        {/* Phone setter for testing - will be replaced with login in Week 4 */}
+        {!hasPhone && <PhoneSetter onPhoneSet={() => setHasPhone(true)} />}
+        
         <Routes>
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/members" element={<Layout><Members /></Layout>} />

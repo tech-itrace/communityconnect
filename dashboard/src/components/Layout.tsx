@@ -6,9 +6,12 @@ import {
     Settings,
     LogOut,
     Menu,
-    X
+    X,
+    Phone
 } from 'lucide-react';
 import { useState } from 'react';
+import { getUserPhone, formatPhone, clearUserContext } from '@/lib/auth';
+import { Card } from './ui/card';
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
@@ -20,9 +23,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    const userPhone = getUserPhone();
+
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        clearUserContext();
+        window.location.reload();
     };
 
     return (
@@ -118,6 +123,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         <Menu className="h-6 w-6" />
                     </button>
                     <div className="flex-1" />
+                    
+                    {/* User info display */}
+                    {userPhone && (
+                        <Card className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border-blue-200">
+                            <Phone className="h-3.5 w-3.5 text-blue-600" />
+                            <span className="text-sm text-gray-700">
+                                {formatPhone(userPhone)}
+                            </span>
+                        </Card>
+                    )}
                 </div>
                 <main className="p-4 lg:p-8">
                     {children}
