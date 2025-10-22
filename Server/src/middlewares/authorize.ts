@@ -33,110 +33,328 @@ export function hasPermission(role: Role, permission: keyof typeof ROLE_PERMISSI
 
 /**
  * Require specific role (exact match)
+ * Intelligently validates role from database if not present in request
  */
 export function requireRole(requiredRole: Role) {
-    return (req: Request, res: Response, next: NextFunction) => {
-        // Get user from request (should be set by authentication middleware)
-        const user = req.user;
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            let user = req.user;
 
-        if (!user) {
-            return res.status(401).json({
+            // If no user object exists, try to get phone number from request
+            if (!user) {
+                const phoneNumber = req.body.phoneNumber || req.query.phoneNumber || req.body.From?.replace('whatsapp:+', '');
+                
+                if (!phoneNumber) {
+                    return res.status(401).json({
+                        success: false,
+                        error: {
+                            code: 'UNAUTHORIZED',
+                            message: 'Authentication required: No user or phone number provided'
+                        }
+                    });
+                }
+
+                // Fetch member from database
+                const { getMemberByPhone } = await import('../services/memberService');
+                const member = await getMemberByPhone(phoneNumber);
+
+                if (!member) {
+                    return res.status(401).json({
+                        success: false,
+                        error: {
+                            code: 'UNAUTHORIZED',
+                            message: 'User not found in database'
+                        }
+                    });
+                }
+
+                // Set user object from database
+                user = {
+                    userId: member.id,
+                    phoneNumber: member.phone || phoneNumber,
+                    memberName: member.name,
+                    role: member.role || 'member' // Default to 'member' if no role in DB
+                };
+
+                // Attach user to request for subsequent middlewares
+                req.user = user;
+                console.log(`[Authorize] ✓ User loaded from DB: ${user.memberName} (${user.role})`);
+            } else if (!user.role) {
+                // User object exists but no role - fetch from database
+                const { getMemberByPhone } = await import('../services/memberService');
+                const member = await getMemberByPhone(user.phoneNumber);
+
+                if (member && member.role) {
+                    user.role = member.role;
+                    if (req.user) {
+                        req.user.role = member.role;
+                    }
+                    console.log(`[Authorize] ✓ Role updated from DB: ${user.role}`);
+                } else {
+                    // Default to 'member' if still no role
+                    user.role = 'member';
+                    if (req.user) {
+                        req.user.role = 'member';
+                    }
+                    console.log(`[Authorize] ⚠ No role in DB, defaulting to 'member'`);
+                }
+            }
+
+            // At this point, user must be defined
+            if (!user) {
+                return res.status(500).json({
+                    success: false,
+                    error: {
+                        code: 'INTERNAL_ERROR',
+                        message: 'Failed to establish user context'
+                    }
+                });
+            }
+
+            // Check if user has required role
+            if (user.role !== requiredRole) {
+                console.log(`[Authorize] Access denied: ${user.role} tried to access ${requiredRole}-only route`);
+                return res.status(403).json({
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message: `Access denied. This action requires ${requiredRole} role.`,
+                        userRole: user.role,
+                        requiredRole
+                    }
+                });
+            }
+
+            console.log(`[Authorize] ✓ Access granted: ${user.role} matches ${requiredRole}`);
+            next();
+        } catch (error) {
+            console.error('[Authorize] Error in requireRole:', error);
+            return res.status(500).json({
                 success: false,
                 error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required'
+                    code: 'INTERNAL_ERROR',
+                    message: 'Error validating user role'
                 }
             });
         }
-
-        // Check if user has required role
-        if (user.role !== requiredRole) {
-            console.log(`[Authorize] Access denied: ${user.role} tried to access ${requiredRole}-only route`);
-            return res.status(403).json({
-                success: false,
-                error: {
-                    code: 'FORBIDDEN',
-                    message: `Access denied. This action requires ${requiredRole} role.`,
-                    userRole: user.role,
-                    requiredRole
-                }
-            });
-        }
-
-        console.log(`[Authorize] ✓ Access granted: ${user.role} matches ${requiredRole}`);
-        next();
     };
 }
 
 /**
  * Require any of the specified roles
+ * Intelligently validates role from database if not present in request
  */
 export function requireAnyRole(allowedRoles: Role[]) {
-    return (req: Request, res: Response, next: NextFunction) => {
-        const user = req.user;
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            let user = req.user;
 
-        if (!user) {
-            return res.status(401).json({
+            // If no user object exists, try to get phone number from request
+            if (!user) {
+                const phoneNumber = req.body.phoneNumber || req.query.phoneNumber || req.body.From?.replace('whatsapp:+', '');
+                
+                if (!phoneNumber) {
+                    return res.status(401).json({
+                        success: false,
+                        error: {
+                            code: 'UNAUTHORIZED',
+                            message: 'Authentication required: No user or phone number provided'
+                        }
+                    });
+                }
+
+                // Fetch member from database
+                const { getMemberByPhone } = await import('../services/memberService');
+                const member = await getMemberByPhone(phoneNumber);
+
+                if (!member) {
+                    return res.status(401).json({
+                        success: false,
+                        error: {
+                            code: 'UNAUTHORIZED',
+                            message: 'User not found in database'
+                        }
+                    });
+                }
+
+                // Set user object from database
+                user = {
+                    userId: member.id,
+                    phoneNumber: member.phone || phoneNumber,
+                    memberName: member.name,
+                    role: member.role || 'member' // Default to 'member' if no role in DB
+                };
+
+                // Attach user to request for subsequent middlewares
+                req.user = user;
+                console.log(`[Authorize] ✓ User loaded from DB: ${user.memberName} (${user.role})`);
+            } else if (!user.role) {
+                // User object exists but no role - fetch from database
+                const { getMemberByPhone } = await import('../services/memberService');
+                const member = await getMemberByPhone(user.phoneNumber);
+
+                if (member && member.role) {
+                    user.role = member.role;
+                    if (req.user) {
+                        req.user.role = member.role;
+                    }
+                    console.log(`[Authorize] ✓ Role updated from DB: ${user.role}`);
+                } else {
+                    // Default to 'member' if still no role
+                    user.role = 'member';
+                    if (req.user) {
+                        req.user.role = 'member';
+                    }
+                    console.log(`[Authorize] ⚠ No role in DB, defaulting to 'member'`);
+                }
+            }
+
+            // At this point, user must be defined
+            if (!user) {
+                return res.status(500).json({
+                    success: false,
+                    error: {
+                        code: 'INTERNAL_ERROR',
+                        message: 'Failed to establish user context'
+                    }
+                });
+            }
+
+            // Check if user has any of the allowed roles
+            if (!allowedRoles.includes(user.role)) {
+                console.log(`[Authorize] Access denied: ${user.role} not in [${allowedRoles.join(', ')}]`);
+                return res.status(403).json({
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message: `Access denied. This action requires one of: ${allowedRoles.join(', ')}`,
+                        userRole: user.role,
+                        allowedRoles
+                    }
+                });
+            }
+
+            console.log(`[Authorize] ✓ Access granted: ${user.role} in allowed roles`);
+            next();
+        } catch (error) {
+            console.error('[Authorize] Error in requireAnyRole:', error);
+            return res.status(500).json({
                 success: false,
                 error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required'
+                    code: 'INTERNAL_ERROR',
+                    message: 'Error validating user role'
                 }
             });
         }
-
-        // Check if user has any of the allowed roles
-        if (!allowedRoles.includes(user.role)) {
-            console.log(`[Authorize] Access denied: ${user.role} not in [${allowedRoles.join(', ')}]`);
-            return res.status(403).json({
-                success: false,
-                error: {
-                    code: 'FORBIDDEN',
-                    message: `Access denied. This action requires one of: ${allowedRoles.join(', ')}`,
-                    userRole: user.role,
-                    allowedRoles
-                }
-            });
-        }
-
-        console.log(`[Authorize] ✓ Access granted: ${user.role} in allowed roles`);
-        next();
     };
 }
 
 /**
  * Require specific permission (uses permission matrix)
+ * Intelligently validates role from database if not present in request
  */
 export function requirePermission(permission: keyof typeof ROLE_PERMISSIONS['member']) {
-    return (req: Request, res: Response, next: NextFunction) => {
-        const user = req.user;
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            let user = req.user;
 
-        if (!user) {
-            return res.status(401).json({
+            // If no user object exists, try to get phone number from request
+            if (!user) {
+                const phoneNumber = req.body.phoneNumber || req.query.phoneNumber || req.body.From?.replace('whatsapp:+', '');
+                
+                if (!phoneNumber) {
+                    return res.status(401).json({
+                        success: false,
+                        error: {
+                            code: 'UNAUTHORIZED',
+                            message: 'Authentication required: No user or phone number provided'
+                        }
+                    });
+                }
+
+                // Fetch member from database
+                const { getMemberByPhone } = await import('../services/memberService');
+                const member = await getMemberByPhone(phoneNumber);
+
+                if (!member) {
+                    return res.status(401).json({
+                        success: false,
+                        error: {
+                            code: 'UNAUTHORIZED',
+                            message: 'User not found in database'
+                        }
+                    });
+                }
+
+                // Set user object from database
+                user = {
+                    userId: member.id,
+                    phoneNumber: member.phone || phoneNumber,
+                    memberName: member.name,
+                    role: member.role || 'member' // Default to 'member' if no role in DB
+                };
+
+                // Attach user to request for subsequent middlewares
+                req.user = user;
+                console.log(`[Authorize] ✓ User loaded from DB: ${user.memberName} (${user.role})`);
+            } else if (!user.role) {
+                // User object exists but no role - fetch from database
+                const { getMemberByPhone } = await import('../services/memberService');
+                const member = await getMemberByPhone(user.phoneNumber);
+
+                if (member && member.role) {
+                    user.role = member.role;
+                    if (req.user) {
+                        req.user.role = member.role;
+                    }
+                    console.log(`[Authorize] ✓ Role updated from DB: ${user.role}`);
+                } else {
+                    // Default to 'member' if still no role
+                    user.role = 'member';
+                    if (req.user) {
+                        req.user.role = 'member';
+                    }
+                    console.log(`[Authorize] ⚠ No role in DB, defaulting to 'member'`);
+                }
+            }
+
+            // At this point, user must be defined
+            if (!user) {
+                return res.status(500).json({
+                    success: false,
+                    error: {
+                        code: 'INTERNAL_ERROR',
+                        message: 'Failed to establish user context'
+                    }
+                });
+            }
+
+            // Check if user's role has the required permission
+            if (!hasPermission(user.role, permission)) {
+                console.log(`[Authorize] Access denied: ${user.role} lacks permission '${permission}'`);
+                return res.status(403).json({
+                    success: false,
+                    error: {
+                        code: 'FORBIDDEN',
+                        message: `Access denied. You don't have permission to ${permission}`,
+                        userRole: user.role,
+                        requiredPermission: permission
+                    }
+                });
+            }
+
+            console.log(`[Authorize] ✓ Access granted: ${user.role} has permission '${permission}'`);
+            next();
+        } catch (error) {
+            console.error('[Authorize] Error in requirePermission:', error);
+            return res.status(500).json({
                 success: false,
                 error: {
-                    code: 'UNAUTHORIZED',
-                    message: 'Authentication required'
+                    code: 'INTERNAL_ERROR',
+                    message: 'Error validating user permission'
                 }
             });
         }
-
-        // Check if user's role has the required permission
-        if (!hasPermission(user.role, permission)) {
-            console.log(`[Authorize] Access denied: ${user.role} lacks permission '${permission}'`);
-            return res.status(403).json({
-                success: false,
-                error: {
-                    code: 'FORBIDDEN',
-                    message: `Access denied. You don't have permission to ${permission}`,
-                    userRole: user.role,
-                    requiredPermission: permission
-                }
-            });
-        }
-
-        console.log(`[Authorize] ✓ Access granted: ${user.role} has permission '${permission}'`);
-        next();
     };
 }
 
