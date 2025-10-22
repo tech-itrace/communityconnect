@@ -20,7 +20,7 @@ export function Members() {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => memberAPI.delete(id),
+        mutationFn: (id: string) => memberAPI.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['members'] });
         },
@@ -28,11 +28,11 @@ export function Members() {
 
     const filteredMembers = members?.filter((member) =>
         member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.phone_number.includes(searchQuery) ||
+        member.phone.includes(searchQuery) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleDelete = (id: number, name: string) => {
+    const handleDelete = (id: string, name: string) => {
         if (window.confirm(`Are you sure you want to delete ${name}?`)) {
             deleteMutation.mutate(id);
         }
@@ -85,8 +85,8 @@ export function Members() {
                                     <th className="text-left p-3 text-sm font-medium">Name</th>
                                     <th className="text-left p-3 text-sm font-medium">Phone</th>
                                     <th className="text-left p-3 text-sm font-medium">Email</th>
-                                    <th className="text-left p-3 text-sm font-medium">Location</th>
-                                    <th className="text-left p-3 text-sm font-medium">Expertise</th>
+                                    <th className="text-left p-3 text-sm font-medium">City</th>
+                                    <th className="text-left p-3 text-sm font-medium">Skills</th>
                                     <th className="text-right p-3 text-sm font-medium">Actions</th>
                                 </tr>
                             </thead>
@@ -94,13 +94,13 @@ export function Members() {
                                 {filteredMembers?.map((member) => (
                                     <tr key={member.id} className="border-b hover:bg-muted/50">
                                         <td className="p-3 text-sm font-medium">{member.name}</td>
-                                        <td className="p-3 text-sm text-muted-foreground">{member.phone_number}</td>
+                                        <td className="p-3 text-sm text-muted-foreground">{member.phone}</td>
                                         <td className="p-3 text-sm text-muted-foreground">{member.email || '-'}</td>
-                                        <td className="p-3 text-sm text-muted-foreground">{member.location || '-'}</td>
+                                        <td className="p-3 text-sm text-muted-foreground">{member.city || '-'}</td>
                                         <td className="p-3 text-sm text-muted-foreground">
-                                            {member.expertise ? (
+                                            {member.working_knowledge ? (
                                                 <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs">
-                                                    {member.expertise.split(',')[0]}
+                                                    {member.working_knowledge.split(',')[0]}
                                                 </span>
                                             ) : '-'}
                                         </td>

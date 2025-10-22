@@ -15,18 +15,20 @@ export function MemberForm() {
 
     const [formData, setFormData] = useState({
         name: '',
-        phone_number: '',
+        phone: '',
         email: '',
-        location: '',
-        expertise: '',
-        interests: '',
-        availability: '',
+        city: '',
+        working_knowledge: '',
+        degree: '',
+        branch: '',
+        organization_name: '',
+        designation: '',
     });
 
     const { data: member } = useQuery({
         queryKey: ['member', id],
         queryFn: async () => {
-            const response = await memberAPI.getById(Number(id));
+            const response = await memberAPI.getById(id!);
             return response.data;
         },
         enabled: isEdit,
@@ -36,12 +38,14 @@ export function MemberForm() {
         if (member) {
             setFormData({
                 name: member.name || '',
-                phone_number: member.phone_number || '',
+                phone: member.phone || '',
                 email: member.email || '',
-                location: member.location || '',
-                expertise: member.expertise || '',
-                interests: member.interests || '',
-                availability: member.availability || '',
+                city: member.city || '',
+                working_knowledge: member.working_knowledge || '',
+                degree: member.degree || '',
+                branch: member.branch || '',
+                organization_name: member.organization_name || '',
+                designation: member.designation || '',
             });
         }
     }, [member]);
@@ -49,7 +53,7 @@ export function MemberForm() {
     const saveMutation = useMutation({
         mutationFn: (data: typeof formData) => {
             if (isEdit) {
-                return memberAPI.update(Number(id), data);
+                return memberAPI.update(id!, data);
             }
             return memberAPI.create(data);
         },
@@ -106,8 +110,8 @@ export function MemberForm() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Phone Number *</label>
                                 <Input
-                                    name="phone_number"
-                                    value={formData.phone_number}
+                                    name="phone"
+                                    value={formData.phone}
                                     onChange={handleChange}
                                     required
                                     placeholder="+1234567890"
@@ -124,39 +128,57 @@ export function MemberForm() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Location</label>
+                                <label className="text-sm font-medium">City</label>
                                 <Input
-                                    name="location"
-                                    value={formData.location}
+                                    name="city"
+                                    value={formData.city}
                                     onChange={handleChange}
                                     placeholder="New York, NY"
                                 />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <label className="text-sm font-medium">Expertise</label>
+                                <label className="text-sm font-medium">Working Knowledge / Skills</label>
                                 <Input
-                                    name="expertise"
-                                    value={formData.expertise}
+                                    name="working_knowledge"
+                                    value={formData.working_knowledge}
                                     onChange={handleChange}
                                     placeholder="Software Engineering, Data Science"
                                 />
                             </div>
-                            <div className="space-y-2 md:col-span-2">
-                                <label className="text-sm font-medium">Interests</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Degree</label>
                                 <Input
-                                    name="interests"
-                                    value={formData.interests}
+                                    name="degree"
+                                    value={formData.degree}
                                     onChange={handleChange}
-                                    placeholder="AI, Machine Learning, Web Development"
+                                    placeholder="B.Tech, MBA"
                                 />
                             </div>
-                            <div className="space-y-2 md:col-span-2">
-                                <label className="text-sm font-medium">Availability</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Branch</label>
                                 <Input
-                                    name="availability"
-                                    value={formData.availability}
+                                    name="branch"
+                                    value={formData.branch}
                                     onChange={handleChange}
-                                    placeholder="Weekends, Evenings"
+                                    placeholder="Computer Science"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Organization Name</label>
+                                <Input
+                                    name="organization_name"
+                                    value={formData.organization_name}
+                                    onChange={handleChange}
+                                    placeholder="Company Name"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Designation</label>
+                                <Input
+                                    name="designation"
+                                    value={formData.designation}
+                                    onChange={handleChange}
+                                    placeholder="Software Engineer"
                                 />
                             </div>
                         </div>

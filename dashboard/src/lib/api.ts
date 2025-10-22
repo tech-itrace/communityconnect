@@ -31,14 +31,16 @@ api.interceptors.response.use(
 );
 
 export interface Member {
-    id: number;
-    phone_number: string;
+    id: string;
+    phone: string;
     name: string;
     email?: string;
-    location?: string;
-    expertise?: string;
-    interests?: string;
-    availability?: string;
+    city?: string;
+    working_knowledge?: string;
+    degree?: string;
+    branch?: string;
+    organization_name?: string;
+    designation?: string;
     role?: string;
     created_at?: string;
     updated_at?: string;
@@ -65,11 +67,11 @@ export interface SearchLog {
 // API Functions
 export const memberAPI = {
     getAll: () => api.get<Member[]>('/api/members'),
-    getById: (id: number) => api.get<Member>(`/api/members/${id}`),
+    getById: (id: string) => api.get<Member>(`/api/members/${id}`),
     create: (member: Partial<Member>) => api.post<Member>('/api/members', member),
-    update: (id: number, member: Partial<Member>) =>
+    update: (id: string, member: Partial<Member>) =>
         api.put<Member>(`/api/members/${id}`, member),
-    delete: (id: number) => api.delete(`/api/members/${id}`),
+    delete: (id: string) => api.delete(`/api/members/${id}`),
 };
 
 export const analyticsAPI = {
