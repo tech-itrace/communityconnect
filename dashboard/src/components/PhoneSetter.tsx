@@ -22,7 +22,7 @@ export function PhoneSetter({ onPhoneSet }: PhoneSetterProps) {
     useEffect(() => {
         const storedPhone = getUserPhone();
         setCurrentPhone(storedPhone);
-        
+
         // If no phone is set, show input automatically
         if (!storedPhone) {
             setShowInput(true);
@@ -31,27 +31,27 @@ export function PhoneSetter({ onPhoneSet }: PhoneSetterProps) {
 
     const handleSetPhone = () => {
         setError('');
-        
+
         // Basic validation
         if (!phone) {
             setError('Please enter a phone number');
             return;
         }
-        
+
         const cleaned = phone.replace(/\D/g, '');
         if (cleaned.length !== 10 && cleaned.length !== 12) {
             setError('Please enter a valid 10-digit phone number');
             return;
         }
-        
+
         // Normalize to 10 digits
         const normalized = cleaned.length === 12 ? cleaned.slice(2) : cleaned;
-        
+
         setUserPhone(normalized);
         setCurrentPhone(normalized);
         setShowInput(false);
         setPhone('');
-        
+
         if (onPhoneSet) {
             onPhoneSet(normalized);
         }
@@ -132,7 +132,7 @@ export function PhoneSetter({ onPhoneSet }: PhoneSetterProps) {
 
                     <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                         <p className="text-sm text-yellow-800">
-                            <strong>Note:</strong> This is for development testing only. 
+                            <strong>Note:</strong> This is for development testing only.
                             A proper login page will be implemented in Week 4.
                         </p>
                     </div>

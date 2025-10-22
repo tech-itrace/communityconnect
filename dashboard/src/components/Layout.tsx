@@ -123,7 +123,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         <Menu className="h-6 w-6" />
                     </button>
                     <div className="flex-1" />
-                    
+
                     {/* User info display */}
                     {userPhone && (
                         <Card className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border-blue-200">

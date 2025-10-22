@@ -17,18 +17,18 @@ const getUserPhone = (): string | null => {
     // Try localStorage first (set after login)
     const storedPhone = localStorage.getItem('userPhone');
     if (storedPhone) return storedPhone;
-    
+
     // Fall back to environment variable for testing
     const envPhone = import.meta.env.VITE_TEST_PHONE_NUMBER;
     if (envPhone) return envPhone;
-    
+
     return null;
 };
 
 // Add phone number to all requests for smart auth middleware
 api.interceptors.request.use((config) => {
     const phoneNumber = getUserPhone();
-    
+
     if (phoneNumber) {
         // Add to query params for GET/DELETE requests
         if (config.method === 'get' || config.method === 'delete') {
@@ -37,7 +37,7 @@ api.interceptors.request.use((config) => {
                 phoneNumber
             };
         }
-        
+
         // Add to body for POST/PUT/PATCH requests
         if (config.method === 'post' || config.method === 'put' || config.method === 'patch') {
             if (config.data) {
@@ -50,13 +50,13 @@ api.interceptors.request.use((config) => {
             }
         }
     }
-    
+
     // Still support legacy token-based auth if present
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     return config;
 });
 
@@ -69,7 +69,7 @@ api.interceptors.response.use(
             console.error('Authentication failed:', error.response.data);
             localStorage.removeItem('token');
             localStorage.removeItem('userPhone');
-            
+
             // Don't redirect if on login page
             if (!window.location.pathname.includes('/login')) {
                 // For now, just log - will implement login page in Week 4

@@ -26,7 +26,7 @@ function App() {
       <BrowserRouter>
         {/* Phone setter for testing - will be replaced with login in Week 4 */}
         {!hasPhone && <PhoneSetter onPhoneSet={() => setHasPhone(true)} />}
-        
+
         <Routes>
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/members" element={<Layout><Members /></Layout>} />
