@@ -5,15 +5,32 @@
  */
 
 import { Router } from 'express';
+import multer from 'multer';
 import {
     getMemberByIdHandler,
     getAllMembersHandler,
     getMemberStatsHandler,
     createMemberHandler,
     updateMemberHandler,
-    deleteMemberHandler
+    deleteMemberHandler,
+    bulkImportMembersHandler
 } from '../controllers/memberController';
 import { requireAnyRole, requirePermission } from '../middlewares/authorize';
+
+// Configure multer for file upload
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only CSV files are allowed'));
+        }
+    }
+});
 
 const router = Router();
 
@@ -31,6 +48,13 @@ router.get('/stats', requireAnyRole(['admin', 'super_admin']), getMemberStatsHan
  * Requires: Admin or Super Admin role
  */
 router.get('/', requireAnyRole(['admin', 'super_admin']), getAllMembersHandler);
+
+/**
+ * POST /api/members/bulk/import
+ * Bulk import members from CSV file
+ * Requires: Admin or Super Admin role
+ */
+router.post('/bulk/import', requireAnyRole(['admin', 'super_admin']), upload.single('file'), bulkImportMembersHandler);
 
 /**
  * POST /api/members

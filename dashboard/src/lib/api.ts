@@ -130,6 +130,15 @@ export const memberAPI = {
     update: (id: string, member: Partial<Member>) =>
         api.put<Member>(`/api/members/${id}`, member),
     delete: (id: string) => api.delete(`/api/members/${id}`),
+    bulkImport: (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/api/members/bulk/import', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
 };
 
 export const analyticsAPI = {

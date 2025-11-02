@@ -450,3 +450,103 @@ export async function getMemberByPhone(phoneNumber: string): Promise<Member | nu
     return result.rows[0];
 }
 
+/**
+ * Bulk create members from CSV import
+ * Returns success count and errors
+ */
+export async function bulkCreateMembers(membersData: Array<{
+    phone: string;
+    name: string;
+    email?: string;
+    city?: string;
+    working_knowledge?: string;
+    degree?: string;
+    branch?: string;
+    organization_name?: string;
+    designation?: string;
+    role?: string;
+}>): Promise<{
+    successCount: number;
+    failedCount: number;
+    errors: Array<{ row: number; error: string; data: any }>;
+    duplicates: number;
+}> {
+    console.log(`[Member Service] Bulk creating ${membersData.length} members`);
+
+    let successCount = 0;
+    let failedCount = 0;
+    let duplicates = 0;
+    const errors: Array<{ row: number; error: string; data: any }> = [];
+
+    for (let i = 0; i < membersData.length; i++) {
+        const memberData = membersData[i];
+
+        try {
+            // Validate required fields
+            if (!memberData.phone || !memberData.name) {
+                errors.push({
+                    row: i + 1,
+                    error: 'Missing required fields (phone or name)',
+                    data: memberData
+                });
+                failedCount++;
+                continue;
+            }
+
+            // Check for duplicates
+            const existingMember = await getMemberByPhone(memberData.phone);
+            if (existingMember) {
+                duplicates++;
+                failedCount++;
+                errors.push({
+                    row: i + 1,
+                    error: 'Member with this phone number already exists',
+                    data: memberData
+                });
+                continue;
+            }
+
+            // Create member
+            const queryText = `
+                INSERT INTO community_members 
+                (phone, name, email, city, working_knowledge, degree, branch, organization_name, designation, role, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+                RETURNING id
+            `;
+
+            const values = [
+                memberData.phone,
+                memberData.name,
+                memberData.email || null,
+                memberData.city || null,
+                memberData.working_knowledge || null,
+                memberData.degree || null,
+                memberData.branch || null,
+                memberData.organization_name || null,
+                memberData.designation || null,
+                memberData.role || 'member'
+            ];
+
+            await query(queryText, values);
+            successCount++;
+
+        } catch (error: any) {
+            failedCount++;
+            errors.push({
+                row: i + 1,
+                error: error.message || 'Unknown error',
+                data: memberData
+            });
+        }
+    }
+
+    console.log(`[Member Service] Bulk import complete: ${successCount} successful, ${failedCount} failed (${duplicates} duplicates)`);
+
+    return {
+        successCount,
+        failedCount,
+        errors,
+        duplicates
+    };
+}
+

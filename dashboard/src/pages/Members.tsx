@@ -3,12 +3,14 @@ import { memberAPI, type Member } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BulkImportDialog } from '@/components/BulkImportDialog';
 
 export function Members() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [showImportDialog, setShowImportDialog] = useState(false);
     const queryClient = useQueryClient();
 
     const { data: members, isLoading } = useQuery({
@@ -55,13 +57,21 @@ export function Members() {
                         Manage your community members
                     </p>
                 </div>
-                <Link to="/members/new">
-                    <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Member
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Bulk Import
                     </Button>
-                </Link>
+                    <Link to="/members/new">
+                        <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Member
+                        </Button>
+                    </Link>
+                </div>
             </div>
+
+            <BulkImportDialog open={showImportDialog} onOpenChange={setShowImportDialog} />
 
             <Card>
                 <CardHeader>

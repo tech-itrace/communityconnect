@@ -1,0 +1,11 @@
+name,phone,email,city,working_knowledge,degree,branch,organization_name,designation
+John Doe,9876543210,john.doe@example.com,Chennai,Software Development,B.E,Computer Science,Tech Solutions Ltd,Senior Developer
+Jane Smith,9876543211,jane.smith@example.com,Bangalore,Data Science,M.Sc,Statistics,Data Analytics Corp,Data Scientist
+Robert Johnson,9876543212,robert.j@example.com,Mumbai,Business Consulting,MBA,Marketing,Consulting Group,Business Analyst
+Emily Davis,9876543213,emily.davis@example.com,Delhi,Web Development,B.Tech,Information Technology,Web Innovations,Full Stack Developer
+Michael Brown,9876543214,michael.brown@example.com,Pune,Machine Learning,M.Tech,Artificial Intelligence,AI Research Lab,ML Engineer
+Sarah Wilson,9876543215,sarah.w@example.com,Hyderabad,Product Management,B.E,Electronics,Product Co,Product Manager
+David Lee,9876543216,david.lee@example.com,Kolkata,Cloud Architecture,B.Tech,Computer Science,Cloud Services Inc,Solutions Architect
+Lisa Anderson,9876543217,lisa.anderson@example.com,Ahmedabad,Digital Marketing,BBA,Marketing,Marketing Pro,Digital Marketing Manager
+James Taylor,9876543218,james.taylor@example.com,Jaipur,Mobile Development,B.E,Computer Science,Mobile Apps Ltd,Android Developer
+Maria Garcia,9876543219,maria.garcia@example.com,Surat,Quality Assurance,B.Tech,Information Technology,QA Systems,QA Lead

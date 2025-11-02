@@ -15,9 +15,11 @@ import {
     createMember,
     updateMember,
     deleteMember,
-    getMemberByPhone
+    getMemberByPhone,
+    bulkCreateMembers
 } from '../services/memberService';
 import { ApiErrorResponse } from '../utils/types';
+import { parse } from 'csv-parse/sync';
 
 /**
  * GET /api/members/:id
@@ -450,6 +452,106 @@ export async function deleteMemberHandler(req: Request, res: Response) {
             error: {
                 code: 'SERVER_ERROR',
                 message: 'Failed to delete member',
+                details: error.message
+            }
+        });
+    }
+}
+
+/**
+ * POST /api/members/bulk/import
+ * Bulk import members from CSV file
+ * Requires: Admin or Super Admin role
+ */
+export async function bulkImportMembersHandler(req: Request, res: Response) {
+    try {
+        // Check if file was uploaded
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'NO_FILE',
+                    message: 'No file uploaded'
+                }
+            });
+        }
+
+        console.log('[Member Controller] Processing bulk import:', {
+            filename: req.file.originalname,
+            size: req.file.size,
+            mimetype: req.file.mimetype
+        });
+
+        // Parse CSV file
+        const csvContent = req.file.buffer.toString('utf-8');
+
+        let records: any[];
+        try {
+            records = parse(csvContent, {
+                columns: true,
+                skip_empty_lines: true,
+                trim: true,
+                bom: true // Handle UTF-8 BOM
+            });
+        } catch (parseError: any) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'CSV_PARSE_ERROR',
+                    message: 'Failed to parse CSV file',
+                    details: parseError.message
+                }
+            });
+        }
+
+        if (records.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'EMPTY_FILE',
+                    message: 'CSV file is empty or has no valid records'
+                }
+            });
+        }
+
+        console.log(`[Member Controller] Parsed ${records.length} records from CSV`);
+
+        // Transform CSV records to member data
+        const membersData = records.map((record: any) => ({
+            phone: record.phone || record.Phone || record['Phone number'] || '',
+            name: record.name || record.Name || '',
+            email: record.email || record.Email || '',
+            city: record.city || record.City || record['City / Town of Living'] || '',
+            working_knowledge: record.working_knowledge || record['Working Knowledge'] || record.skills || record.Skills || '',
+            degree: record.degree || record.Degree || '',
+            branch: record.branch || record.Branch || '',
+            organization_name: record.organization_name || record['Organization Name'] || record['Organization Name:'] || '',
+            designation: record.designation || record.Designation || record['Designation:'] || '',
+            role: 'member'
+        }));
+
+        // Bulk create members
+        const result = await bulkCreateMembers(membersData);
+
+        res.status(201).json({
+            success: true,
+            message: `Bulk import completed: ${result.successCount} members imported successfully`,
+            data: {
+                successCount: result.successCount,
+                failedCount: result.failedCount,
+                duplicates: result.duplicates,
+                totalProcessed: records.length,
+                errors: result.errors.slice(0, 10) // Return first 10 errors
+            }
+        });
+
+    } catch (error: any) {
+        console.error('[Member Controller] Error in bulk import:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                code: 'SERVER_ERROR',
+                message: 'Failed to process bulk import',
                 details: error.message
             }
         });
