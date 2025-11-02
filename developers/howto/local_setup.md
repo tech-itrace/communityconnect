@@ -3,10 +3,33 @@
 ## Prerequisites
 
 Before starting, ensure you have:
-- **Node.js** v20 or higher
+- **Node.js** v20 or higher ([Download](https://nodejs.org/))
 - **PostgreSQL** 16 (Community Edition) - *Recommended for pgvector compatibility*
 - **Redis** (for sessions and rate limiting)
 - **ngrok** (for WhatsApp/Twilio testing)
+
+### Platform-Specific Prerequisites
+
+**macOS:**
+- Homebrew package manager ([Install](https://brew.sh/))
+- Xcode Command Line Tools: `xcode-select --install`
+
+**Linux (Ubuntu/Debian):**
+- apt package manager (pre-installed)
+- sudo access for system installations
+
+**Windows:**
+- **Option 1 (Recommended):** WSL2 (Windows Subsystem for Linux)
+  - Allows running Linux commands and tools on Windows
+  - Install: `wsl --install` in PowerShell (Administrator)
+  - Then follow Linux installation steps inside WSL2
+- **Option 2:** Native Windows installation
+  - PostgreSQL Windows installer from EnterpriseDB
+  - Memurai (Redis for Windows) or Docker
+  - Git for Windows ([Download](https://git-scm.com/download/win))
+  - Visual Studio Build Tools (for building native modules)
+
+**Note for Windows Users:** While native Windows installation is possible, using WSL2 is recommended for a smoother development experience and better compatibility with shell scripts in this project.
 
 ---
 
@@ -197,6 +220,162 @@ sudo -u postgres psql -d community_connect -c "\dx vector"
 
 ---
 
+### Windows Installation
+
+**Step 1: Install PostgreSQL 16**
+
+1. Download PostgreSQL 16 installer from [EnterpriseDB](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+   - Select Windows x86-64 version 16.x
+   - Download the installer (approximately 200 MB)
+
+2. Run the installer:
+   - Accept default installation directory: `C:\Program Files\PostgreSQL\16`
+   - Set a password for the `postgres` superuser (remember this!)
+   - Keep default port: `5432`
+   - Keep default locale
+   - Uncheck "Stack Builder" at the end (not needed)
+
+3. Add PostgreSQL to PATH:
+   - Open "Environment Variables" (Search in Start menu)
+   - Under "System variables", find "Path" and click "Edit"
+   - Click "New" and add: `C:\Program Files\PostgreSQL\16\bin`
+   - Click "OK" to save
+
+4. Verify installation:
+   ```cmd
+   # Open Command Prompt or PowerShell
+   psql --version
+   # Should show: psql (PostgreSQL) 16.x
+   ```
+
+**Step 2: Install pgvector Extension**
+
+1. Download pre-built pgvector binary:
+   - Visit [pgvector releases](https://github.com/pgvector/pgvector/releases)
+   - Download `pgvector-v0.8.0-pg16-windows-x64.zip`
+
+2. Extract and install:
+   ```powershell
+   # Open PowerShell as Administrator
+   
+   # Extract the downloaded zip file to a temporary location
+   # Then copy files to PostgreSQL directory
+   
+   # Copy vector.dll to lib directory
+   Copy-Item "path\to\extracted\vector.dll" "C:\Program Files\PostgreSQL\16\lib\"
+   
+   # Copy vector.control and vector--*.sql files to extension directory
+   Copy-Item "path\to\extracted\vector.control" "C:\Program Files\PostgreSQL\16\share\extension\"
+   Copy-Item "path\to\extracted\vector--*.sql" "C:\Program Files\PostgreSQL\16\share\extension\"
+   ```
+
+**Alternative - Build from Source (Advanced):**
+
+If pre-built binaries are not available:
+
+```powershell
+# Install Visual Studio 2022 Community (C++ development tools)
+# Install Git for Windows
+
+# Clone pgvector repository
+git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git
+cd pgvector
+
+# Open "x64 Native Tools Command Prompt for VS 2022"
+# Set PostgreSQL path
+set PGROOT=C:\Program Files\PostgreSQL\16
+
+# Build and install
+nmake /F Makefile.win
+nmake /F Makefile.win install
+```
+
+**Step 3: Create Database and User**
+
+```cmd
+# Open Command Prompt or PowerShell
+
+# Connect to PostgreSQL as postgres user
+psql -U postgres
+
+# Inside psql prompt, enter the password you set during installation
+# Then create database and user:
+
+CREATE DATABASE community_connect;
+CREATE USER community_user WITH PASSWORD 'dev_password_123';
+GRANT ALL PRIVILEGES ON DATABASE community_connect TO community_user;
+
+# Switch to the new database
+\c community_connect
+
+# Grant schema privileges
+GRANT ALL ON SCHEMA public TO community_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO community_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO community_user;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO community_user;
+
+# Exit psql
+\q
+```
+
+**Step 4: Enable pgvector Extension**
+
+```cmd
+# Connect to community_connect database
+psql -U postgres -d community_connect
+
+# Enable pgvector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+# Verify installation (should show vector 0.8.0)
+\dx vector
+
+# Test vector functionality
+SELECT '[1,2,3]'::vector;
+
+# Exit
+\q
+```
+
+**Verification:**
+
+```cmd
+# Check PostgreSQL service is running
+# Open Services (services.msc) and look for "postgresql-x64-16"
+# Or use PowerShell:
+Get-Service postgresql*
+
+# Check database exists
+psql -U postgres -l | findstr community_connect
+
+# Check pgvector is installed
+psql -U postgres -d community_connect -c "\dx vector"
+```
+
+**Troubleshooting Windows Installation:**
+
+If psql command is not found:
+```cmd
+# Verify PostgreSQL is in PATH
+where psql
+
+# If not found, add manually:
+# 1. Copy this path: C:\Program Files\PostgreSQL\16\bin
+# 2. Search for "Environment Variables" in Start menu
+# 3. Edit PATH variable and add the path above
+# 4. Restart your terminal
+```
+
+If PostgreSQL service won't start:
+```cmd
+# Check Windows Event Viewer for errors
+# Or restart service manually:
+net stop postgresql-x64-16
+net start postgresql-x64-16
+```
+
+---
+
 ## 2. Redis Setup
 
 ### macOS Installation
@@ -227,6 +406,104 @@ sudo systemctl enable redis
 redis-cli ping
 ```
 
+### Windows Installation
+
+**Option 1: Using WSL2 (Recommended)**
+
+```powershell
+# Install WSL2 if not already installed
+wsl --install
+
+# Inside WSL2 Ubuntu terminal:
+sudo apt update
+sudo apt install -y redis-server
+
+# Start Redis
+sudo service redis-server start
+
+# Test connection
+redis-cli ping
+# Should return: PONG
+```
+
+**Option 2: Using Memurai (Redis for Windows)**
+
+Memurai is a Redis-compatible server for Windows:
+
+1. Download Memurai from [https://www.memurai.com/](https://www.memurai.com/)
+   - Choose "Memurai Developer" (free version)
+   - Download the Windows installer
+
+2. Run the installer:
+   - Accept the license agreement
+   - Keep default installation path: `C:\Program Files\Memurai`
+   - Choose "Install as Windows Service" (recommended)
+   - Click "Install"
+
+3. Verify installation:
+   ```cmd
+   # Open Command Prompt or PowerShell
+   memurai-cli ping
+   # Should return: PONG
+   ```
+
+4. Add to PATH (optional):
+   ```cmd
+   # Add to System Environment Variables:
+   # C:\Program Files\Memurai
+   ```
+
+**Option 3: Redis Stack (Docker)**
+
+If you have Docker Desktop for Windows:
+
+```powershell
+# Pull and run Redis Stack
+docker run -d --name redis-stack -p 6379:6379 redis/redis-stack:latest
+
+# Test connection
+docker exec -it redis-stack redis-cli ping
+```
+
+**Configuration for Windows:**
+
+Update `Server/.env` to use appropriate Redis connection:
+
+```bash
+# For WSL2 or Memurai
+REDIS_URL=redis://localhost:6379
+
+# For Docker
+REDIS_URL=redis://localhost:6379
+
+REDIS_PASSWORD=
+REDIS_TLS=false
+```
+
+**Troubleshooting Windows Redis:**
+
+If Memurai service won't start:
+```cmd
+# Open Services (services.msc)
+# Find "Memurai" service
+# Right-click → Start
+
+# Or via command line:
+net start Memurai
+```
+
+If WSL2 Redis connection fails:
+```bash
+# Check Redis is running in WSL2
+sudo service redis-server status
+
+# If stopped, start it
+sudo service redis-server start
+
+# Check port is listening
+sudo netstat -tlnp | grep 6379
+```
+
 ---
 
 ## 3. Server Setup
@@ -240,12 +517,46 @@ npm install
 
 ### Configure Environment Variables
 
+**macOS/Linux:**
 ```bash
 # Copy example environment file
 cp .env.example .env
 ```
 
+**Windows (Command Prompt):**
+```cmd
+REM Copy example environment file
+copy .env.example .env
+```
+
+**Windows (PowerShell):**
+```powershell
+# Copy example environment file
+Copy-Item .env.example .env
+```
+
 Edit `.env` with your local configuration:
+
+**macOS/Linux:**
+```bash
+# Use your preferred editor
+nano .env
+# or
+vim .env
+# or
+code .env  # if using VS Code
+```
+
+**Windows:**
+```cmd
+REM Use Notepad
+notepad .env
+
+REM Or use VS Code
+code .env
+```
+
+**Environment Variables (.env file):**
 
 ```bash
 NODE_ENV=development
@@ -254,7 +565,11 @@ PORT=3000
 # AI/LLM API Keys
 DEEPINFRA_API_KEY=your_deepinfra_key_here
 
-# Local PostgreSQL 16 Database
+# Database Connection
+# For local PostgreSQL (macOS/Linux)
+DATABASE_URL=postgresql://community_user:dev_password_123@localhost:5432/community_connect
+
+# For local PostgreSQL (Windows)
 DATABASE_URL=postgresql://community_user:dev_password_123@localhost:5432/community_connect
 
 # Local Redis
@@ -272,7 +587,10 @@ RATE_LIMIT_MESSAGES_PER_HOUR=50
 RATE_LIMIT_SEARCHES_PER_HOUR=30
 ```
 
-**Important:** Make sure `DATABASE_URL` matches the username and password you created in Step 3.
+**Important Notes:**
+- On Windows, if you installed PostgreSQL with a different username, update the `DATABASE_URL` accordingly
+- The default PostgreSQL superuser on Windows is `postgres` (not `community_user`)
+- Make sure `DATABASE_URL` matches the username and password you created in the PostgreSQL setup steps
 
 ### Initialize Database
 
@@ -386,18 +704,67 @@ The Chat page provides a conversational interface to interact with the community
 
 ### Install ngrok
 
+**macOS:**
 ```bash
-# macOS
 brew install ngrok
 
 # Or download from https://ngrok.com/download
 ```
 
+**Linux:**
+```bash
+# Download and install
+curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+sudo apt update
+sudo apt install ngrok
+```
+
+**Windows:**
+
+1. Download ngrok from [https://ngrok.com/download](https://ngrok.com/download)
+   - Choose "Windows (64-bit)" or "Windows (32-bit)"
+   - Extract the zip file to a location (e.g., `C:\ngrok`)
+
+2. Add ngrok to PATH (optional):
+   ```powershell
+   # Open PowerShell as Administrator
+   
+   # Add to user PATH
+   $env:Path += ";C:\ngrok"
+   [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
+   ```
+
+3. Verify installation:
+   ```cmd
+   # Open new Command Prompt or PowerShell
+   ngrok version
+   ```
+
+4. Sign up and authenticate:
+   - Create free account at [https://dashboard.ngrok.com/signup](https://dashboard.ngrok.com/signup)
+   - Copy your authtoken from dashboard
+   - Run in terminal:
+   ```cmd
+   ngrok config add-authtoken YOUR_AUTHTOKEN_HERE
+   ```
+
 ### Setup Tunnel
 
+**macOS/Linux:**
 ```bash
 # In a separate terminal, start ngrok
 ngrok http 3000
+```
+
+**Windows:**
+```cmd
+# In a separate Command Prompt or PowerShell, start ngrok
+ngrok http 3000
+
+# Or if not in PATH, navigate to ngrok directory:
+cd C:\ngrok
+ngrok.exe http 3000
 ```
 
 You'll see output like:
@@ -676,12 +1043,40 @@ redis-cli -h localhost -p 6379 ping
 
 This happens when another process is using port 3000, often a previous server instance that didn't shut down properly.
 
-**Quick Solution:**
+**Quick Solution (macOS/Linux):**
 ```bash
 # Kill all processes using port 3000
 kill -9 $(lsof -ti:3000) 2>/dev/null || echo "Port 3000 is already free"
 
 # Then restart your server
+npm run dev
+```
+
+**Quick Solution (Windows - PowerShell):**
+```powershell
+# Find and kill process using port 3000
+$port = 3000
+$processId = (Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue).OwningProcess
+if ($processId) {
+    Stop-Process -Id $processId -Force
+    Write-Host "Killed process using port $port"
+} else {
+    Write-Host "Port $port is already free"
+}
+
+# Then restart your server
+npm run dev
+```
+
+**Quick Solution (Windows - Command Prompt):**
+```cmd
+REM Find process using port 3000
+netstat -ano | findstr :3000
+
+REM Kill the process (replace PID with the actual process ID from above)
+taskkill /PID <PID> /F
+
+REM Then restart your server
 npm run dev
 ```
 
@@ -695,11 +1090,25 @@ PORT=3001 npm run dev
 ```
 
 **Check What's Using the Port:**
+
+**macOS/Linux:**
 ```bash
 # See detailed information about processes on port 3000
 lsof -i:3000
 
 # This will show the PID, process name, and user
+```
+
+**Windows (PowerShell):**
+```powershell
+# See what's using port 3000
+Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State, OwningProcess, @{Name="ProcessName";Expression={(Get-Process -Id $_.OwningProcess).ProcessName}}
+```
+
+**Windows (Command Prompt):**
+```cmd
+# See what's using port 3000
+netstat -ano | findstr :3000
 ```
 
 #### Environment Variables Not Loaded
@@ -842,6 +1251,7 @@ npm run generate:embeddings
 
 ### Typical Daily Workflow
 
+**macOS/Linux:**
 ```bash
 # Terminal 1 - Backend
 cd Server
@@ -854,6 +1264,39 @@ npm run dev
 # Terminal 3 - ngrok (if testing WhatsApp)
 ngrok http 3000
 ```
+
+**Windows (Command Prompt/PowerShell):**
+```cmd
+REM Terminal 1 - Backend
+cd Server
+npm run dev
+
+REM Terminal 2 - Frontend
+cd dashboard
+npm run dev
+
+REM Terminal 3 - ngrok (if testing WhatsApp)
+ngrok http 3000
+```
+
+**Windows (WSL2):**
+```bash
+# Terminal 1 - Backend
+cd Server
+npm run dev
+
+# Terminal 2 - Frontend
+cd dashboard
+npm run dev
+
+# Terminal 3 - ngrok (if testing WhatsApp)
+ngrok http 3000
+```
+
+**Pro Tip for Windows Users:**
+- Use **Windows Terminal** for better multi-tab experience
+- Or use VS Code's integrated terminal with split panes
+- Each terminal tab/pane should run one of the services above
 
 ### Making Database Changes
 
@@ -904,8 +1347,10 @@ DATABASE_URL=postgresql://community_user:mypass123@localhost:5432/community_conn
 ### Common Commands
 
 **PostgreSQL:**
+
+*macOS:*
 ```bash
-# Start/stop service (macOS)
+# Start/stop service
 brew services start postgresql@16
 brew services stop postgresql@16
 brew services restart postgresql@16
@@ -920,11 +1365,95 @@ psql -l
 psql -d community_connect -c "\dx vector"
 ```
 
-**Redis:**
+*Linux:*
 ```bash
-# Start/stop service (macOS)
+# Start/stop service
+sudo systemctl start postgresql
+sudo systemctl stop postgresql
+sudo systemctl restart postgresql
+
+# Connect to database
+sudo -u postgres psql -d community_connect
+
+# List databases
+sudo -u postgres psql -l
+
+# Check pgvector version
+sudo -u postgres psql -d community_connect -c "\dx vector"
+```
+
+*Windows:*
+```cmd
+REM Start/stop service via Services panel (services.msc)
+REM Or use command line:
+net start postgresql-x64-16
+net stop postgresql-x64-16
+
+REM Connect to database
+psql -U postgres -d community_connect
+
+REM List databases
+psql -U postgres -l
+
+REM Check pgvector version
+psql -U postgres -d community_connect -c "\dx vector"
+```
+
+**Redis:**
+
+*macOS:*
+```bash
+# Start/stop service
 brew services start redis
 brew services stop redis
+
+# Test connection
+redis-cli ping
+
+# Monitor Redis commands
+redis-cli monitor
+
+# Clear all data (⚠️ use with caution)
+redis-cli FLUSHALL
+```
+
+*Linux:*
+```bash
+# Start/stop service
+sudo systemctl start redis
+sudo systemctl stop redis
+
+# Test connection
+redis-cli ping
+
+# Monitor Redis commands
+redis-cli monitor
+
+# Clear all data (⚠️ use with caution)
+redis-cli FLUSHALL
+```
+
+*Windows (Memurai):*
+```cmd
+REM Start/stop service
+net start Memurai
+net stop Memurai
+
+REM Test connection
+memurai-cli ping
+
+REM Monitor commands
+memurai-cli monitor
+
+REM Clear all data (⚠️ use with caution)
+memurai-cli FLUSHALL
+```
+
+*Windows (WSL2):*
+```bash
+# Start/stop service
+sudo service redis-server start
+sudo service redis-server stop
 
 # Test connection
 redis-cli ping
