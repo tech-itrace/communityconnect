@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
 import { MemberForm } from './pages/MemberForm';
 import { Settings } from './pages/Settings';
+import { Chat } from './pages/Chat';
 import { PhoneSetter } from './components/PhoneSetter';
 import { useState } from 'react';
 import { getUserPhone } from './lib/auth';
@@ -32,6 +33,7 @@ function App() {
           <Route path="/members" element={<Layout><Members /></Layout>} />
           <Route path="/members/:id" element={<Layout><MemberForm /></Layout>} />
           <Route path="/members/:id/edit" element={<Layout><MemberForm /></Layout>} />
+          <Route path="/chat" element={<Layout><Chat /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

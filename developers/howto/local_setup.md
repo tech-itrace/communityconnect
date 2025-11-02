@@ -364,6 +364,22 @@ npm run dev
 
 Dashboard will be available at `http://localhost:5173`
 
+### Dashboard Features
+
+Once the dashboard is running, you'll have access to:
+
+1. **Dashboard** (`/`) - Overview and analytics
+2. **Members** (`/members`) - View, search, add, edit, and delete members
+3. **Chat** (`/chat`) - Interactive chat interface to query members using natural language
+4. **Settings** (`/settings`) - Application settings
+
+**Chat Feature:**
+The Chat page provides a conversational interface to interact with the community search bot:
+- Ask questions in natural language: "Who works in tech?", "Find members in Chennai"
+- Get instant responses powered by the LLM
+- View suggestions for better queries
+- Uses the same backend API (`/api/messages`) as WhatsApp integration
+
 ---
 
 ## 5. WhatsApp Testing with ngrok

@@ -7,7 +7,8 @@ import {
     LogOut,
     Menu,
     X,
-    Phone
+    Phone,
+    MessageCircle
 } from 'lucide-react';
 import { useState } from 'react';
 import { getUserPhone, formatPhone, clearUserContext } from '@/lib/auth';
@@ -16,6 +17,7 @@ import { Card } from './ui/card';
 const navigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
     { name: 'Members', href: '/members', icon: Users },
+    { name: 'Chat', href: '/chat', icon: MessageCircle },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
