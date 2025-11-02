@@ -122,13 +122,30 @@ export interface SearchLog {
     created_at: string;
 }
 
+// API Response Types
+export interface MembersResponse {
+    success: boolean;
+    members: Member[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+}
+
+export interface MemberResponse {
+    success: boolean;
+    member: Member;
+}
+
 // API Functions
 export const memberAPI = {
-    getAll: () => api.get<Member[]>('/api/members'),
-    getById: (id: string) => api.get<Member>(`/api/members/${id}`),
-    create: (member: Partial<Member>) => api.post<Member>('/api/members', member),
+    getAll: () => api.get<MembersResponse>('/api/members'),
+    getById: (id: string) => api.get<MemberResponse>(`/api/members/${id}`),
+    create: (member: Partial<Member>) => api.post<MemberResponse>('/api/members', member),
     update: (id: string, member: Partial<Member>) =>
-        api.put<Member>(`/api/members/${id}`, member),
+        api.put<MemberResponse>(`/api/members/${id}`, member),
     delete: (id: string) => api.delete(`/api/members/${id}`),
     bulkImport: (file: File) => {
         const formData = new FormData();

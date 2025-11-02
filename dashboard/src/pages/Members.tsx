@@ -17,7 +17,9 @@ export function Members() {
         queryKey: ['members'],
         queryFn: async () => {
             const response = await memberAPI.getAll();
-            return response.data;
+            // API returns { success, members, pagination }
+            // Extract just the members array
+            return response.data.members || [];
         },
     });
 
