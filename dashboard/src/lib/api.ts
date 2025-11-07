@@ -88,6 +88,7 @@ api.interceptors.response.use(
     }
 );
 
+
 export interface Member {
     id: string;
     phone: string;
@@ -123,6 +124,35 @@ export interface SearchLog {
 }
 
 // API Response Types
+export interface Group {
+    id: string;
+    name: string;
+    description?: string;
+    members?: string[];
+    totalMembers?: number;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface GroupsResponse {
+    success: boolean;
+    groups: Group[];
+    pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalResults: number;
+        resultsPerPage: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
+}
+
+export interface GroupResponse {
+    success: boolean;
+    group: Group;
+}
+
 export interface MembersResponse {
     success: boolean;
     members: Member[];
@@ -140,6 +170,29 @@ export interface MemberResponse {
 }
 
 // API Functions
+
+export const groupAPI = {
+    // Get all groups with pagination
+    getAll: (params?: { page?: number; limit?: number }) => 
+        api.get<GroupsResponse>('/api/groups', { params }),
+    
+    // Get single group by ID
+    getById: (id: string) => 
+        api.get<GroupResponse>(`/api/groups/${id}`),
+    
+    // Create new group
+    create: (data: { name: string; description?: string; members?: string[] }) => 
+        api.post<GroupResponse>('/api/groups', data),
+    
+    // Update existing group
+    update: (id: string, data: Partial<{ name: string; description: string; members: string[] }>) => 
+        api.put<GroupResponse>(`/api/groups/${id}`, data),
+    
+    // Delete group
+    delete: (id: string) => 
+        api.delete(`/api/groups/${id}`)
+};
+
 export const memberAPI = {
     getAll: () => api.get<MembersResponse>('/api/members'),
     getById: (id: string) => api.get<MemberResponse>(`/api/members/${id}`),

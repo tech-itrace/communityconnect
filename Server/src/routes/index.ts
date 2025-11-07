@@ -4,6 +4,7 @@ import searchRouter from './search';
 import membersRouter from './members';
 import whatsappRouter from './whatsapp';
 import adminRouter from './admin';
+import groupsRouter from './groups';
 import analyticsRouter from './analytics';
 import { getRedisHealth } from '../config/redis';
 
@@ -25,6 +26,7 @@ router.use('/messages', botRouter);
 
 // Phase 2: Search and member routes
 router.use('/search', searchRouter);
+router.use('/groups', groupsRouter)
 router.use('/members', membersRouter);
 
 // Admin routes (Phase 2: Day 5)

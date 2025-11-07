@@ -7,6 +7,7 @@
 ---
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Data Analysis](#data-analysis)
 3. [Search Requirements](#search-requirements)
@@ -26,6 +27,7 @@
 Implement a natural language chatbot interface to search the business community database. The chatbot should understand conversational queries and return relevant member information based on skills, services, location, and other criteria.
 
 ### Goals
+
 - Enable natural language search across community member data
 - Support skill-based, service-based, and location-based queries
 - Provide conversational responses with member details
@@ -37,22 +39,24 @@ Implement a natural language chatbot interface to search the business community 
 ## Data Analysis
 
 ### Available Data Fields (from CommunityMemberDetails.csv)
-| Field | Example | Search Relevance |
-|-------|---------|------------------|
-| Name | "Mr. Udhayakumar Ulaganathan" | ✅ High - Direct search |
-| Year of Graduation | 2009 | ✅ Medium - Experience level |
-| Degree | MCA, B.E, MBA | ✅ Medium - Qualification |
-| Branch | Mechanical, ECE, Production | ✅ High - Technical domain |
-| Working Knowledge | "IT Consulting", "Product" | ✅ **CRITICAL** - Skills/Services |
-| Email | udhayapsg@gmail.com | ✅ High - Contact info |
-| Phone number | 919943549835 | ✅ High - Contact info |
-| Address | "14, kakkan street, chitlapakkam" | ✅ Medium - Exact location |
-| City / Town of Living | Chennai, Salem, Madurai | ✅ **CRITICAL** - Location search |
-| Organization Name | "Thoughtworks Technologies" | ✅ High - Business/Company |
-| Designation | "Lead Consultant", "CEO" | ✅ High - Role/Level |
-| Annual Turnover | "Above 10 Crores", "2 to 5 Crores" | ✅ Medium - Business size |
+
+| Field                 | Example                            | Search Relevance                  |
+| --------------------- | ---------------------------------- | --------------------------------- |
+| Name                  | "Mr. Udhayakumar Ulaganathan"      | ✅ High - Direct search           |
+| Year of Graduation    | 2009                               | ✅ Medium - Experience level      |
+| Degree                | MCA, B.E, MBA                      | ✅ Medium - Qualification         |
+| Branch                | Mechanical, ECE, Production        | ✅ High - Technical domain        |
+| Working Knowledge     | "IT Consulting", "Product"         | ✅ **CRITICAL** - Skills/Services |
+| Email                 | udhayapsg@gmail.com                | ✅ High - Contact info            |
+| Phone number          | 919943549835                       | ✅ High - Contact info            |
+| Address               | "14, kakkan street, chitlapakkam"  | ✅ Medium - Exact location        |
+| City / Town of Living | Chennai, Salem, Madurai            | ✅ **CRITICAL** - Location search |
+| Organization Name     | "Thoughtworks Technologies"        | ✅ High - Business/Company        |
+| Designation           | "Lead Consultant", "CEO"           | ✅ High - Role/Level              |
+| Annual Turnover       | "Above 10 Crores", "2 to 5 Crores" | ✅ Medium - Business size         |
 
 ### Key Insights
+
 1. **Working Knowledge** field is the primary indicator of skills/services
 2. **City/Town** is critical for location-based searches
 3. **Organization Name** helps identify business owners vs employees
@@ -64,9 +68,11 @@ Implement a natural language chatbot interface to search the business community 
 ## Search Requirements
 
 ### 1. Skill-Based Search
+
 **User Intent**: Find members with specific technical or business skills
 
 **Example Queries**:
+
 - "Who knows about software development?"
 - "Find someone with manufacturing experience"
 - "I need a consultant for my startup"
@@ -78,9 +84,11 @@ Implement a natural language chatbot interface to search the business community 
 ---
 
 ### 2. Service-Based Search
+
 **User Intent**: Find members who provide specific services or run businesses
 
 **Example Queries**:
+
 - "Who provides HR services?"
 - "Find someone who does insurance broking"
 - "I need a waterproofing contractor"
@@ -92,9 +100,11 @@ Implement a natural language chatbot interface to search the business community 
 ---
 
 ### 3. Location-Based Search
+
 **User Intent**: Find members in specific cities or regions
 
 **Example Queries**:
+
 - "Who is based in Chennai?"
 - "Find members in Salem"
 - "Show me businesses in Madurai"
@@ -106,9 +116,11 @@ Implement a natural language chatbot interface to search the business community 
 ---
 
 ### 4. Multi-Criteria Search (Advanced)
+
 **User Intent**: Combine multiple filters
 
 **Example Queries**:
+
 - "Find a software consultant in Chennai"
 - "Who provides manufacturing services in Coimbatore with turnover above 5 crores?"
 - "B.E Mechanical graduates working in Chennai"
@@ -120,9 +132,11 @@ Implement a natural language chatbot interface to search the business community 
 ---
 
 ### 5. Network/Referral Search
+
 **User Intent**: Get recommendations and contextual information
 
 **Example Queries**:
+
 - "Who can I talk to about e-waste recycling?"
 - "Recommend someone for industrial automation"
 - "Who is the best contact for investment advisory?"
@@ -178,13 +192,13 @@ Implement a natural language chatbot interface to search the business community 
 
 ### Technology Stack Additions
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| CSV Parser | `csv-parse` | Import member data |
-| Vector Embeddings | OpenAI `text-embedding-ada-002` | Semantic similarity |
-| Vector Database | `pgvector` extension | Fast similarity search |
-| NLP Enhancement | DeepInfra Llama 3.1 8B | Intent detection & query understanding |
-| Caching | Redis or in-memory | Performance optimization |
+| Component         | Technology                      | Purpose                                |
+| ----------------- | ------------------------------- | -------------------------------------- |
+| CSV Parser        | `csv-parse`                     | Import member data                     |
+| Vector Embeddings | OpenAI `text-embedding-ada-002` | Semantic similarity                    |
+| Vector Database   | `pgvector` extension            | Fast similarity search                 |
+| NLP Enhancement   | DeepInfra Llama 3.1 8B          | Intent detection & query understanding |
+| Caching           | Redis or in-memory              | Performance optimization               |
 
 ---
 
@@ -199,16 +213,18 @@ POST /api/search/query
 **Purpose**: Main chatbot endpoint - accepts natural language queries
 
 **Request Body**:
+
 ```json
 {
   "message": "Find someone who provides IT consulting in Chennai",
-  "userId": "user_123",           // Optional: for personalization
-  "conversationId": "conv_456",   // Optional: for context
-  "limit": 10                     // Optional: max results (default: 10)
+  "userId": "user_123", // Optional: for personalization
+  "conversationId": "conv_456", // Optional: for context
+  "limit": 10 // Optional: max results (default: 10)
 }
 ```
 
 **Response**:
+
 ```json
 {
   "response": "I found 3 IT consultants in Chennai:\n\n1. **Udhayakumar Ulaganathan** - Lead Consultant at Thoughtworks Technologies...",
@@ -239,6 +255,7 @@ POST /api/search/query
 ```
 
 **Status Codes**:
+
 - `200`: Success
 - `400`: Invalid query
 - `500`: Server error
@@ -254,6 +271,7 @@ POST /api/search/members
 **Purpose**: Structured search with explicit filters (for advanced UI)
 
 **Request Body**:
+
 ```json
 {
   "filters": {
@@ -266,16 +284,19 @@ POST /api/search/members
       "max": 2015
     }
   },
-  "sortBy": "relevance",  // or "name", "yearOfGraduation", "turnover"
+  "sortBy": "relevance", // or "name", "yearOfGraduation", "turnover"
   "limit": 20,
   "offset": 0
 }
 ```
 
 **Response**:
+
 ```json
 {
-  "members": [/* array of member objects */],
+  "members": [
+    /* array of member objects */
+  ],
   "pagination": {
     "total": 45,
     "limit": 20,
@@ -296,6 +317,7 @@ GET /api/members/:id
 **Purpose**: Get full details of a specific member
 
 **Response**:
+
 ```json
 {
   "id": "mem_001",
@@ -337,6 +359,7 @@ GET /api/search/suggestions?q={query}
 **Example**: `GET /api/search/suggestions?q=IT cons`
 
 **Response**:
+
 ```json
 {
   "suggestions": [
@@ -370,11 +393,12 @@ GET /api/admin/search/analytics
 **Purpose**: Track popular searches, conversion rates
 
 **Response**:
+
 ```json
 {
   "topSearches": [
-    {"query": "IT consulting", "count": 145},
-    {"query": "Chennai", "count": 98}
+    { "query": "IT consulting", "count": 145 },
+    { "query": "Chennai", "count": 98 }
   ],
   "searchesByType": {
     "skill": 345,
@@ -392,9 +416,11 @@ GET /api/admin/search/analytics
 ## Implementation Phases
 
 ### Phase 1: Data Ingestion & Setup (Day 1-2)
+
 **Goal**: Import CSV data and set up database
 
 **Tasks**:
+
 1. ✅ Create PostgreSQL schema for members
 2. ✅ Install `pgvector` extension
 3. ✅ Write CSV import script
@@ -404,6 +430,7 @@ GET /api/admin/search/analytics
 7. ✅ Create indexes for performance
 
 **Deliverables**:
+
 - `community_members` table populated
 - `member_embeddings` table with vectors
 - Data import scripts
@@ -411,9 +438,11 @@ GET /api/admin/search/analytics
 ---
 
 ### Phase 2: Basic Search Implementation (Day 3-4)
+
 **Goal**: Implement keyword and filter-based search
 
 **Tasks**:
+
 1. ✅ Implement structured search endpoint (`/api/search/members`)
 2. ✅ Add filter logic for all fields
 3. ✅ Implement sorting and pagination
@@ -421,15 +450,18 @@ GET /api/admin/search/analytics
 5. ✅ Test with sample queries
 
 **Deliverables**:
+
 - Working `/api/search/members` endpoint
 - Test coverage >80%
 
 ---
 
 ### Phase 3: Semantic Search & Embeddings (Day 5-6)
+
 **Goal**: Add vector-based semantic search
 
 **Tasks**:
+
 1. ✅ Integrate OpenAI embeddings API
 2. ✅ Implement query embedding generation
 3. ✅ Add vector similarity search
@@ -438,15 +470,18 @@ GET /api/admin/search/analytics
 6. ✅ Add caching for common queries
 
 **Deliverables**:
+
 - Semantic search functionality
 - Performance benchmarks
 
 ---
 
 ### Phase 4: NLP Query Parser (Day 7-9)
+
 **Goal**: Understand natural language queries using LLM
 
 **Tasks**:
+
 1. ✅ Design intent detection prompt
 2. ✅ Implement query parser with Llama 3.1
 3. ✅ Extract entities (skills, locations, etc.)
@@ -455,6 +490,7 @@ GET /api/admin/search/analytics
 6. ✅ Add conversation context support
 
 **Deliverables**:
+
 - `/api/search/query` endpoint
 - Intent classification system
 - Entity extraction
@@ -462,9 +498,11 @@ GET /api/admin/search/analytics
 ---
 
 ### Phase 5: Response Generation (Day 10-11)
+
 **Goal**: Generate natural, conversational responses
 
 **Tasks**:
+
 1. ✅ Design response templates
 2. ✅ Implement LLM-based response generation
 3. ✅ Format member data for readability
@@ -472,15 +510,18 @@ GET /api/admin/search/analytics
 5. ✅ Add follow-up question suggestions
 
 **Deliverables**:
+
 - Natural language responses
 - Response templates
 
 ---
 
 ### Phase 6: WhatsApp Integration (Day 12-13)
+
 **Goal**: Connect to WhatsApp Business API
 
 **Tasks**:
+
 1. ✅ Set up WhatsApp Business Account
 2. ✅ Implement webhook handlers
 3. ✅ Format responses for WhatsApp
@@ -488,15 +529,18 @@ GET /api/admin/search/analytics
 5. ✅ Add conversation state management
 
 **Deliverables**:
+
 - WhatsApp bot integration
 - Message formatting
 
 ---
 
 ### Phase 7: Testing & Optimization (Day 14-15)
+
 **Goal**: Ensure reliability and performance
 
 **Tasks**:
+
 1. ✅ End-to-end testing
 2. ✅ Load testing (1000+ queries/min)
 3. ✅ Optimize database queries
@@ -505,6 +549,7 @@ GET /api/admin/search/analytics
 6. ✅ Documentation
 
 **Deliverables**:
+
 - Test reports
 - Performance metrics
 - Documentation
@@ -512,6 +557,42 @@ GET /api/admin/search/analytics
 ---
 
 ## Database Schema
+
+### Table: `community_groups`
+
+```sql
+
+CREATE TABLE IF NOT EXISTS community_groups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    members UUID[] DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Create index on name for faster searches
+CREATE INDEX IF NOT EXISTS idx_community_groups_name ON community_groups(name);
+
+-- Create index on is_active for filtering active groups
+CREATE INDEX IF NOT EXISTS idx_community_groups_is_active ON community_groups(is_active);
+
+-- Create index on members array for member lookup (GIN index for array operations)
+CREATE INDEX IF NOT EXISTS idx_community_groups_members ON community_groups USING GIN(members);
+
+-- Add comment to table
+COMMENT ON TABLE community_groups IS 'Stores community groups with their members';
+COMMENT ON COLUMN community_groups.id IS 'Unique identifier for the group';
+COMMENT ON COLUMN community_groups.name IS 'Name of the group';
+COMMENT ON COLUMN community_groups.description IS 'Description of the group purpose';
+COMMENT ON COLUMN community_groups.members IS 'Array of member UUIDs belonging to this group';
+COMMENT ON COLUMN community_groups.is_active IS 'Whether the group is active (for soft delete)';
+COMMENT ON COLUMN community_groups.created_at IS 'Timestamp when the group was created';
+COMMENT ON COLUMN community_groups.updated_at IS 'Timestamp when the group was last updated';
+```
+
+---
 
 ### Table: `community_members`
 
@@ -532,10 +613,10 @@ CREATE TABLE community_members (
   organization_name TEXT,
   designation VARCHAR(255),
   annual_turnover VARCHAR(50),
-  
+
   -- Computed fields for search
   full_text_search TSVECTOR,
-  
+
   -- Metadata
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
@@ -562,24 +643,24 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE member_embeddings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   member_id UUID NOT NULL REFERENCES community_members(id) ON DELETE CASCADE,
-  
+
   -- Embeddings for different fields
   profile_embedding VECTOR(1536),  -- Full profile embedding
   skills_embedding VECTOR(1536),   -- Working knowledge only
-  
+
   -- Metadata
   embedding_model VARCHAR(100) DEFAULT 'text-embedding-ada-002',
   created_at TIMESTAMP DEFAULT NOW(),
-  
+
   UNIQUE(member_id)
 );
 
 -- Vector similarity search indexes
-CREATE INDEX idx_embeddings_profile ON member_embeddings 
+CREATE INDEX idx_embeddings_profile ON member_embeddings
   USING ivfflat (profile_embedding vector_cosine_ops)
   WITH (lists = 100);
 
-CREATE INDEX idx_embeddings_skills ON member_embeddings 
+CREATE INDEX idx_embeddings_skills ON member_embeddings
   USING ivfflat (skills_embedding vector_cosine_ops)
   WITH (lists = 100);
 ```
@@ -662,12 +743,12 @@ Respond in JSON format:
 
 ### Entity Extraction Examples
 
-| Query | Intent | Entities |
-|-------|--------|----------|
-| "Find IT consultants in Chennai" | multi-criteria | skills: ["IT consulting"], locations: ["Chennai"] |
-| "Who provides waterproofing services?" | service | services: ["waterproofing"] |
-| "Show me manufacturing businesses" | service | industries: ["manufacturing"] |
-| "B.E Mechanical graduates" | skill | degrees: ["B.E"], branches: ["Mechanical"] |
+| Query                                  | Intent         | Entities                                          |
+| -------------------------------------- | -------------- | ------------------------------------------------- |
+| "Find IT consultants in Chennai"       | multi-criteria | skills: ["IT consulting"], locations: ["Chennai"] |
+| "Who provides waterproofing services?" | service        | services: ["waterproofing"]                       |
+| "Show me manufacturing businesses"     | service        | industries: ["manufacturing"]                     |
+| "B.E Mechanical graduates"             | skill          | degrees: ["B.E"], branches: ["Mechanical"]        |
 
 ---
 
@@ -677,30 +758,31 @@ Respond in JSON format:
 function hybridSearch(query, filters) {
   // 1. Generate embedding for query
   const queryEmbedding = await generateEmbedding(query);
-  
+
   // 2. Vector similarity search
   const vectorResults = await vectorSearch(queryEmbedding, limit: 50);
-  
+
   // 3. Keyword/Filter search
   const keywordResults = await keywordSearch(filters, limit: 50);
-  
+
   // 4. Combine and re-rank
   const combined = mergeResults(vectorResults, keywordResults);
-  
+
   // 5. Apply relevance scoring
   const scored = scoreResults(combined, query, filters);
-  
+
   // 6. Return top N
   return scored.slice(0, limit);
 }
 ```
 
 **Relevance Scoring Formula**:
+
 ```
-relevance_score = 
-  (0.5 × vector_similarity) + 
-  (0.3 × keyword_match_score) + 
-  (0.1 × profile_completeness) + 
+relevance_score =
+  (0.5 × vector_similarity) +
+  (0.3 × keyword_match_score) +
+  (0.1 × profile_completeness) +
   (0.1 × recency_factor)
 ```
 
@@ -713,6 +795,7 @@ relevance_score =
 **User Query**: "Who knows about IT consulting?"
 
 **API Call**:
+
 ```json
 POST /api/search/query
 {
@@ -721,6 +804,7 @@ POST /api/search/query
 ```
 
 **Bot Response**:
+
 ```
 I found 4 members with IT consulting expertise:
 
@@ -750,6 +834,7 @@ Would you like more details about any of these members?
 **User Query**: "Show me businesses in Madurai"
 
 **Bot Response**:
+
 ```
 I found 1 business in Madurai:
 
@@ -772,6 +857,7 @@ Need help connecting with them?
 **User Query**: "I need someone for waterproofing services"
 
 **Bot Response**:
+
 ```
 Perfect! I found 2 waterproofing specialists:
 
@@ -797,6 +883,7 @@ Both work for a large construction waterproofing company. Would you like their e
 **User Query**: "Find manufacturing businesses in Chennai with turnover above 5 crores"
 
 **Bot Response**:
+
 ```
 I found 3 manufacturing businesses matching your criteria:
 
@@ -825,22 +912,22 @@ Would you like to filter by specific industry?
 ### Unit Tests
 
 ```typescript
-describe('Search API', () => {
-  test('should find members by skill', async () => {
+describe("Search API", () => {
+  test("should find members by skill", async () => {
     const response = await request(app)
-      .post('/api/search/query')
-      .send({ message: 'IT consulting' });
-    
+      .post("/api/search/query")
+      .send({ message: "IT consulting" });
+
     expect(response.status).toBe(200);
     expect(response.body.members.length).toBeGreaterThan(0);
   });
-  
-  test('should handle location queries', async () => {
+
+  test("should handle location queries", async () => {
     const response = await request(app)
-      .post('/api/search/query')
-      .send({ message: 'businesses in Chennai' });
-    
-    expect(response.body.members[0].city).toBe('Chennai');
+      .post("/api/search/query")
+      .send({ message: "businesses in Chennai" });
+
+    expect(response.body.members[0].city).toBe("Chennai");
   });
 });
 ```
@@ -848,21 +935,21 @@ describe('Search API', () => {
 ### Integration Tests
 
 ```typescript
-describe('End-to-End Search', () => {
-  test('should complete full search workflow', async () => {
+describe("End-to-End Search", () => {
+  test("should complete full search workflow", async () => {
     // 1. Parse query
-    const parsed = await parseQuery('IT consultant in Chennai');
-    
+    const parsed = await parseQuery("IT consultant in Chennai");
+
     // 2. Generate embeddings
     const embedding = await generateEmbedding(parsed);
-    
+
     // 3. Search database
     const results = await searchMembers(embedding, parsed.filters);
-    
+
     // 4. Generate response
     const response = await generateResponse(results, parsed);
-    
-    expect(response).toContain('Chennai');
+
+    expect(response).toContain("Chennai");
   });
 });
 ```
@@ -870,15 +957,13 @@ describe('End-to-End Search', () => {
 ### Performance Tests
 
 ```typescript
-describe('Performance', () => {
-  test('should handle 100 concurrent searches', async () => {
-    const queries = Array(100).fill('IT consulting');
+describe("Performance", () => {
+  test("should handle 100 concurrent searches", async () => {
+    const queries = Array(100).fill("IT consulting");
     const start = Date.now();
-    
-    await Promise.all(
-      queries.map(q => searchAPI(q))
-    );
-    
+
+    await Promise.all(queries.map((q) => searchAPI(q)));
+
     const duration = Date.now() - start;
     expect(duration).toBeLessThan(5000); // 5 seconds for 100 queries
   });
@@ -891,29 +976,30 @@ describe('Performance', () => {
 
 ### API Costs (Monthly for 10,000 queries)
 
-| Service | Usage | Cost |
-|---------|-------|------|
-| **OpenAI Embeddings** | 10,000 queries × 100 tokens | $0.01 per 1M tokens = **$0.01** |
-| **DeepInfra LLM** | 10,000 queries × 500 tokens (avg) | $0.055 per 1M = **$0.28** |
-| **DeepInfra LLM (Output)** | 10,000 responses × 200 tokens | $0.055 per 1M = **$0.11** |
-| **Supabase** | 500MB storage + queries | **Free tier** (or $25/mo Pro) |
-| **WhatsApp Business** | 10,000 messages | Free tier: 1000, then $0.005 = **$45** |
-| **Total** | | **~$45.40/month** or **~$70/month** with Supabase Pro |
+| Service                    | Usage                             | Cost                                                  |
+| -------------------------- | --------------------------------- | ----------------------------------------------------- |
+| **OpenAI Embeddings**      | 10,000 queries × 100 tokens       | $0.01 per 1M tokens = **$0.01**                       |
+| **DeepInfra LLM**          | 10,000 queries × 500 tokens (avg) | $0.055 per 1M = **$0.28**                             |
+| **DeepInfra LLM (Output)** | 10,000 responses × 200 tokens     | $0.055 per 1M = **$0.11**                             |
+| **Supabase**               | 500MB storage + queries           | **Free tier** (or $25/mo Pro)                         |
+| **WhatsApp Business**      | 10,000 messages                   | Free tier: 1000, then $0.005 = **$45**                |
+| **Total**                  |                                   | **~$45.40/month** or **~$70/month** with Supabase Pro |
 
 ### Scaling Estimates
 
-| Users | Queries/Month | Estimated Cost |
-|-------|---------------|----------------|
-| 50 members | 1,000 | **$5-10** |
-| 100 members | 5,000 | **$25-35** |
-| 500 members | 25,000 | **$120-150** |
-| 1000 members | 50,000 | **$250-300** |
+| Users        | Queries/Month | Estimated Cost |
+| ------------ | ------------- | -------------- |
+| 50 members   | 1,000         | **$5-10**      |
+| 100 members  | 5,000         | **$25-35**     |
+| 500 members  | 25,000        | **$120-150**   |
+| 1000 members | 50,000        | **$250-300**   |
 
 ---
 
 ## Implementation Checklist
 
 ### Prerequisites
+
 - [ ] Supabase account with PostgreSQL database
 - [ ] OpenAI API key for embeddings
 - [ ] DeepInfra API key (already configured)
@@ -921,6 +1007,7 @@ describe('Performance', () => {
 - [ ] Node.js dependencies installed
 
 ### Phase 1: Foundation
+
 - [ ] Create database schema
 - [ ] Install pgvector extension
 - [ ] Import CSV data
@@ -928,36 +1015,42 @@ describe('Performance', () => {
 - [ ] Create indexes
 
 ### Phase 2: Core Search
+
 - [ ] Implement `/api/search/members` endpoint
 - [ ] Add filtering logic
 - [ ] Add pagination
 - [ ] Write tests
 
 ### Phase 3: Semantic Search
+
 - [ ] Integrate OpenAI embeddings
 - [ ] Implement vector search
 - [ ] Add hybrid search
 - [ ] Optimize performance
 
 ### Phase 4: NLP
+
 - [ ] Implement intent detection
 - [ ] Add entity extraction
 - [ ] Create query parser
 - [ ] Test with sample queries
 
 ### Phase 5: Response Generation
+
 - [ ] Design response templates
 - [ ] Implement LLM response generation
 - [ ] Format member data
 - [ ] Handle edge cases
 
 ### Phase 6: Integration
+
 - [ ] WhatsApp webhook setup
 - [ ] Message formatting
 - [ ] Conversation state
 - [ ] Testing
 
 ### Phase 7: Polish
+
 - [ ] End-to-end testing
 - [ ] Performance optimization
 - [ ] Documentation
@@ -977,13 +1070,13 @@ describe('Performance', () => {
 
 ## Success Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Search Accuracy | >85% | User satisfaction surveys |
-| Response Time | <2 seconds | API monitoring |
-| Coverage | 100% | All 48 members searchable |
-| Uptime | >99% | Server monitoring |
-| User Engagement | 50% monthly active | Usage analytics |
+| Metric          | Target             | Measurement               |
+| --------------- | ------------------ | ------------------------- |
+| Search Accuracy | >85%               | User satisfaction surveys |
+| Response Time   | <2 seconds         | API monitoring            |
+| Coverage        | 100%               | All 48 members searchable |
+| Uptime          | >99%               | Server monitoring         |
+| User Engagement | 50% monthly active | Usage analytics           |
 
 ---
 

@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { analyticsAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, Search, Activity, Clock } from 'lucide-react';
+import { Users, Search, Activity, Clock, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Dashboard() {
+    const navigate = useNavigate()
     const { data: analytics, isLoading } = useQuery({
         queryKey: ['analytics'],
         queryFn: async () => {
@@ -12,6 +15,12 @@ export function Dashboard() {
             return response.data;
         },
     });
+
+    const handleCreateGroup = () => {
+        // TODO: Implement create group functionality
+        console.log('Create new group');
+        navigate("/groups/new")
+    };
 
     if (isLoading) {
         return (
@@ -79,6 +88,46 @@ export function Dashboard() {
                     );
                 })}
             </div>
+
+            {/* Groups Table */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle>Groups</CardTitle>
+                    {/* <Link to="/groups/new"></Link> */}
+                    <Button onClick={handleCreateGroup} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Group
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left p-3 text-sm font-medium">Group Name</th>
+                                <th className="text-left p-3 text-sm font-medium">Description</th>
+                                <th className="text-right p-3 text-sm font-medium">Total Members</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {analytics?.groups && analytics.groups.length > 0 ? (
+                                analytics.groups.map((group, index) => (
+                                    <tr key={index} className="border-b hover:bg-muted/50">
+                                        <td className="p-3 text-sm font-medium">{group.name}</td>
+                                        <td className="p-3 text-sm text-muted-foreground">{group.description}</td>
+                                        <td className="p-3 text-sm text-muted-foreground text-right">{group.totalMembers}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={3} className="p-8 text-center text-muted-foreground">
+                                        No groups found. Click "Add Group" to create one.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </CardContent>
+            </Card>
 
             {/* Charts */}
             <div className="grid gap-4 md:grid-cols-2">

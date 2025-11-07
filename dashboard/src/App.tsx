@@ -9,6 +9,8 @@ import { Chat } from './pages/Chat';
 import { PhoneSetter } from './components/PhoneSetter';
 import { useState } from 'react';
 import { getUserPhone } from './lib/auth';
+import { GroupForm } from './pages/GroupForm';
+import { Groups } from './pages/Groups';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +32,9 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
+           <Route path="/groups" element={<Layout><Groups /></Layout>} />
+          <Route path="/groups/:id" element={<Layout><GroupForm /></Layout>} />
+          <Route path="/groups/:id/edit" element={<Layout><GroupForm /></Layout>} />
           <Route path="/members" element={<Layout><Members /></Layout>} />
           <Route path="/members/:id" element={<Layout><MemberForm /></Layout>} />
           <Route path="/members/:id/edit" element={<Layout><MemberForm /></Layout>} />
