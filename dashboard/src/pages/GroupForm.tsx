@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Upload, UserPlus, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
+interface Member {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string;
+}
+
 interface NewMember {
     name: string;
     phone: string;
@@ -25,7 +32,8 @@ export function GroupForm() {
         description: ''
     });
 
-    const [members, setMembers] = useState<NewMember[]>([]);
+    const [existingMembers, setExistingMembers] = useState<Member[]>([]);
+    const [newMembers, setNewMembers] = useState<NewMember[]>([]);
     const [showAddMember, setShowAddMember] = useState(false);
     const [newMember, setNewMember] = useState<NewMember>({
         name: '',
@@ -34,7 +42,7 @@ export function GroupForm() {
     });
 
     // Fetch single group for editing
-    const { data: groupResponse } = useQuery({
+    const { data: groupResponse, isLoading } = useQuery({
         queryKey: ['group', id],
         queryFn: async () => {
             const response = await groupAPI.getById(id!);
@@ -51,8 +59,8 @@ export function GroupForm() {
                 name: group.name || '',
                 description: group.description || ''
             });
-            // Note: existing member IDs from the group are not loaded
-            // as we're creating a NEW members list
+            // Set existing members from the group
+            setExistingMembers(group.members || []);
         }
     }, [group]);
 
@@ -60,24 +68,33 @@ export function GroupForm() {
         mutationFn: async (data: { name: string; description: string; members: NewMember[] }) => {
             console.log('Mutation function called with:', data);
             
-            // For now, we'll just save the group info
-            // You may need to create members first, then add their IDs to the group
-            const groupData = {
-                name: data.name,
-                description: data.description,
-                members: [] // Empty for now - you'll need to create members first
-            };
-
             if (isEdit) {
                 console.log('Updating group:', id);
-                return groupAPI.update(id!, groupData);
+                // Update group name and description
+                await groupAPI.update(id!, {
+                    name: data.name,
+                    description: data.description
+                });
+                
+                // If there are NEW members to add, add them
+                if (data.members.length > 0) {
+                    console.log('Adding new members to group:', data.members);
+                    await groupAPI.addMembers(id!, data.members);
+                }
+                
+                return { success: true };
+            } else {
+                console.log('Creating new group');
+                return groupAPI.create({
+                    name: data.name,
+                    description: data.description
+                });
             }
-            console.log('Creating new group');
-            return groupAPI.create(groupData);
         },
         onSuccess: (response) => {
             console.log('Group saved successfully:', response);
             queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['group', id] });
             navigate('/groups');
         },
         onError: (error: any) => {
@@ -95,11 +112,11 @@ export function GroupForm() {
         const dataToSend = {
             name: formData.name.trim(),
             description: formData.description.trim(),
-            members: isEdit ? members : [] // Only include members when editing
+            members: isEdit ? newMembers : [] // Only send NEW members to add
         };
         
         console.log('Submitting group data:', dataToSend);
-        console.log('Members to add:', members);
+        console.log('Existing members will remain:', existingMembers.length);
         
         saveMutation.mutate(dataToSend);
     };
@@ -118,13 +135,23 @@ export function GroupForm() {
             return;
         }
 
-        setMembers(prev => [...prev, { ...newMember }]);
+        // Check if phone already exists in existing or new members
+        const phoneExists = [...existingMembers, ...newMembers].some(
+            m => m.phone === newMember.phone
+        );
+
+        if (phoneExists) {
+            alert('A member with this phone number already exists in this group');
+            return;
+        }
+
+        setNewMembers(prev => [...prev, { ...newMember }]);
         setNewMember({ name: '', phone: '', email: '' });
         setShowAddMember(false);
     };
 
-    const handleRemoveMember = (index: number) => {
-        setMembers(prev => prev.filter((_, i) => i !== index));
+    const handleRemoveNewMember = (index: number) => {
+        setNewMembers(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,23 +164,34 @@ export function GroupForm() {
                 const text = event.target?.result as string;
                 const lines = text.split('\n');
                 
-                // Skip header row and process data
-                const newMembers: NewMember[] = [];
+                const uploadedMembers: NewMember[] = [];
+                const existingPhones = [...existingMembers, ...newMembers].map(m => m.phone);
+                let skipped = 0;
+
                 for (let i = 1; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
                     
-                    // CSV format: name,phone,email
                     const [name, phone, email] = line.split(',').map(s => s.trim());
                     if (name && phone) {
-                        newMembers.push({ name, phone, email: email || '' });
+                        // Skip if phone already exists
+                        if (existingPhones.includes(phone)) {
+                            skipped++;
+                            continue;
+                        }
+                        uploadedMembers.push({ name, phone, email: email || '' });
+                        existingPhones.push(phone); // Add to check for duplicates within CSV
                     }
                 }
 
-                setMembers(prev => [...prev, ...newMembers]);
-                alert(`Added ${newMembers.length} members from CSV`);
+                setNewMembers(prev => [...prev, ...uploadedMembers]);
                 
-                // Reset file input
+                let message = `Added ${uploadedMembers.length} members from CSV`;
+                if (skipped > 0) {
+                    message += ` (${skipped} skipped - already in group)`;
+                }
+                alert(message);
+                
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                 }
@@ -164,6 +202,16 @@ export function GroupForm() {
         };
         reader.readAsText(file);
     };
+
+    const totalMembers = existingMembers.length + newMembers.length;
+
+    if (isLoading && isEdit) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-muted-foreground">Loading group...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
@@ -178,7 +226,7 @@ export function GroupForm() {
                         {isEdit ? 'Edit Group' : 'New Group'}
                     </h1>
                     <p className="text-muted-foreground mt-2">
-                        {isEdit ? 'Update group information and add members' : 'Add a new group to the community'}
+                        {isEdit ? 'Update group information and manage members' : 'Add a new group to the community'}
                     </p>
                 </div>
             </div>
@@ -217,7 +265,14 @@ export function GroupForm() {
                             {isEdit && (
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium">Members ({members.length})</label>
+                                        <label className="text-sm font-medium">
+                                            Members ({totalMembers})
+                                            {existingMembers.length > 0 && (
+                                                <span className="text-muted-foreground ml-2">
+                                                    ({existingMembers.length} existing, {newMembers.length} new)
+                                                </span>
+                                            )}
+                                        </label>
                                         <div className="flex gap-2">
                                             <Button
                                                 type="button"
@@ -299,14 +354,44 @@ export function GroupForm() {
                                         </Card>
                                     )}
 
-                                    {/* Members List */}
-                                    {members.length > 0 && (
+                                    {/* Existing Members List */}
+                                    {existingMembers.length > 0 && (
                                         <div className="border rounded-md">
-                                            <div className="p-3 border-b bg-muted/30">
-                                                <div className="text-sm font-medium">Added Members:</div>
+                                            <div className="p-3 border-b bg-muted/50">
+                                                <div className="text-sm font-medium">Current Members:</div>
                                             </div>
                                             <div className="divide-y">
-                                                {members.map((member, index) => (
+                                                {existingMembers.map((member) => (
+                                                    <div
+                                                        key={member.id}
+                                                        className="flex items-center justify-between p-3 bg-background"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="text-sm font-medium">{member.name}</div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {member.phone}
+                                                                {member.email && ` • ${member.email}`}
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground px-2">
+                                                            Existing
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* New Members to Add List */}
+                                    {newMembers.length > 0 && (
+                                        <div className="border rounded-md">
+                                            <div className="p-3 border-b bg-green-50 dark:bg-green-950">
+                                                <div className="text-sm font-medium text-green-800 dark:text-green-200">
+                                                    New Members to Add:
+                                                </div>
+                                            </div>
+                                            <div className="divide-y">
+                                                {newMembers.map((member, index) => (
                                                     <div
                                                         key={index}
                                                         className="flex items-center justify-between p-3 hover:bg-muted/30"
@@ -322,7 +407,7 @@ export function GroupForm() {
                                                             type="button"
                                                             variant="ghost"
                                                             size="icon"
-                                                            onClick={() => handleRemoveMember(index)}
+                                                            onClick={() => handleRemoveNewMember(index)}
                                                         >
                                                             <X className="h-4 w-4 text-destructive" />
                                                         </Button>
@@ -332,7 +417,6 @@ export function GroupForm() {
                                         </div>
                                     )}
 
-                                    {/* CSV Format Help */}
                                     <p className="text-xs text-muted-foreground">
                                         💡 Tip: For bulk upload, use CSV format: name,phone,email (one per line, header row required)
                                     </p>

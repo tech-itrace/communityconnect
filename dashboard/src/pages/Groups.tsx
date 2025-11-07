@@ -97,7 +97,7 @@ export function Groups() {
                                         <td className="p-3 text-sm text-muted-foreground text-right">
                                             <span className="inline-flex items-center gap-1">
                                                 <Users className="h-3 w-3" />
-                                                {group.members || 0}
+                                                {group.members.length || 0}
                                             </span>
                                         </td>
                                         <td className="p-3">

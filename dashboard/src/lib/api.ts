@@ -190,7 +190,10 @@ export const groupAPI = {
     
     // Delete group
     delete: (id: string) => 
-        api.delete(`/api/groups/${id}`)
+        api.delete(`/api/groups/${id}`),
+
+    addMembers: (groupId: string, members: Array<{ name: string; phone: string; email?: string }>) => 
+        api.post(`/api/groups/${groupId}/members`, { members }),
 };
 
 export const memberAPI = {
