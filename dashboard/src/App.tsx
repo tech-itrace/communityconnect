@@ -36,6 +36,7 @@ function App() {
           <Route path="/groups/:id" element={<Layout><GroupForm /></Layout>} />
           <Route path="/groups/:id/edit" element={<Layout><GroupForm /></Layout>} />
           <Route path="/members" element={<Layout><Members /></Layout>} />
+          <Route path="/members/:groupId" element={<Layout><Members /></Layout>} />
           <Route path="/members/:id" element={<Layout><MemberForm /></Layout>} />
           <Route path="/members/:id/edit" element={<Layout><MemberForm /></Layout>} />
           <Route path="/chat" element={<Layout><Chat /></Layout>} />

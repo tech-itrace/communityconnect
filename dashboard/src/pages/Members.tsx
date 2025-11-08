@@ -1,40 +1,67 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { memberAPI, type Member } from '@/lib/api';
+import { memberAPI, groupAPI, type Member } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Eye, Upload } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Upload, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BulkImportDialog } from '@/components/BulkImportDialog';
+// import { Badge } from '@/components/ui/badge';
 
 export function Members() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showImportDialog, setShowImportDialog] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
     const queryClient = useQueryClient();
+    
+    const groupId = searchParams.get('groupId');
 
-    const { data: members, isLoading } = useQuery({
-        queryKey: ['members'],
+    // const { data: members, isLoading } = useQuery({
+    //     queryKey: ['members'],
+    //     queryFn: async () => {
+    //         const response = await memberAPI.getAll();
+    //         return response.data.members || [];
+    //     },
+    // });
+
+    // Fetch group details if groupId is present
+    const { data: groupData, isLoading } = useQuery({
+        queryKey: ['group', groupId],
         queryFn: async () => {
-            const response = await memberAPI.getAll();
-            // API returns { success, members, pagination }
-            // Extract just the members array
-            return response.data.members || [];
+            if (!groupId) return null;
+            const response = await groupAPI.getById(groupId);
+            return response.data;
         },
+        enabled: !!groupId,
     });
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => memberAPI.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['members'] });
+            if (groupId) {
+                queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+            }
         },
     });
-
-    const filteredMembers = members?.filter((member) =>
+console.log("groupData:" + JSON.stringify(groupData))
+    // Filter members based on group if groupId is present
+    const displayMembers = groupData?.group.members;
+    // if (groupId && groupData?.members) {
+    //     const groupMemberIds = new Set(groupData.members.map((m: any) => m.id));
+    //     displayMembers = groupData?.members?.filter((member) => groupMemberIds.has(member.id));
+    // }
+console.log("displayMembers:" + JSON.stringify(displayMembers))
+    const filteredMembers = displayMembers?.filter((member) =>
         member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.phone.includes(searchQuery) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+console.log("filteredMembers:" + JSON.stringify(filteredMembers))
+    const handleClearFilter = () => {
+        setSearchParams({});
+    };
 
     const handleDelete = (id: string, name: string) => {
         if (window.confirm(`Are you sure you want to delete ${name}?`)) {
@@ -54,10 +81,25 @@ export function Members() {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Members</h1>
+                    <h1 className="text-3xl font-bold">Members - {groupData?.group.name}</h1>
                     <p className="text-muted-foreground mt-2">
                         Manage your community members
                     </p>
+                    {/* {groupData && (
+                        <Badge variant="secondary" className="mt-2">
+                        <>                            Filtered by: {groupData.name}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 ml-2 p-0"
+                                onClick={handleClearFilter}
+                            >
+                                <X className="h-3 w-3" />
+                            </Button>
+                            </>
+
+                        </Badge>
+                    )} */}
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => setShowImportDialog(true)}>
@@ -103,7 +145,7 @@ export function Members() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredMembers?.map((member) => (
+                                {displayMembers?.map((member) => (
                                     <tr key={member.id} className="border-b hover:bg-muted/50">
                                         <td className="p-3 text-sm font-medium">{member.name}</td>
                                         <td className="p-3 text-sm text-muted-foreground">{member.phone}</td>

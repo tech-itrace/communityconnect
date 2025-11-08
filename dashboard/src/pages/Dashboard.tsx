@@ -1,13 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
-import { analyticsAPI } from '@/lib/api';
+import { analyticsAPI, groupAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, Search, Activity, Clock, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 export function Dashboard() {
+     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate()
+
+    const { data: groups } = useQuery({
+        queryKey: ['groups'],
+        queryFn: async () => {
+            const response = await groupAPI.getAll();
+            return response.data.groups || [];
+        },
+    });
+
+    const filteredGroups = groups?.filter((group) =>
+        group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        group.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+   
     const { data: analytics, isLoading } = useQuery({
         queryKey: ['analytics'],
         queryFn: async () => {
@@ -19,7 +35,7 @@ export function Dashboard() {
     const handleCreateGroup = () => {
         // TODO: Implement create group functionality
         console.log('Create new group');
-        navigate("/groups/new")
+        navigate('/groups/new')
     };
 
     if (isLoading) {
@@ -103,14 +119,14 @@ export function Dashboard() {
                     <table className="w-full">
                         <thead>
                             <tr className="border-b">
-                                <th className="text-left p-3 text-sm font-medium">Group Name</th>
+                                <th className="text-left p-3 text-sm font-medium">Name</th>
                                 <th className="text-left p-3 text-sm font-medium">Description</th>
                                 <th className="text-right p-3 text-sm font-medium">Total Members</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {analytics?.groups && analytics.groups.length > 0 ? (
-                                analytics.groups.map((group, index) => (
+                            {filteredGroups && filteredGroups.length > 0 ? (
+                                filteredGroups.map((group, index) => (
                                     <tr key={index} className="border-b hover:bg-muted/50">
                                         <td className="p-3 text-sm font-medium">{group.name}</td>
                                         <td className="p-3 text-sm text-muted-foreground">{group.description}</td>

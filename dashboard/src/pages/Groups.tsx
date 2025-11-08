@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Edit, Trash2, Eye, Users } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function Groups() {
     const [searchQuery, setSearchQuery] = useState('');
     const queryClient = useQueryClient();
+    const navigate = useNavigate()
 
     const { data: groups, isLoading } = useQuery({
         queryKey: ['groups'],
@@ -46,6 +47,7 @@ export function Groups() {
             </div>
         );
     }
+
 
     return (
         <div className="space-y-8">
@@ -95,10 +97,12 @@ export function Groups() {
                                         <td className="p-3 text-sm font-medium">{group.name}</td>
                                         <td className="p-3 text-sm text-muted-foreground">{group.description || '-'}</td>
                                         <td className="p-3 text-sm text-muted-foreground text-right">
+                                              <Link to={`/members?groupId=${group.id}`}>
                                             <span className="inline-flex items-center gap-1">
                                                 <Users className="h-3 w-3" />
                                                 {group.members.length || 0}
                                             </span>
+                                            </Link>
                                         </td>
                                         <td className="p-3">
                                             <div className="flex items-center justify-end gap-2">
