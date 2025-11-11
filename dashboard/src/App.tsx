@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { getUserPhone } from './lib/auth';
 import { GroupForm } from './pages/GroupForm';
 import { Groups } from './pages/Groups';
+import { SignUp } from './pages/SignUp';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,8 +32,10 @@ function App() {
         {!hasPhone && <PhoneSetter onPhoneSet={() => setHasPhone(true)} />}
 
         <Routes>
+           <Route path="/signup" element={<SignUp />} />
+
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
-           <Route path="/groups" element={<Layout><Groups /></Layout>} />
+          <Route path="/groups" element={<Layout><Groups /></Layout>} />
           <Route path="/groups/:id" element={<Layout><GroupForm /></Layout>} />
           <Route path="/groups/:id/edit" element={<Layout><GroupForm /></Layout>} />
           <Route path="/members" element={<Layout><Members /></Layout>} />
