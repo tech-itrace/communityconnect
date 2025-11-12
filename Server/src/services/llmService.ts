@@ -150,127 +150,287 @@ Return ONLY valid JSON, no explanation or markdown formatting.`;
 /**
  * Generate conversational response based on search results
  */
+// export async function generateResponse(
+//     originalQuery: string,
+//     results: MemberSearchResult[],
+//     confidence: number
+// ): Promise<string> {
+//     const startTime = Date.now();
+//     console.log(`[LLM Service] Generating response for ${results.length} results`);
+
+//     // Handle no results
+//     if (results.length === 0) {
+//         return `I couldn't find any members matching "${originalQuery}". You might want to try searching for related skills, different locations, or browse all members.`;
+//     }
+
+//     // Prepare results summary (top 5 max)
+//     const topResults = results.slice(0, 5);
+//     const resultsSummary = topResults.map((member, idx) => {
+//         const skills = member.skills ? ` (${member.skills.split(',').slice(0, 3).join(', ')})` : '';
+//         const location = member.city ? ` - ${member.city}` : '';
+//         const org = member.organization ? ` at ${member.organization}` : '';
+//         return `${idx + 1}. ${member.name}${org}${location}${skills}`;
+//     }).join('\n');
+
+// const systemPrompt = `# Business Community Search Assistant - System Prompt
+
+// You are a friendly, professional assistant for a business networking platform. 
+// Your goal is to generate a short, conversational response based on the member search results provided.
+
+// ## OBJECTIVE
+// Generate a concise, natural summary that:
+// 1. Acknowledges the user’s search or intent.
+// 2. Mentions how many members were found.
+// 3. Displays up to 3 top matches using a clear, multi-line format.
+// 4. Sounds conversational, human-like, and professional.
+// 5. Ends with a helpful question or suggestion for next steps.
+
+// ## STYLE GUIDELINES
+// - Tone: Friendly, professional, confident.
+// - Voice: Speak naturally as “I,” the assistant.
+// - Use line breaks and bullet/numbered formatting for clarity.
+// - Skip missing fields gracefully (don’t show “undefined” or empty labels).
+
+// ## DISPLAY FORMAT
+// When presenting results, use this layout for each member:
+
+// 1️⃣ **Name:** <Full Name>  
+//    **Email:** <Email Address>  
+//    **Contact:** <Phone Number>  
+//    **Place:** <City or Location>
+
+// (Show up to 3 members only. If more exist, mention that there are additional matches.)
+
+// ## SPECIAL CASES
+// - **1 result:** Present full details in the display format.
+// - **2–5 results:** Show all results in the display format.
+// - **6+ results:** Say “I found several members” and show the top 3.
+// - **No results:** Politely acknowledge that and suggest refining the search.
+
+// ## OUTPUT EXAMPLES
+
+// **Example 1 (Single Result):**
+// I found one member matching your search:
+
+// **Name:** John Doe  
+// **Email:** john.doe@example.com  
+// **Contact:** +91 98765 43210  
+// **Place:** Chennai  
+
+// Would you like me to help you connect with John?
+
+// **Example 2 (Multiple Results):**
+// I found 5 members in Chennai with AI expertise. Here are the top matches:
+
+// 1️⃣ **Name:** Sarah Lee  
+//    **Email:** sarah.lee@bizconnect.com  
+//    **Contact:** +91 90234 56789  
+//    **Place:** Chennai  
+
+// 2️⃣ **Name:** Ravi Kumar  
+//    **Email:** ravi.kumar@innoventures.in  
+//    **Contact:** +91 98765 43210  
+//    **Place:** Coimbatore  
+
+// 3️⃣ **Name:** Priya Menon  
+//    **Email:** priya.menon@brandhive.com  
+//    **Place:** Bengaluru  
+
+// Would you like to view more results or connect with any of them?`
+
+
+//     const userMessage = `Original Query: "${originalQuery}"
+// Number of Results: ${results.length}
+// Top Matches:
+// ${resultsSummary}
+
+// Generate a natural response:`;
+
+//     try {
+//         const response = await callLLM(systemPrompt, userMessage, 0.7);
+//         const duration = Date.now() - startTime;
+//         console.log(`[LLM Service] ✓ Response generated in ${duration}ms`);
+//         return response;
+//     } catch (error: any) {
+//         console.error('[LLM Service] Failed to generate response:', error.message);
+//         // Fallback response
+//         if (results.length === 1) {
+//             return `I found 1 member matching your search: ${results[0].name}${results[0].city ? ` from ${results[0].city}` : ''}. Would you like more details?`;
+//         } else {
+//             const topNames = topResults.map(r => r.name).slice(0, 3).join(', ');
+//             return `I found ${results.length} members matching your search. Top matches include ${topNames}. Would you like to refine your search or see more details?`;
+//         }
+//     }
+// }
+
 export async function generateResponse(
-    originalQuery: string,
-    results: MemberSearchResult[],
-    confidence: number
+  originalQuery: string,
+  results: MemberSearchResult[],
+  confidence: number
 ): Promise<string> {
-    const startTime = Date.now();
-    console.log(`[LLM Service] Generating response for ${results.length} results`);
+  const startTime = Date.now();
+  console.log(`[LLM Service] Generating verified response for ${results.length} results`);
 
-    // Handle no results
-    if (results.length === 0) {
-        return `I couldn't find any members matching "${originalQuery}". You might want to try searching for related skills, different locations, or browse all members.`;
-    }
+  // 🧩 Handle empty results
+  if (results.length === 0) {
+    return `I couldn't find any members matching "${originalQuery}". Try searching with different keywords or locations.`;
+  }
 
-    // Prepare results summary (top 5 max)
-    const topResults = results.slice(0, 5);
-    const resultsSummary = topResults.map((member, idx) => {
-        const skills = member.skills ? ` (${member.skills.split(',').slice(0, 3).join(', ')})` : '';
-        const location = member.city ? ` - ${member.city}` : '';
-        const org = member.organization ? ` at ${member.organization}` : '';
-        return `${idx + 1}. ${member.name}${org}${location}${skills}`;
-    }).join('\n');
+  // 🧠 Prepare ALL results (no limit)
+  const safeResults = results.map((m, i) => ({
+    id: i + 1,
+    name: m.name || "",
+    email: m.email || "",
+    phone: m.phone || "",
+    city: m.city || "",
+    organization: m.organization || "",
+    designation: m.designation || "",
+    degree: m.degree || "",
+    yearOfGraduation: m.yearOfGraduation || "",
+    skills: m.skills || "",
+  }));
 
-    const systemPrompt = `You are a helpful assistant for a business community network. Generate a natural, conversational response based on the search results.
+  const systemPrompt = `
+# Community Connect - Member Search Assistant
 
-Generate a response that:
-1. Acknowledges the user's request
-2. Summarizes what was found (mention the count)
-3. Highlights top matches (names, key skills, locations)
-4. Is friendly and professional
-5. Is 2-3 sentences long
-6. Ends with a helpful question or suggestion
+You are a helpful assistant for a professional alumni community directory.
 
-Example: "I found 5 members in Chennai with AI expertise. The top matches include John Doe (CEO with ML experience at TechCorp), Jane Smith (AI Consultant), and Mike Johnson (Data Scientist). Would you like more details about any of them?"
+## YOUR ROLE
+Present ALL verified member search results in a simple, comma-separated format.
 
-Keep it concise and natural. Do NOT use bullet points or lists in the response.`;
+## OUTPUT FORMAT (CRITICAL)
+Use this EXACT format for each member:
 
-    const userMessage = `Original Query: "${originalQuery}"
-Number of Results: ${results.length}
-Top Matches:
-${resultsSummary}
+1. [Name], [Email], [Phone], [City]
+2. [Name], [Email], [Phone], [City]
+3. [Name], [Email], [Phone], [City]
 
-Generate a natural response:`;
+## FORMATTING RULES
+1. Start with number followed by period (1. 2. 3. etc.)
+2. Separate each field with a comma and space (, )
+3. Each member on a new line
+4. NO bold text, NO asterisks, NO extra formatting
+5. If a field is empty, skip it - don't show commas for missing fields
+6. Never show "undefined", "null", "N/A", or "Na"
+7. Show ALL members provided - do not limit to 3
 
-    try {
-        const response = await callLLM(systemPrompt, userMessage, 0.7);
-        const duration = Date.now() - startTime;
-        console.log(`[LLM Service] ✓ Response generated in ${duration}ms`);
-        return response;
-    } catch (error: any) {
-        console.error('[LLM Service] Failed to generate response:', error.message);
-        // Fallback response
-        if (results.length === 1) {
-            return `I found 1 member matching your search: ${results[0].name}${results[0].city ? ` from ${results[0].city}` : ''}. Would you like more details?`;
-        } else {
-            const topNames = topResults.map(r => r.name).slice(0, 3).join(', ');
-            return `I found ${results.length} members matching your search. Top matches include ${topNames}. Would you like to refine your search or see more details?`;
-        }
-    }
+## CONTENT RULES
+- List every single member from the provided JSON data
+- Never fabricate or invent information
+- Keep it simple and clean
+- No introductory text needed
+- No closing questions needed
+
+## EXAMPLE OUTPUT
+1. Mrs. Fatima Mary, fatisttu@gmail.com, 918110073877, Sivakasi
+2. Mr. John Doe, john@example.com, 919876543210, Chennai
+3. Ms. Sarah Smith, sarah@test.com, 918765432109, Bangalore
+`;
+
+  const userMessage = `
+User searched for: "${originalQuery}"
+Total results found: ${results.length}
+
+ALL member data (JSON):
+${JSON.stringify(safeResults, null, 2)}
+
+List ALL members in the simple comma-separated format specified.`;
+
+  try {
+    const response = await callLLM(systemPrompt, userMessage, 0.2); // Even lower temperature for exact formatting
+    const duration = Date.now() - startTime;
+    console.log(`[LLM Service] ✓ Verified response generated in ${duration}ms`);
+    return response.trim();
+  } catch (error: any) {
+    console.error("[LLM Service] Fallback response used due to error:", error.message);
+
+    // Simple fallback with comma-separated format for ALL results
+    const fallbackList = safeResults
+      .map((r, i) => {
+        const parts = [r.name];
+        if (r.email) parts.push(r.email);
+        if (r.phone) parts.push(r.phone);
+        if (r.city) parts.push(r.city);
+        
+        return `${i + 1}. ${parts.join(', ')}`;
+      })
+      .join('\n');
+
+    return fallbackList;
+  }
 }
 
 /**
  * Generate follow-up suggestions based on query and results
  */
 export async function generateSuggestions(
-    originalQuery: string,
-    results: MemberSearchResult[]
+  originalQuery: string,
+  results: MemberSearchResult[]
 ): Promise<string[]> {
-    const startTime = Date.now();
-    console.log(`[LLM Service] Generating suggestions`);
+  const startTime = Date.now();
+  console.log(`[LLM Service] Generating refined suggestions`);
 
-    const systemPrompt = `Based on the search query and results, suggest 3 natural follow-up questions the user might ask.
+  const systemPrompt = `
+You are a professional assistant for a *business networking* platform.
+The user has searched for members based on certain criteria (like skills, location, or organization).
+Your job is to generate 3 smart, *relevant*, and *actionable* follow-up search suggestions.
 
-Generate 3 natural follow-up questions as a JSON array:
-["suggestion 1", "suggestion 2", "suggestion 3"]
+Focus on refining or extending the user's current intent.
+Use information from the search results (skills, roles, cities, organizations) to stay *on-topic*.
 
-Suggestions should be:
-- Natural and conversational
-- Relevant to the search context
-- Actionable (can be directly searched)
-- Varied (different types of refinements)
+🧭 Rules:
+- Suggestions must be realistic follow-up queries that improve or narrow the search.
+- Avoid vague, generic, or repetitive questions.
+- Never invent unrelated topics or random cities.
+- Each suggestion must make sense given the results.
+- Return ONLY a raw JSON array like: ["...", "...", "..."]
+`;
 
-Examples:
-- "Show me members with higher annual turnover"
-- "Find similar members in Bangalore"
-- "Who has experience in both AI and consulting?"
-- "List members who provide consulting services"
-- "Find members graduated after 2010"
+  // ✅ Extract contextual info from the actual results
+  const cities = Array.from(
+    new Set(results.map((r) => r.location).filter(Boolean))
+  )
+    .slice(0, 3)
+    .join(", ");
 
-Return ONLY a JSON array, no explanation or markdown formatting.`;
+  const userMessage = `
+User Query: "${originalQuery}"
+Number of members found: ${results.length}
 
-    const userMessage = `Query: "${originalQuery}"
-Results Found: ${results.length}
-${results.length > 0 ? `Top Skills: ${Array.from(new Set(results.flatMap(r => r.skills?.split(',') || []))).slice(0, 5).join(', ')}` : ''}
-${results.length > 0 ? `Cities: ${Array.from(new Set(results.map(r => r.city).filter(Boolean))).slice(0, 3).join(', ')}` : ''}
+Summary of result data:
+- Cities: ${cities || "N/A"}
 
-Generate 3 follow-up suggestions:`;
+Now, generate 3 follow-up suggestions that would make sense for this user to ask next.
+For example, refine by city, skill, or organization — only if those fields appear relevant.
+Return a clean JSON array (no markdown, no explanation).
+`;
 
-    try {
-        const response = await callLLM(systemPrompt, userMessage, 0.8);
+  try {
+    const response = await callLLM(systemPrompt, userMessage, 0.7);
 
-        // Clean response
-        let cleanedResponse = response.trim();
-        if (cleanedResponse.startsWith('```json')) {
-            cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-        } else if (cleanedResponse.startsWith('```')) {
-            cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
-        }
-
-        const suggestions = JSON.parse(cleanedResponse);
-        const duration = Date.now() - startTime;
-        console.log(`[LLM Service] ✓ Suggestions generated in ${duration}ms`);
-
-        if (Array.isArray(suggestions) && suggestions.length > 0) {
-            return suggestions.slice(0, 3);
-        }
-
-        return getFallbackSuggestions(results);
-    } catch (error: any) {
-        console.error('[LLM Service] Failed to generate suggestions:', error.message);
-        return getFallbackSuggestions(results);
+    // ✅ Clean LLM output
+    let cleanedResponse = response.trim();
+    if (cleanedResponse.startsWith("```json")) {
+      cleanedResponse = cleanedResponse
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "");
+    } else if (cleanedResponse.startsWith("```")) {
+      cleanedResponse = cleanedResponse.replace(/```\n?/g, "");
     }
+
+    const suggestions = JSON.parse(cleanedResponse);
+    const duration = Date.now() - startTime;
+    console.log(`[LLM Service] ✓ Smart suggestions generated in ${duration}ms`);
+
+    if (Array.isArray(suggestions) && suggestions.length > 0) {
+      return suggestions.slice(0, 3);
+    }
+
+    return getFallbackSuggestions(results);
+  } catch (error: any) {
+    console.error("[LLM Service] Failed to generate suggestions:", error.message);
+    return getFallbackSuggestions(results);
+  }
 }
 
 /**

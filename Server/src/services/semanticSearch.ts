@@ -318,6 +318,55 @@ async function keywordSearchOnly(
 /**
  * Hybrid search: Combines semantic and keyword search
  */
+// export async function hybridSearch(
+//     searchQuery: string,
+//     filters: SearchFilters = {},
+//     options: SearchOptions = {}
+// ): Promise<{ members: ScoredMember[]; totalCount: number }> {
+//     const startTime = Date.now();
+
+//     const page = options.page || DEFAULT_PAGE;
+//     const limit = Math.min(options.limit || DEFAULT_LIMIT, MAX_LIMIT);
+//     const offset = (page - 1) * limit;
+
+//     console.log(`[Semantic Search] Starting hybrid search for: "${searchQuery}"`);
+//     console.log(`[Semantic Search] Filters:`, filters);
+//     console.log(`[Semantic Search] Page: ${page}, Limit: ${limit}`);
+
+//     // Generate embedding for the query
+//     const embedding = await generateQueryEmbedding(searchQuery);
+
+//     // Execute both searches in parallel
+//     const [semanticResults, keywordResults] = await Promise.all([
+//         semanticSearchOnly(embedding, filters, limit * 2, 0), // Get more results for merging
+//         keywordSearchOnly(searchQuery, filters, limit * 2, 0)
+//     ]);
+
+//     console.log(`[Semantic Search] Semantic results: ${semanticResults.length}`);
+//     console.log(`[Semantic Search] Keyword results: ${keywordResults.length}`);
+
+//     // Merge and score results
+//     const mergedResults = mergeResults(semanticResults, keywordResults);
+
+//     // Get total count for pagination
+//     const totalCount = await getTotalCount(searchQuery, embedding, filters);
+
+//     // Apply sorting
+//     const sortedResults = sortResults(mergedResults, options.sortBy, options.sortOrder);
+
+//     // Apply pagination
+//     const paginatedResults = sortedResults.slice(0, limit);
+
+//     const duration = Date.now() - startTime;
+//     console.log(`[Semantic Search] Hybrid search completed in ${duration}ms`);
+//     console.log(`[Semantic Search] Returning ${paginatedResults.length} results (total: ${totalCount})`);
+
+//     return {
+//         members: paginatedResults,
+//         totalCount
+//     };
+// }
+
 export async function hybridSearch(
     searchQuery: string,
     filters: SearchFilters = {},
@@ -338,7 +387,7 @@ export async function hybridSearch(
 
     // Execute both searches in parallel
     const [semanticResults, keywordResults] = await Promise.all([
-        semanticSearchOnly(embedding, filters, limit * 2, 0), // Get more results for merging
+        semanticSearchOnly(embedding, filters, limit * 2, 0),
         keywordSearchOnly(searchQuery, filters, limit * 2, 0)
     ]);
 
@@ -346,16 +395,26 @@ export async function hybridSearch(
     console.log(`[Semantic Search] Keyword results: ${keywordResults.length}`);
 
     // Merge and score results
-    const mergedResults = mergeResults(semanticResults, keywordResults);
+    const mergedResults = mergeResults(semanticResults, keywordResults, searchQuery);
 
-    // Get total count for pagination
-    const totalCount = await getTotalCount(searchQuery, embedding, filters);
+    // Filter for exact matches if searching for a person
+    let filteredResults = filterForPersonSearch(mergedResults, searchQuery);
+    
+    // Additional filter: If only 1 exact match found, return only that
+    const exactMatches = filteredResults.filter(m => m.isExactMatch);
+    if (exactMatches.length === 1) {
+        console.log(`[Semantic Search] Single exact match found, returning only that member`);
+        filteredResults = exactMatches;
+    }
 
     // Apply sorting
-    const sortedResults = sortResults(mergedResults, options.sortBy, options.sortOrder);
+    const sortedResults = sortResults(filteredResults, options.sortBy, options.sortOrder);
 
     // Apply pagination
     const paginatedResults = sortedResults.slice(0, limit);
+
+    // Get total count
+    const totalCount = filteredResults.length;
 
     const duration = Date.now() - startTime;
     console.log(`[Semantic Search] Hybrid search completed in ${duration}ms`);
@@ -368,38 +427,168 @@ export async function hybridSearch(
 }
 
 /**
+ * Check if a member is an exact match for the search query
+ */
+function isExactMatch(member: any, searchQuery: string): boolean {
+    const query = searchQuery.toLowerCase().trim();
+    const searchTerms = query.split(/\s+/);
+    const memberName = member.name?.toLowerCase().trim() || '';
+    const nameWords = memberName.split(/\s+/).filter((word: string) => word.length > 0);
+    
+    // Remove common prefixes/titles for comparison
+    const cleanNameWords = nameWords.filter((word: string) => 
+        !['mr', 'mrs', 'ms', 'dr', 'prof'].includes(word.replace(/[.,]/g, ''))
+    );
+    
+    // 1. Check exact full name match (ignoring titles)
+    const cleanFullName = cleanNameWords.join(' ');
+    if (cleanFullName === query) {
+        return true;
+    }
+    
+    // Also check with original name
+    if (memberName === query) {
+        return true;
+    }
+    
+    // 2. For single word searches - must be an EXACT standalone word
+    if (searchTerms.length === 1) {
+        const singleTerm = searchTerms[0];
+        
+        // Check if it's an exact match with any complete name word
+        const exactWordMatch = cleanNameWords.some((word: string) => {
+            // Remove punctuation from word
+            const cleanWord = word.replace(/[.,]/g, '');
+            return cleanWord === singleTerm;
+        });
+        
+        if (!exactWordMatch) {
+            return false;
+        }
+        
+        // Additional verification: Must be a primary name component
+        // For "fatima" search, match "Fatima Mary" but not "Ramanand" 
+        const firstWord = cleanNameWords[0]?.replace(/[.,]/g, '');
+        const lastWord = cleanNameWords[cleanNameWords.length - 1]?.replace(/[.,]/g, '');
+        
+        // Only match if the search term is the first OR last name
+        return firstWord === singleTerm || lastWord === singleTerm;
+    }
+    
+    // 3. For multi-word searches - all terms must exactly match name words
+    if (searchTerms.length > 1) {
+        const allTermsMatch = searchTerms.every((term: string) => 
+            cleanNameWords.some((word: string) => word.replace(/[.,]/g, '') === term)
+        );
+        
+        if (allTermsMatch) {
+            return true;
+        }
+    }
+    
+    // 4. Check exact email match
+    if (member.email?.toLowerCase().trim() === query) {
+        return true;
+    }
+    
+    // 5. Check exact phone match (remove all formatting)
+    const cleanPhone = member.phone?.replace(/[\s\-\(\)+]/g, '');
+    const cleanQuery = query.replace(/[\s\-\(\)+]/g, '');
+    if (cleanPhone && cleanPhone === cleanQuery) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
  * Merge results from semantic and keyword searches with weighted scoring
  */
-function mergeResults(semanticResults: ScoredMember[], keywordResults: ScoredMember[]): ScoredMember[] {
+// function mergeResults(semanticResults: ScoredMember[], keywordResults: ScoredMember[]): ScoredMember[] {
+//     const memberMap = new Map<string, ScoredMember>();
+
+//     // Add semantic results
+//     for (const member of semanticResults) {
+//         memberMap.set(member.id, {
+//             ...member,
+//             relevanceScore: (member.semanticScore || 0) * SEMANTIC_WEIGHT
+//         });
+//     }
+
+//     // Merge keyword results
+//     for (const member of keywordResults) {
+//         const existing = memberMap.get(member.id);
+//         if (existing) {
+//             // Combine scores
+//             existing.relevanceScore =
+//                 (existing.semanticScore || 0) * SEMANTIC_WEIGHT +
+//                 (member.keywordScore || 0) * KEYWORD_WEIGHT;
+//             existing.keywordScore = member.keywordScore;
+//             // Merge matched fields
+//             existing.matchedFields = Array.from(new Set([
+//                 ...existing.matchedFields,
+//                 ...member.matchedFields
+//             ]));
+//         } else {
+//             // Add new member with keyword score only
+//             memberMap.set(member.id, {
+//                 ...member,
+//                 relevanceScore: (member.keywordScore || 0) * KEYWORD_WEIGHT
+//             });
+//         }
+//     }
+
+//     return Array.from(memberMap.values());
+// }
+
+function mergeResults(
+    semanticResults: ScoredMember[], 
+    keywordResults: ScoredMember[],
+    searchQuery: string
+): ScoredMember[] {
     const memberMap = new Map<string, ScoredMember>();
 
     // Add semantic results
     for (const member of semanticResults) {
+        const isExact = isExactMatch(member, searchQuery);
+        if (isExact) {
+            console.log(`[Semantic Search] Exact match found: ${member.name}`);
+        }
         memberMap.set(member.id, {
             ...member,
-            relevanceScore: (member.semanticScore || 0) * SEMANTIC_WEIGHT
+            relevanceScore: isExact ? 1.0 : (member.semanticScore || 0) * SEMANTIC_WEIGHT,
+            isExactMatch: isExact
         });
     }
 
     // Merge keyword results
     for (const member of keywordResults) {
         const existing = memberMap.get(member.id);
+        const isExact = isExactMatch(member, searchQuery);
+        
+        if (isExact) {
+            console.log(`[Semantic Search] Exact match found in keyword results: ${member.name}`);
+        }
+        
         if (existing) {
-            // Combine scores
-            existing.relevanceScore =
-                (existing.semanticScore || 0) * SEMANTIC_WEIGHT +
-                (member.keywordScore || 0) * KEYWORD_WEIGHT;
+            if (isExact || existing.isExactMatch) {
+                existing.relevanceScore = 1.0;
+                existing.isExactMatch = true;
+            } else {
+                existing.relevanceScore =
+                    (existing.semanticScore || 0) * SEMANTIC_WEIGHT +
+                    (member.keywordScore || 0) * KEYWORD_WEIGHT;
+            }
             existing.keywordScore = member.keywordScore;
-            // Merge matched fields
             existing.matchedFields = Array.from(new Set([
                 ...existing.matchedFields,
                 ...member.matchedFields
             ]));
         } else {
-            // Add new member with keyword score only
             memberMap.set(member.id, {
                 ...member,
-                relevanceScore: (member.keywordScore || 0) * KEYWORD_WEIGHT
+                relevanceScore: isExact ? 1.0 : (member.keywordScore || 0) * KEYWORD_WEIGHT,
+                isExactMatch: isExact
             });
         }
     }
@@ -407,6 +596,61 @@ function mergeResults(semanticResults: ScoredMember[], keywordResults: ScoredMem
     return Array.from(memberMap.values());
 }
 
+/**
+ * Filter results to show only exact matches if query looks like a person's name
+ */
+function filterForPersonSearch(
+    members: ScoredMember[], 
+    searchQuery: string
+): ScoredMember[] {
+    const trimmedQuery = searchQuery.trim();
+    const words = trimmedQuery.split(/\s+/);
+    
+    // Check if query looks like a person name search
+    const hasEmailChars = /@/.test(trimmedQuery);
+    const isPhoneNumber = /^\+?[\d\s\-\(\)]+$/.test(trimmedQuery);
+    const looksLikePersonName = !hasEmailChars && !isPhoneNumber && words.length >= 1 && words.length <= 4;
+    
+    if (!looksLikePersonName) {
+        return members; // Return all results for email/phone/skill searches
+    }
+    
+    // For person name searches, ALWAYS prioritize exact matches
+    const exactMatches = members.filter(m => m.isExactMatch);
+    
+    if (exactMatches.length > 0) {
+        console.log(`[Semantic Search] Found ${exactMatches.length} exact match(es) for "${searchQuery}"`);
+        console.log(`[Semantic Search] Filtered out ${members.length - exactMatches.length} partial/semantic matches`);
+        return exactMatches;
+    }
+    
+    // No exact matches - for single word name searches, apply strict filtering
+    if (words.length === 1) {
+        // Filter out results where the name doesn't contain the search term as a standalone word
+        const strictMatches = members.filter(m => {
+            const name = m.name?.toLowerCase() || '';
+            const nameWords = name.split(/\s+/).map((w: string) => w.replace(/[.,]/g, ''));
+            return nameWords.includes(trimmedQuery.toLowerCase());
+        });
+        
+        if (strictMatches.length > 0 && strictMatches.length < members.length) {
+            console.log(`[Semantic Search] Applied strict word matching: ${strictMatches.length} results`);
+            return strictMatches;
+        }
+    }
+    
+    // If still too many results, use relevance threshold
+    if (members.length > 5) {
+        const highRelevance = members.filter(m => m.relevanceScore > 0.8);
+        if (highRelevance.length > 0) {
+            console.log(`[Semantic Search] Applied relevance filter (>0.8): ${highRelevance.length} results`);
+            return highRelevance;
+        }
+    }
+    
+    console.log(`[Semantic Search] Returning all ${members.length} results for "${searchQuery}"`);
+    return members;
+}
 /**
  * Sort results based on specified criteria
  */

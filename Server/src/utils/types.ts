@@ -119,20 +119,21 @@ export interface SearchParams {
 
 export interface MemberSearchResult {
     id: string;
-    name: string;
-    email: string;
-    phone: string;
-    city: string;
-    organization: string;
-    designation: string;
-    skills: string;
-    productsServices: string;
-    annualTurnover: number;
-    yearOfGraduation: number;
-    degree: string;
-    branch: string;
-    relevanceScore: number;
-    matchedFields: string[];
+    name?: string;
+    email?: string;
+    phone?: string;
+    city?: string;
+    organization?: string;
+    designation?: string;
+    skills?: string;
+    productsServices?: string;
+    annualTurnover?: number;
+    yearOfGraduation?: number;
+    degree?: string;
+    branch?: string;
+    relevanceScore?: number;
+    matchedFields?: string[];
+    location?: string;
 }
 
 export interface PaginationInfo {
@@ -183,6 +184,7 @@ export interface ScoredMember extends Member {
     semanticScore?: number;
     keywordScore?: number;
     matchedFields: string[];
+    isExactMatch?: boolean;
 }
 
 export interface EmbeddingResult {
