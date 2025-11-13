@@ -1,0 +1,22 @@
+{
+  "total": 4,
+  "correct": 2,
+  "partial": 0,
+  "incorrect": 2,
+  "byCategory": {
+    "alumni": {
+      "total": 3,
+      "correct": 2,
+      "partial": 0,
+      "incorrect": 2
+    }
+  },
+  "byIntent": {
+    "find_member": {
+      "total": 3,
+      "correct": 2
+    }
+  },
+  "avgConfidence": 0.675,
+  "avgResponseTime": 2158
+}
