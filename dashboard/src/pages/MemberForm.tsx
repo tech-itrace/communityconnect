@@ -6,13 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export function MemberForm() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const isEdit = id !== 'new';
-
+    const [searchParams, setSearchParams] = useSearchParams();
+    
+    const groupId = searchParams.get('groupId');
+const memberId = searchParams.get('memberId')
+console.log("groupId:" + groupId)
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
@@ -29,11 +34,11 @@ export function MemberForm() {
         queryKey: ['member', id],
         queryFn: async () => {
             const response = await memberAPI.getById(id!);
-            return response.data;
+            return response.data.member;
         },
         enabled: isEdit,
     });
-
+console.log("member:" + JSON.stringify(member))
     useEffect(() => {
         if (member) {
             setFormData({
@@ -75,7 +80,7 @@ export function MemberForm() {
     return (
         <div className="space-y-8">
             <div className="flex items-center gap-4">
-                <Link to="/members">
+                 <Link to={`/members?groupId=${groupId}`}>
                     <Button variant="ghost" size="icon">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>

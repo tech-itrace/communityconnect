@@ -17,7 +17,8 @@ import { Card } from './ui/card';
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
-    { name: 'Groups', href: '/groups', icon: Group },
+    { name: 'Community', href: '/community', icon: Group },
+    // { name: 'Groups', href: '/groups', icon: Group },
     // { name: 'Members', href: '/members', icon: Users },
     { name: 'Chat', href: '/chat', icon: MessageCircle },
     { name: 'Settings', href: '/settings', icon: Settings },
