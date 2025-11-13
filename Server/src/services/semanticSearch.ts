@@ -378,126 +378,159 @@ export async function hybridSearch(
     const limit = Math.min(options.limit || DEFAULT_LIMIT, MAX_LIMIT);
     const offset = (page - 1) * limit;
 
-    console.log(`[Semantic Search] Starting hybrid search for: "${searchQuery}"`);
-    console.log(`[Semantic Search] Filters:`, filters);
-    console.log(`[Semantic Search] Page: ${page}, Limit: ${limit}`);
+    // AGGRESSIVE query cleaning
+    const cleanedQuery = searchQuery
+        .toLowerCase()
+        .replace(/\b(who|what|where|when|why|how|whose)\b/gi, '')
+        .replace(/\b(is|are|was|were|am|be|been|being|do|does|did|have|has|had)\b/gi, '')
+        .replace(/\b(i|me|my|you|your|we|our|they|their)\b/gi, '')
+        .replace(/\b(need|want|looking|search|find|show|give|get|tell|know)\b/gi, '')
+        .replace(/\b(details?|info|information|about|of|the|and|profile|contact|data|record)\b/gi, '')
+        .replace(/\b(a|an|the|in|on|at|to|for|with|from|by)\b/gi, '')
+        .replace(/[?!.,;:]/g, '') // Remove punctuation
+        .trim()
+        .replace(/\s+/g, ' ');
 
-    // Generate embedding for the query
-    const embedding = await generateQueryEmbedding(searchQuery);
+    const finalQuery = cleanedQuery.length >= 2 ? cleanedQuery : searchQuery.trim();
+    
+    console.log(`[Semantic Search] ========== SEARCH START ==========`);
+    console.log(`[Semantic Search] Original: "${searchQuery}"`);
+    console.log(`[Semantic Search] Cleaned: "${cleanedQuery}"`);
+    console.log(`[Semantic Search] Final: "${finalQuery}"`);
+    console.log(`[Semantic Search] ==================================`);
 
-    // Execute both searches in parallel
+    const embedding = await generateQueryEmbedding(finalQuery);
+
     const [semanticResults, keywordResults] = await Promise.all([
         semanticSearchOnly(embedding, filters, limit * 2, 0),
-        keywordSearchOnly(searchQuery, filters, limit * 2, 0)
+        keywordSearchOnly(finalQuery, filters, limit * 2, 0)
     ]);
 
-    console.log(`[Semantic Search] Semantic results: ${semanticResults.length}`);
-    console.log(`[Semantic Search] Keyword results: ${keywordResults.length}`);
+    console.log(`[Semantic Search] Semantic: ${semanticResults.length}, Keyword: ${keywordResults.length}`);
 
-    // Merge and score results
-    const mergedResults = mergeResults(semanticResults, keywordResults, searchQuery);
+    const mergedResults = mergeResults(semanticResults, keywordResults, finalQuery);
 
-    // Filter for exact matches if searching for a person
-    let filteredResults = filterForPersonSearch(mergedResults, searchQuery);
+    console.log(`[Semantic Search] ========== MERGED (top 5) ==========`);
+    mergedResults.slice(0, 5).forEach((m, i) => {
+        console.log(`${i + 1}. ${m.name} | Exact: ${m.isExactMatch} | Score: ${m.relevanceScore.toFixed(3)}`);
+    });
+
+    // STRICT FILTERING: For person name searches, ONLY return exact matches
+    let filteredResults = filterForPersonSearch(mergedResults, finalQuery);
     
-    // Additional filter: If only 1 exact match found, return only that
-    const exactMatches = filteredResults.filter(m => m.isExactMatch);
-    if (exactMatches.length === 1) {
-        console.log(`[Semantic Search] Single exact match found, returning only that member`);
-        filteredResults = exactMatches;
-    }
+    console.log(`[Semantic Search] ========== AFTER FILTER ==========`);
+    console.log(`[Semantic Search] Filtered to ${filteredResults.length} results`);
+    filteredResults.slice(0, 5).forEach((m, i) => {
+        console.log(`${i + 1}. ${m.name} | Exact: ${m.isExactMatch}`);
+    });
 
-    // Apply sorting
     const sortedResults = sortResults(filteredResults, options.sortBy, options.sortOrder);
-
-    // Apply pagination
     const paginatedResults = sortedResults.slice(0, limit);
-
-    // Get total count
     const totalCount = filteredResults.length;
 
     const duration = Date.now() - startTime;
-    console.log(`[Semantic Search] Hybrid search completed in ${duration}ms`);
-    console.log(`[Semantic Search] Returning ${paginatedResults.length} results (total: ${totalCount})`);
+    console.log(`[Semantic Search] ========== FINAL ==========`);
+    console.log(`[Semantic Search] Completed in ${duration}ms`);
+    console.log(`[Semantic Search] Returning ${paginatedResults.length} of ${totalCount}`);
+    console.log(`[Semantic Search] ============================`);
 
     return {
         members: paginatedResults,
         totalCount
     };
 }
-
 /**
  * Check if a member is an exact match for the search query
  */
 function isExactMatch(member: any, searchQuery: string): boolean {
     const query = searchQuery.toLowerCase().trim();
-    const searchTerms = query.split(/\s+/);
+    const searchTerms = query.split(/\s+/).filter((t: string) => t.length > 0);
     const memberName = member.name?.toLowerCase().trim() || '';
-    const nameWords = memberName.split(/\s+/).filter((word: string) => word.length > 0);
     
-    // Remove common prefixes/titles for comparison
+    // Split name into words and remove titles
+    const nameWords = memberName
+        .split(/\s+/)
+        .map((w: string) => w.replace(/[.,]/g, ''))
+        .filter((w: string) => w.length > 0);
+    
+    // Remove common titles
     const cleanNameWords = nameWords.filter((word: string) => 
-        !['mr', 'mrs', 'ms', 'dr', 'prof'].includes(word.replace(/[.,]/g, ''))
+        !['mr', 'mrs', 'ms', 'dr', 'prof'].includes(word)
     );
     
-    // 1. Check exact full name match (ignoring titles)
     const cleanFullName = cleanNameWords.join(' ');
-    if (cleanFullName === query) {
+    
+    console.log(`[isExactMatch] Comparing "${query}" with "${memberName}" (cleaned: "${cleanFullName}")`);
+    
+    // 1. Exact full name match (with or without titles)
+    if (cleanFullName === query || memberName === query) {
+        console.log(`[isExactMatch] ✓ Full name match`);
         return true;
     }
     
-    // Also check with original name
-    if (memberName === query) {
-        return true;
-    }
-    
-    // 2. For single word searches - must be an EXACT standalone word
+    // 2. For single word searches
     if (searchTerms.length === 1) {
-        const singleTerm = searchTerms[0];
+        const searchTerm = searchTerms[0];
+        const firstWord = cleanNameWords[0];
+        const lastWord = cleanNameWords[cleanNameWords.length - 1];
         
-        // Check if it's an exact match with any complete name word
-        const exactWordMatch = cleanNameWords.some((word: string) => {
-            // Remove punctuation from word
-            const cleanWord = word.replace(/[.,]/g, '');
-            return cleanWord === singleTerm;
-        });
-        
-        if (!exactWordMatch) {
-            return false;
-        }
-        
-        // Additional verification: Must be a primary name component
-        // For "fatima" search, match "Fatima Mary" but not "Ramanand" 
-        const firstWord = cleanNameWords[0]?.replace(/[.,]/g, '');
-        const lastWord = cleanNameWords[cleanNameWords.length - 1]?.replace(/[.,]/g, '');
-        
-        // Only match if the search term is the first OR last name
-        return firstWord === singleTerm || lastWord === singleTerm;
+        const isMatch = firstWord === searchTerm || lastWord === searchTerm;
+        console.log(`[isExactMatch] Single word "${searchTerm}" - first:"${firstWord}" last:"${lastWord}" - Match: ${isMatch}`);
+        return isMatch;
     }
     
-    // 3. For multi-word searches - all terms must exactly match name words
-    if (searchTerms.length > 1) {
-        const allTermsMatch = searchTerms.every((term: string) => 
-            cleanNameWords.some((word: string) => word.replace(/[.,]/g, '') === term)
-        );
+    // 3. For multi-word searches (e.g., "fatima mary")
+    if (searchTerms.length >= 2) {
+        // Check if search terms form a consecutive sequence in the name
+        const cleanNameString = cleanNameWords.join(' ');
+        const searchString = searchTerms.join(' ');
         
-        if (allTermsMatch) {
+        if (cleanNameString === searchString) {
+            console.log(`[isExactMatch] ✓ Exact consecutive match`);
             return true;
         }
+        
+        // Check if name contains the search terms consecutively
+        if (cleanNameString.includes(searchString)) {
+            console.log(`[isExactMatch] ✓ Contains consecutive match`);
+            return true;
+        }
+        
+        // Check if all search terms exist in name (for "fatima mary" matching "Fatima Mary Smith")
+        const allTermsExist = searchTerms.every((term: string) =>
+            cleanNameWords.includes(term)
+        );
+        
+        if (allTermsExist && searchTerms.length >= 2) {
+            // Additional validation: first 2 search terms should match first 2 name words
+            const firstTwoMatch = searchTerms.slice(0, 2).every((term: string, idx: number) => 
+                cleanNameWords[idx] === term
+            );
+            
+            console.log(`[isExactMatch] All terms exist: ${allTermsExist}, First two match: ${firstTwoMatch}`);
+            
+            if (firstTwoMatch) {
+                console.log(`[isExactMatch] ✓ Multi-word match (first names match)`);
+                return true;
+            }
+        }
     }
     
-    // 4. Check exact email match
+    // 4. Email exact match
     if (member.email?.toLowerCase().trim() === query) {
+        console.log(`[isExactMatch] ✓ Email match`);
         return true;
     }
     
-    // 5. Check exact phone match (remove all formatting)
+    // 5. Phone exact match
     const cleanPhone = member.phone?.replace(/[\s\-\(\)+]/g, '');
     const cleanQuery = query.replace(/[\s\-\(\)+]/g, '');
     if (cleanPhone && cleanPhone === cleanQuery) {
+        console.log(`[isExactMatch] ✓ Phone match`);
         return true;
     }
     
+    console.log(`[isExactMatch] ✗ No match`);
     return false;
 }
 
@@ -596,61 +629,91 @@ function mergeResults(
     return Array.from(memberMap.values());
 }
 
-/**
- * Filter results to show only exact matches if query looks like a person's name
- */
 function filterForPersonSearch(
     members: ScoredMember[], 
     searchQuery: string
 ): ScoredMember[] {
-    const trimmedQuery = searchQuery.trim();
-    const words = trimmedQuery.split(/\s+/);
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    const words = trimmedQuery.split(/\s+/).filter(w => w.length > 0);
     
-    // Check if query looks like a person name search
+    console.log(`[Filter] Query: "${trimmedQuery}" (${words.length} words)`);
+    console.log(`[Filter] Total members before filter: ${members.length}`);
+    
+    // Check if this looks like a person name search
     const hasEmailChars = /@/.test(trimmedQuery);
     const isPhoneNumber = /^\+?[\d\s\-\(\)]+$/.test(trimmedQuery);
-    const looksLikePersonName = !hasEmailChars && !isPhoneNumber && words.length >= 1 && words.length <= 4;
+    const hasNumbers = /\d/.test(trimmedQuery);
+    const hasSpecialChars = /[!@#$%^&*()_+=\[\]{};:'",.<>?\/\\|`~]/.test(trimmedQuery);
+    
+    // If it has technical/search indicators, don't treat as person search
+    const technicalKeywords = ['skill', 'skills', 'work', 'experience', 'organization', 'company', 'location', 'city'];
+    const hasTechnicalWords = technicalKeywords.some(kw => trimmedQuery.includes(kw));
+    
+    const looksLikePersonName = !hasEmailChars && 
+                                !isPhoneNumber && 
+                                !hasNumbers &&
+                                !hasSpecialChars &&
+                                !hasTechnicalWords &&
+                                words.length >= 1 && 
+                                words.length <= 3;
+    
+    console.log(`[Filter] Looks like person name: ${looksLikePersonName}`);
     
     if (!looksLikePersonName) {
-        return members; // Return all results for email/phone/skill searches
+        console.log(`[Filter] Not a person search → returning all ${members.length}`);
+        return members;
     }
     
-    // For person name searches, ALWAYS prioritize exact matches
-    const exactMatches = members.filter(m => m.isExactMatch);
+    // Count exact matches
+    const exactMatches = members.filter(m => m.isExactMatch === true);
+    
+    console.log(`[Filter] Found ${exactMatches.length} exact matches`);
     
     if (exactMatches.length > 0) {
-        console.log(`[Semantic Search] Found ${exactMatches.length} exact match(es) for "${searchQuery}"`);
-        console.log(`[Semantic Search] Filtered out ${members.length - exactMatches.length} partial/semantic matches`);
+        console.log(`[Filter] ✓ Returning ONLY ${exactMatches.length} exact match(es):`);
+        exactMatches.forEach((m, i) => {
+            console.log(`  ${i + 1}. ${m.name}`);
+        });
         return exactMatches;
     }
     
-    // No exact matches - for single word name searches, apply strict filtering
+    // NO EXACT MATCHES - Be very strict for single-word name searches
     if (words.length === 1) {
-        // Filter out results where the name doesn't contain the search term as a standalone word
-        const strictMatches = members.filter(m => {
-            const name = m.name?.toLowerCase() || '';
-            const nameWords = name.split(/\s+/).map((w: string) => w.replace(/[.,]/g, ''));
-            return nameWords.includes(trimmedQuery.toLowerCase());
+        const searchWord = words[0];
+        console.log(`[Filter] Single word "${searchWord}" - applying strict matching`);
+        
+        // Only keep if the word appears as FIRST or LAST name (not middle/title)
+        const veryStrictMatches = members.filter(m => {
+            const nameLower = (m.name || '').toLowerCase();
+            const nameWords = nameLower
+                .split(/\s+/)
+                .map(w => w.replace(/[.,]/g, ''))
+                .filter(w => w.length > 0 && !['mr', 'mrs', 'ms', 'dr', 'prof'].includes(w));
+            
+            if (nameWords.length === 0) return false;
+            
+            const firstName = nameWords[0];
+            const lastName = nameWords[nameWords.length - 1];
+            
+            return firstName === searchWord || lastName === searchWord;
         });
         
-        if (strictMatches.length > 0 && strictMatches.length < members.length) {
-            console.log(`[Semantic Search] Applied strict word matching: ${strictMatches.length} results`);
-            return strictMatches;
+        if (veryStrictMatches.length > 0) {
+            console.log(`[Filter] ${veryStrictMatches.length} very strict matches (first/last name only)`);
+            
+            // Limit to top 1 by relevance score
+            const topMatch = veryStrictMatches.sort((a, b) => b.relevanceScore - a.relevanceScore)[0];
+            console.log(`[Filter] Returning top 1: ${topMatch.name}`);
+            return [topMatch];
         }
     }
     
-    // If still too many results, use relevance threshold
-    if (members.length > 5) {
-        const highRelevance = members.filter(m => m.relevanceScore > 0.8);
-        if (highRelevance.length > 0) {
-            console.log(`[Semantic Search] Applied relevance filter (>0.8): ${highRelevance.length} results`);
-            return highRelevance;
-        }
-    }
-    
-    console.log(`[Semantic Search] Returning all ${members.length} results for "${searchQuery}"`);
-    return members;
+    // Multi-word: keep top 1 by relevance
+    console.log(`[Filter] No exact matches, returning top 1 by relevance`);
+    const topOne = members.sort((a, b) => b.relevanceScore - a.relevanceScore)[0];
+    return topOne ? [topOne] : [];
 }
+
 /**
  * Sort results based on specified criteria
  */
@@ -662,6 +725,10 @@ function sortResults(
     const sorted = [...members];
 
     sorted.sort((a, b) => {
+        // CRITICAL: Always put exact matches first, regardless of sort criteria
+        if (a.isExactMatch && !b.isExactMatch) return -1;
+        if (!a.isExactMatch && b.isExactMatch) return 1;
+        
         let comparison = 0;
 
         switch (sortBy) {
