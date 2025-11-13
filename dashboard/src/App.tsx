@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { getUserPhone } from './lib/auth';
 import { GroupForm } from './pages/GroupForm';
 import { Groups } from './pages/Groups';
+import { Community } from './pages/Community';
+import { CommunityForm } from './pages/CommunityForm';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,12 +34,17 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
+           <Route path="/community" element={<Layout><Community /></Layout>} />
+          <Route path="/community/:id" element={<Layout><CommunityForm /></Layout>} />
+          <Route path="/community/:id/edit" element={<Layout><CommunityForm /></Layout>} />
            <Route path="/groups" element={<Layout><Groups /></Layout>} />
           <Route path="/groups/:id" element={<Layout><GroupForm /></Layout>} />
           <Route path="/groups/:id/edit" element={<Layout><GroupForm /></Layout>} />
           <Route path="/members" element={<Layout><Members /></Layout>} />
           <Route path="/members/:groupId" element={<Layout><Members /></Layout>} />
-          <Route path="/members/:id" element={<Layout><MemberForm /></Layout>} />
+           <Route path="/member" element={<Layout><MemberForm /></Layout>} />
+          {/* <Route path="/members/:id" element={<Layout><MemberForm /></Layout>} /> */}
+           <Route path="/member/:id" element={<Layout><MemberForm /></Layout>} />
           <Route path="/members/:id/edit" element={<Layout><MemberForm /></Layout>} />
           <Route path="/chat" element={<Layout><Chat /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />

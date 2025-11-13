@@ -3,7 +3,7 @@ import { memberAPI, groupAPI, type Member } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Eye, Upload, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Upload, X, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BulkImportDialog } from '@/components/BulkImportDialog';
@@ -17,14 +17,16 @@ export function Members() {
     
     const groupId = searchParams.get('groupId');
 
-    // const { data: members, isLoading } = useQuery({
-    //     queryKey: ['members'],
-    //     queryFn: async () => {
-    //         const response = await memberAPI.getAll();
-    //         return response.data.members || [];
-    //     },
-    // });
-
+    const { data: members } = useQuery({
+        queryKey: ['members'],
+        queryFn: async () => {
+            const response = await memberAPI.getAll();
+            return response.data.members || [];
+        },
+    });
+console.log("members:" + JSON.stringify(members))
+const memberId = searchParams.get('memberId')
+console.log("memberId:" + memberId)
     // Fetch group details if groupId is present
     const { data: groupData, isLoading } = useQuery({
         queryKey: ['group', groupId],
@@ -80,27 +82,20 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
+            
                 <div>
-                    <h1 className="text-3xl font-bold">Members - {groupData?.group.name}</h1>
-                    <p className="text-muted-foreground mt-2">
+                    
+                    <h1 className="text-3xl font-bold"> 
+                        <Link to="/groups">
+                    <Button variant="ghost" size="icon">
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                </Link>Members - {groupData?.group.name}</h1>
+                    <p className="text-muted-foreground mt-2 ">
                         Manage your community members
                     </p>
-                    {/* {groupData && (
-                        <Badge variant="secondary" className="mt-2">
-                        <>                            Filtered by: {groupData.name}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 ml-2 p-0"
-                                onClick={handleClearFilter}
-                            >
-                                <X className="h-3 w-3" />
-                            </Button>
-                            </>
-
-                        </Badge>
-                    )} */}
                 </div>
+                
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => setShowImportDialog(true)}>
                         <Upload className="h-4 w-4 mr-2" />
@@ -160,7 +155,7 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
                                         </td>
                                         <td className="p-3">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link to={`/members/${member.id}`}>
+                                                <Link to={`/member/${member.id}?groupId=${groupId}`}>
                                                     <Button variant="ghost" size="icon">
                                                         <Eye className="h-4 w-4" />
                                                     </Button>

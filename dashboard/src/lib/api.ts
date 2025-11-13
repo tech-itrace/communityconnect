@@ -123,6 +123,37 @@ export interface SearchLog {
     created_at: string;
 }
 
+export interface Community {
+  id: string;
+  name: string;
+  description?: string;
+  type?: string;
+  rules?: string;
+  admins?: any;
+  is_bot_enable?: boolean;
+  is_active?: boolean;
+  created_by?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface CommunitiesResponse {
+    success: boolean;
+    community: Community[];
+    pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalResults: number;
+        resultsPerPage: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
+}
+
+export interface CommunityResponse {
+    success: boolean;
+    community: Community;
+}
 // API Response Types
 export interface Group {
     id: string;
@@ -212,6 +243,15 @@ export const memberAPI = {
             },
         });
     },
+};
+
+export const communityAPI = {
+    getAll: () => api.get<CommunitiesResponse>('/api/community'),
+    getById: (id: string) => api.get<CommunitiesResponse>(`/api/community/${id}`),
+    create: (community: Partial<Community>) => api.post<CommunitiesResponse>('/api/community', community),
+    update: (id: string, community: Partial<Community>) =>
+        api.put<CommunitiesResponse>(`/api/community/${id}`, community),
+    delete: (id: string) => api.delete(`/api/community/${id}`),
 };
 
 export const analyticsAPI = {
