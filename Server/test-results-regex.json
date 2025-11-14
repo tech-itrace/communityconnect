@@ -1,0 +1,29 @@
+{
+  "total": 15,
+  "correct": 13,
+  "partial": 2,
+  "incorrect": 0,
+  "needsLLM": 3,
+  "byCategory": {
+    "entrepreneurs": {
+      "total": 5,
+      "correct": 5,
+      "partial": 0,
+      "incorrect": 0
+    },
+    "alumni": {
+      "total": 5,
+      "correct": 4,
+      "partial": 1,
+      "incorrect": 0
+    },
+    "alumni_business": {
+      "total": 5,
+      "correct": 4,
+      "partial": 1,
+      "incorrect": 0
+    }
+  },
+  "avgResponseTime": 5.933333333333334,
+  "avgConfidence": 0.6133333333333334
+}

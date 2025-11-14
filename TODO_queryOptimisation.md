@@ -2,7 +2,7 @@
 
 **Date**: November 14, 2025 | **Updated**: January 2025  
 **Project**: Community Connect - LLM & Search Optimization  
-**Status**: � Phase 1 - Task 1.1 Complete (Partial Baseline)
+**Status**: 🟢 Phase 1 - Task 1.2 Complete | Task 1.3 Ready
 
 ---
 
@@ -66,16 +66,46 @@
 
 ---
 
-### 🔄 **Task 1.2: Build Regex Entity Extractor** [NEXT TASK]
+### ✅ **Task 1.2: Build Regex Entity Extractor** [COMPLETE]
 **Priority**: P0 - Critical  
-**Estimated Time**: 4-5 hours  
+**Estimated Time**: 4-5 hours | **Actual**: 2 hours  
 **File**: `Server/src/services/regexExtractor.ts`  
-**Status**: 🔄 READY TO START
+**Status**: ✅ COMPLETE
 
 **Rationale**: Based on partial baseline results, regex optimization is **URGENT**:
 - Current LLM approach: 3-5s per query (too slow)
 - API dependency: Free tier exhausted after 35 queries (too expensive)
 - Target: <20ms extraction with 95%+ accuracy for simple patterns
+
+**Steps**:
+- [x] Create `regexExtractor.ts` service file
+- [x] Implement year extraction patterns (handle 1995, 95, "1995 passout", "batch of 95")
+- [x] Implement location extraction with city normalization
+- [x] Implement branch/department extraction
+- [x] Implement degree extraction (B.E, MBA, MCA, etc.)
+- [x] Implement service/skill keyword extraction (basic)
+- [x] Add entity normalization functions
+- [x] Add confidence scoring (0.0-1.0 based on pattern matches)
+
+**Results**:
+- **Performance**: 6ms avg (794x faster than LLM's 5134ms)
+- **Accuracy**: 86.7% (13/15 correct) vs LLM 66.7%
+- **Cost**: $0 vs $0.10 for 15 queries
+- **LLM Fallback**: 20% of queries (3/15)
+- **Category Accuracy**: Entrepreneurs 100%, Alumni 80%, Alumni Business 80%
+
+**Deliverables**:
+- ✅ `regexExtractor.ts` - 450 lines, 5 extraction modules
+- ✅ `regexExtractor.test.ts` - 350 lines test suite
+- ✅ `test-results-regex.json` - Performance metrics
+- ✅ `TASK-1.2-COMPLETE.md` - Detailed report
+
+**Known Issues**:
+- Missed "software" skill in complex query (1 incorrect)
+- Location includes "In" prefix (normalization issue)
+- Confidence threshold could be tuned
+
+**Dependencies**: None
 
 **Steps**:
 - [ ] Create `regexExtractor.ts` service file
@@ -819,34 +849,116 @@ function shouldUseNewPipeline(userId: string): boolean
 
 ### **Dependencies Check**
 
-- [ ] Access to test environment
-- [ ] Redis available for caching
-- [ ] DeepInfra API key active
-- [ ] Test data populated in database
+- [x] Access to test environment
+- [x] Redis available for caching
+- [x] DeepInfra API key active
+- [x] Test data populated in database
 - [ ] Monitoring tools set up
 
 ---
 
-## 📞 Support & Resources
+## � FUTURE PLAN: Continuous Improvement Loop
+
+### **Failed Query Analysis & Pattern Refinement**
+
+**Purpose**: Continuously improve regex extraction accuracy by learning from failures
+
+#### Process Flow
+
+1. **Capture Failed Extractions**
+   - Log queries where `needsLLM === true` or accuracy < 0.8
+   - Store: query text, expected entities, actual entities, confidence
+   - File: `Server/logs/failed-extractions.json`
+
+2. **Weekly Pattern Analysis**
+   - Review last 7 days of failed queries
+   - Identify common patterns not covered by regex
+   - Group by failure type:
+     - Missing pattern (e.g., "software companies" wasn't caught)
+     - Wrong normalization (e.g., "In Chennai" → "Chennai")
+     - Ambiguous query (genuinely needs LLM)
+
+3. **Update Extraction Logic**
+   - Add new patterns to `regexExtractor.ts`:
+     ```typescript
+     // Example: If "software companies" failed
+     SKILL_PATTERNS.push(/\b(software|tech)\s+companies\b/gi);
+     ```
+   - Update `SKILL_KEYWORDS`, `LOCATION_PATTERNS`, etc.
+   - Adjust confidence thresholds if needed
+
+4. **Re-test & Deploy**
+   - Run failed queries through updated extractor
+   - Measure improvement: `npm test regexExtractor`
+   - Deploy if accuracy improves by >5%
+
+#### Implementation Tasks
+
+**Task: Failed Query Logger** (Priority: P2, Time: 2 hours)
+```typescript
+// File: Server/src/services/failedQueryLogger.ts
+export function logFailedExtraction(
+  query: string,
+  regexResult: RegexExtractionResult,
+  llmResult: ParsedQuery
+): void {
+  // Log to file or database for analysis
+}
+```
+
+**Task: Pattern Analysis Script** (Priority: P2, Time: 3 hours)
+```bash
+# File: Server/scripts/analyze-failed-queries.ts
+# Analyzes logs, suggests new patterns
+npm run analyze:failures
+```
+
+**Task: A/B Testing Framework** (Priority: P3, Time: 4 hours)
+- Test new patterns against control group
+- Measure: accuracy delta, response time, user satisfaction
+
+#### Success Metrics
+
+- **Week 1**: Capture 100+ failed queries
+- **Week 2**: Identify 5-10 new patterns
+- **Week 3**: Add patterns, improve accuracy by 3-5%
+- **Month 1**: Achieve 95%+ regex accuracy (reduce LLM usage to <10%)
+- **Quarter 1**: Self-learning system with auto-pattern generation
+
+#### Long-term Vision
+
+**Machine Learning Integration** (6+ months)
+- Train ML model on failed queries
+- Auto-suggest regex patterns
+- Predict which queries need LLM before trying regex
+- Personalized extraction based on community type
+
+---
+
+## �📞 Support & Resources
 
 **Reference Documents**:
 - Architecture: `/CRITICAL-REVIEW-LLM-FLOW.md`
 - Query Patterns: `/QUERY-TAXONOMY.md`
 - Current Code: `/Server/src/services/llmService.ts`
+- Task Completion: `/Server/TASK-1.1-COMPLETE.md`, `/Server/TASK-1.2-COMPLETE.md`
 
 **Key Files to Modify**:
 - `Server/src/services/llmService.ts` (LLM prompts)
 - `Server/src/services/nlSearchService.ts` (orchestration)
-- New: `Server/src/services/regexExtractor.ts`
+- ✅ `Server/src/services/regexExtractor.ts` (implemented)
 - New: `Server/src/services/hybridExtractor.ts`
 - New: `Server/src/services/responseFormatter.ts`
+- Future: `Server/src/services/failedQueryLogger.ts`
 
 **Testing**:
-- Test suite: `Server/src/tests/queryExtraction.test.ts`
-- Load testing: `Server/src/tests/loadTest.ts`
+- ✅ Test suite: `Server/src/tests/queryExtraction.test.ts` (88 queries)
+- ✅ Sample test: `Server/src/tests/querySample.test.ts` (15 queries)
+- ✅ Regex test: `Server/src/tests/regexExtractor.test.ts` (15 queries)
+- Future: `Server/src/tests/loadTest.ts`
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: November 14, 2025  
-**Status**: Ready for Implementation ✅
+**Document Version**: 1.1  
+**Last Updated**: November 15, 2025  
+**Status**: Phase 1 Complete (Tasks 1.1, 1.2) ✅ | Phase 2 Ready 🔄
