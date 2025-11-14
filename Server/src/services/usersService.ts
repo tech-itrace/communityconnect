@@ -1,5 +1,6 @@
 import { query } from '../config/db';
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
+
 
 export interface User {
   id?: number;
@@ -18,7 +19,10 @@ export async function createUser(user: User): Promise<User> {
   const existing = await getUserByEmail(user.email);
   if (existing) throw new Error("Email already registered");
   
-  const hashedPassword = await bcrypt.hash(user.password!, 10);
+  // const hashedPassword = await bcrypt.hash(user.password!, 10);
+//   const hashed = await bcrypt.hash(password, 10);
+// const match = await bcrypt.compare(password, hashed);
+
   
   const queryText = `
     INSERT INTO users (name, email, password, purpose, about, phone, created_at)
@@ -29,7 +33,8 @@ export async function createUser(user: User): Promise<User> {
   const values = [
     user.name,
     user.email,
-    hashedPassword,
+    user.password,
+    // hashedPassword,
     user.purpose || null,
     user.about || null,
     user.phone || null,
