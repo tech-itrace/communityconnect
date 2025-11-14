@@ -7,6 +7,7 @@ import adminRouter from './admin';
 import groupsRouter from './groups';
 import analyticsRouter from './analytics';
 import { getRedisHealth } from '../config/redis';
+import usersRouter from './users';
 
 const router = Router();
 
@@ -37,5 +38,9 @@ router.use('/analytics', analyticsRouter);
 
 // WhatsApp webhook
 router.use('/whatsapp', whatsappRouter);
+
+// Login
+router.use('/users', usersRouter);
+
 
 export default router;
