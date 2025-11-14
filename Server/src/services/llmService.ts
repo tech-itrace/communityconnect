@@ -1,8 +1,89 @@
 import axios from 'axios';
 import Ajv from 'ajv';
 import { ParsedQuery, ExtractedEntities, Member, MemberSearchResult } from '../utils/types';
+import { classifyIntent, Intent, IntentResult } from './intentClassifier';
 
 const DEEPINFRA_API_URL = 'https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3.1-8B-Instruct';
+
+// ============================================================================
+// DOMAIN-SPECIFIC PROMPTS BY INTENT
+// ============================================================================
+
+/**
+ * Get domain-specific extraction rules based on intent (CONDENSED)
+ */
+function getDomainSpecificRules(intent: Intent): string {
+  const baseRules = `
+**DATABASE FIELDS**:
+year_of_graduation, degree, branch, working_knowledge, city, organization_name, designation, annual_turnover
+
+**KEY MAPPINGS**:
+- "passout"/"batch"/"graduated" → year_of_graduation
+- "mechanical"/"civil"/"ECE" → branch
+- "web dev"/"IT"/"consulting" → working_knowledge
+- "Chennai"/"Bangalore" → city (capitalize)
+- "95" → 1995, "98" → 1998 (year normalization)
+`;
+
+  switch (intent) {
+    case 'find_business':
+      return baseRules + `
+**BUSINESS RULES**:
+Extract service/industry keywords to working_knowledge.
+Example: "web dev company Chennai" → {"working_knowledge":["web development","website"],"city":"Chennai"}`;
+
+    case 'find_peers':
+      return baseRules + `
+**ALUMNI RULES**:
+Extract year and branch. "1995 passout mechanical" → {"year_of_graduation":[1995],"branch":["Mechanical"]}`;
+
+    case 'find_specific_person':
+      return baseRules + `
+**PERSON RULES**:
+Extract name. "Find Sivakumar from USAM" → {"name":"Sivakumar","organization_name":"USAM"}`;
+
+    case 'find_alumni_business':
+      return baseRules + `
+**ALUMNI+BUSINESS RULES**:
+Extract both. "1995 batch IT services" → {"year_of_graduation":[1995],"working_knowledge":["IT"]}`;
+
+    default:
+      return baseRules;
+  }
+}
+
+/**
+ * Build compact system prompt
+ */
+function buildSystemPrompt(intent: Intent, conversationContext?: string): string {
+  let prompt = `Extract entities from query for alumni/business directory search.
+
+${getDomainSpecificRules(intent)}`;
+
+  if (conversationContext) {
+    prompt += `\nContext: ${conversationContext.substring(0, 200)}`;
+  }
+
+  prompt += `
+
+Output JSON:
+{
+  "entities": {
+    "year_of_graduation": [year] or null,
+    "branch": ["name"] or null,
+    "working_knowledge": ["skill"] or null,
+    "city": "Name" or null,
+    "organization_name": "Name" or null,
+    "name": "PersonName" or null
+  },
+  "search_query": "optimized text",
+  "confidence": 0-1
+}
+
+Rules: Extract all entities, normalize values, be generous. JSON only.`;
+
+  return prompt;
+}
 
 // =====================================================================
 // SCHEMA VALIDATION
@@ -282,8 +363,20 @@ async function callLLM(systemPrompt: string, userMessage: string, temperature: n
     throw new Error('DEEPINFRA_API_KEY is not configured');
   }
 
+  // Format the input with system prompt and user message
+  const formattedInput = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n${userMessage}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`;
   const formattedInput = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n${userMessage}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`;
 
+  const payload = {
+    input: formattedInput,
+    temperature: temperature,
+    max_tokens: 1000,
+    stop: [
+      "<|eot_id|>",
+      "<|end_of_text|>",
+      "<|eom_id|>"
+    ]
+  };
   const payload = {
     input: formattedInput,
     temperature: temperature,
@@ -319,14 +412,14 @@ function extractJSON(text: string): any {
   // Try direct parse
   try {
     return JSON.parse(text);
-  } catch {}
+  } catch { }
 
   // Try extracting JSON from markdown code blocks
   const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/);
   if (jsonMatch) {
     try {
       return JSON.parse(jsonMatch[1]);
-    } catch {}
+    } catch { }
   }
 
   // Try extracting first {...} object
@@ -334,7 +427,7 @@ function extractJSON(text: string): any {
   if (objectMatch) {
     try {
       return JSON.parse(objectMatch[0]);
-    } catch {}
+    } catch { }
   }
 
   throw new Error('Could not extract valid JSON from response');
@@ -524,6 +617,18 @@ Show ALL members provided. No bold, no markdown, no extra text.`;
     console.log(`[LLM Service] ✓ Response generated in ${Date.now() - startTime}ms`);
     return response.trim();
   } catch (error: any) {
+    console.error("[LLM Service] Fallback response used due to error:", error.message);
+
+    // Simple fallback with comma-separated format for ALL results
+    const fallbackList = safeResults
+      .map((r, i) => {
+        const parts = [r.name];
+        if (r.email) parts.push(r.email);
+        if (r.phone) parts.push(r.phone);
+        if (r.city) parts.push(r.city);
+
+        return `${i + 1}. ${parts.join(', ')}`;
+      })
     console.error('[LLM Service] Response generation failed:', error.message);
     // Fallback
     return safeResults
@@ -554,6 +659,30 @@ export async function generateSuggestions(originalQuery: string, results: Member
 }
 
 function getFallbackSuggestions(results: MemberSearchResult[]): string[] {
+  const suggestions: string[] = [];
+
+  if (results.length > 0) {
+    // Extract unique cities
+    const cities = Array.from(new Set(results.map(r => r.city).filter(Boolean)));
+    if (cities.length > 1) {
+      suggestions.push(`Show me members only in ${cities[0]}`);
+    }
+
+    // Extract unique skills
+    const allSkills = results.flatMap(r => r.skills?.split(',').map(s => s.trim()) || []);
+    const uniqueSkills = Array.from(new Set(allSkills)).slice(0, 3);
+    if (uniqueSkills.length > 0) {
+      suggestions.push(`Find members with ${uniqueSkills[0]} skills`);
+    }
+
+    suggestions.push('Show members with consulting services');
+  } else {
+    suggestions.push('Search by location (e.g., Chennai, Bangalore)');
+    suggestions.push('Find members with specific skills');
+    suggestions.push('Browse all members');
+  }
+
+  return suggestions.slice(0, 3);
   return [
     'Search by location',
     'Find members with specific skills',
@@ -567,12 +696,48 @@ function getFallbackSuggestions(results: MemberSearchResult[]): string[] {
 
 export async function getLLMResponse(message: string): Promise<string> {
   const DEEPINFRA_API_KEY = process.env.DEEPINFRA_API_KEY;
+
+  console.log('[getLLMResponse] All env vars:', Object.keys(process.env));
+  console.log('[getLLMResponse] DEEPINFRA_API_KEY exists:', !!DEEPINFRA_API_KEY);
+
+  if (!DEEPINFRA_API_KEY) {
+    console.error('[getLLMResponse] ERROR: DEEPINFRA_API_KEY is not set!');
+    return 'API key configuration error.';
+  }
+  const DEEPINFRA_API_KEY = process.env.DEEPINFRA_API_KEY;
   if (!DEEPINFRA_API_KEY) {
     return 'API key not configured.';
   }
 
   const formattedInput = `<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n${message}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`;
 
+  const payload = {
+    input: formattedInput,
+    stop: [
+      "<|eot_id|>",
+      "<|end_of_text|>",
+      "<|eom_id|>"
+    ]
+  };
+
+  try {
+    const response = await axios.post(DEEPINFRA_API_URL, payload, {
+      headers: {
+        'Authorization': `Bearer ${DEEPINFRA_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const generatedText = response.data?.results?.[0]?.generated_text || '';
+    return generatedText;
+  } catch (error: any) {
+    console.error('[getLLMResponse] LLM API error:', error.message);
+    if (error.response) {
+      console.error('[getLLMResponse] Error status:', error.response.status);
+      console.error('[getLLMResponse] Error data:', JSON.stringify(error.response.data));
+    }
+    return 'Sorry, I could not process your request.';
+  }
   try {
     const response = await axios.post(DEEPINFRA_API_URL, { input: formattedInput }, {
       headers: { 'Authorization': `Bearer ${DEEPINFRA_API_KEY}` },

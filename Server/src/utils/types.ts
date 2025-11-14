@@ -222,10 +222,16 @@ export interface GetMembersRequest {
 // ============================================================================
 
 export interface ParsedQuery {
-    intent: 'find_member' | 'get_info' | 'list_members' | 'compare';
+    intent: 'find_member' | 'get_info' | 'list_members' | 'compare' | 'find_business' | 'find_peers' | 'find_specific_person' | 'find_alumni_business';
     entities: ExtractedEntities;
     searchQuery: string;
     confidence: number;
+    intentMetadata?: {
+        primary: string;
+        secondary?: string;
+        intentConfidence: number;
+        matchedPatterns: string[];
+    };
 }
 
 export interface ExtractedEntities {
@@ -235,6 +241,9 @@ export interface ExtractedEntities {
     turnoverRequirement?: 'high' | 'medium' | 'low';
     graduationYear?: number[];
     degree?: string;
+    branch?: string[];
+    name?: string;
+    organizationName?: string;
 }
 
 export interface NLSearchRequest {
