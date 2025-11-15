@@ -60,64 +60,201 @@ export async function getCommunityById(id: string): Promise<Community | null> {
 }
 
 /** Create a new community */
-export async function createCommunity(communityData: {
-    name: string;
-    description?: string;
-    type?: string;
-    admins?: any; // JSON field (will be string from frontend)
-    rules?: string;
-    is_bot_enable?: boolean;
-    created_at?: Date;
-    updated_at?: Date;
-    is_active?: boolean;
-    created_by?: string;
-}): Promise<Community> {
-    console.log(`[Community Service] Creating community: ${communityData.name}`);
+// export async function createCommunity(communityData: {
+//     name: string;
+//     description?: string;
+//     type?: string;
+//     admins?: any; // JSON field (will be string from frontend)
+//     rules?: string;
+//     is_bot_enable?: boolean;
+//     created_at?: Date;
+//     updated_at?: Date;
+//     is_active?: boolean;
+//     created_by?: string;
+// }): Promise<Community> {
+//     console.log(`[Community Service] Creating community: ${communityData.name}`);
 
-    const {
-        name,
-        description,
-        type,
-        admins,
-        rules,
-        is_bot_enable = false,
-        is_active = true,
-        created_by,
-    } = communityData;
+//     const {
+//         name,
+//         description,
+//         type,
+//         admins,
+//         rules,
+//         is_bot_enable = false,
+//         is_active = true,
+//         created_by,
+//     } = communityData;
 
-    const queryText = `
-        INSERT INTO community
-        (name, description, type, admins, rules, is_bot_enable, is_active, created_by, created_at, updated_at) 
-        VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-        RETURNING id
-    `;
+//     const queryText = `
+//         INSERT INTO community
+//         (name, description, type, admins, rules, is_bot_enable, is_active, created_by, created_at, updated_at) 
+//         VALUES
+//         ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+//         RETURNING id
+//     `;
 
-    const values = [
-        name,
-        description,
-        type,
-        admins, // This is already a JSON string from frontend
-        rules,
-        is_bot_enable,
-        is_active,
-        created_by
-    ];
+//     const values = [
+//         name,
+//         description,
+//         type,
+//         admins, // This is already a JSON string from frontend
+//         rules,
+//         is_bot_enable,
+//         is_active,
+//         created_by
+//     ];
 
-    console.log('[Community Service] Query values:', values);
+//     console.log('[Community Service] Query values:', values);
 
-    const result = await query(queryText, values);
+//     const result = await query(queryText, values);
 
-    const communityId = result.rows[0].id;
+//     const communityId = result.rows[0].id;
 
-    const createdCommunity = await getCommunityById(communityId);
+//     const createdCommunity = await getCommunityById(communityId);
     
-    if (!createdCommunity) {
-        throw new Error('Failed to retrieve created community');
+//     if (!createdCommunity) {
+//         throw new Error('Failed to retrieve created community');
+//     }
+
+//     return createdCommunity;
+// }
+
+/** Check if member exists */
+async function findMember(phone: string, email: string) {
+  const sql = `
+      SELECT * FROM members
+      WHERE phone = $1 OR email = $2
+  `;
+  const res = await query(sql, [phone, email]);
+  return res.rows[0] || null;
+}
+
+/** Create new member */
+async function createMember(member: { id: string; name: string; phone: string; email: string }) {
+  const sql = `
+      INSERT INTO members (id, name, phone, email, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, NOW(), NOW())
+      RETURNING *
+  `;
+  const res = await query(sql, [member.id, member.name, member.phone, member.email]);
+  return res.rows[0];
+}
+
+/** Insert into community type-specific table */
+async function createTypeMember(type: string, memberId: string) {
+  let table = "";
+
+  if (type === "religious") table = "religious_members";
+  if (type === "alumni") table = "alumni_members";
+  if (type === "entrepreneur") table = "entrepreneur_members";
+
+  if (!table) return null;
+
+  const sql = `
+    INSERT INTO ${table} (member_id, is_active, created_at)
+    VALUES ($1, TRUE, NOW())
+    RETURNING id
+  `;
+
+  const res = await query(sql, [memberId]);
+  return res.rows[0];
+}
+
+/** Mapping table */
+async function addCommunityMemberMapping(communityId: string, memberId: string, memberTypeId: string | null) {
+  const sql = `
+    INSERT INTO community_members_types (community_id, member_id, member_type_id)
+    VALUES ($1, $2, $3)
+  `;
+  await query(sql, [communityId, memberId, memberTypeId]);
+}
+
+/** Create a new community */
+export async function createCommunity(communityData: {
+  name: string;
+  description?: string;
+  type?: string;
+  admins?: any; 
+  rules?: string;
+  is_bot_enable?: boolean;
+  is_active?: boolean;
+  created_by?: string;
+}): Promise<Community> {
+
+  console.log(`[Community Service] Creating community: ${communityData.name}`);
+
+  const {
+    name,
+    description,
+    type,
+    admins,
+    rules,
+    is_bot_enable = false,
+    is_active = true,
+    created_by,
+  } = communityData;
+
+  // Ensure admins is parsed JSON
+  const adminList = typeof admins === "string" ? JSON.parse(admins) : admins;
+
+  // Step 1: Create Community
+  const insertCommunitySQL = `
+    INSERT INTO community
+    (name, description, type, admins, rules, is_bot_enable, is_active, created_by, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+    RETURNING id
+  `;
+
+  const values = [
+    name,
+    description,
+    type,
+    admins, 
+    rules,
+    is_bot_enable,
+    is_active,
+    created_by
+  ];
+
+  const result = await query(insertCommunitySQL, values);
+  const communityId = result.rows[0].id;
+
+  console.log("✔ Community created with ID:", communityId);
+
+
+  // Step 2: PROCESS EACH ADMIN AS MEMBER
+  for (const admin of adminList) {
+    console.log("Processing admin:", admin);
+
+    const existingMember = await findMember(admin.phone, admin.email);
+
+    let memberId;
+    if (existingMember) {
+      console.log("✔ Member already exists:", existingMember.id);
+      memberId = existingMember.id;
+    } else {
+      console.log("➕ Creating new member");
+      const newMember = await createMember(admin);
+      memberId = newMember.id;
     }
 
-    return createdCommunity;
+    // Step 3: Insert into type-specific table
+    const typeMember = await createTypeMember(type!, memberId);
+
+    // Step 4: Insert into community_members_types
+    await addCommunityMemberMapping(
+      communityId,
+      memberId,
+      typeMember?.id || null
+    );
+  }
+
+  // Step 5: Return full community
+  const createdCommunity = await getCommunityById(communityId);
+
+  return createdCommunity!;
 }
+
 
 /** Get all communities */
 export async function getAllCommunity(): Promise<Community[]> {
@@ -174,8 +311,6 @@ export async function updateCommunity(
     throw error;
   }
 }
-
-
 
 /** Soft delete (set is_active = false) */
 export async function deleteCommunity(id: string): Promise<boolean> {
