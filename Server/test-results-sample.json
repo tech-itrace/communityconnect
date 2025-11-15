@@ -1,28 +1,28 @@
 {
   "total": 15,
-  "correct": 10,
-  "partial": 3,
+  "correct": 7,
+  "partial": 6,
   "incorrect": 2,
   "byCategory": {
     "entrepreneurs": {
       "total": 5,
-      "correct": 4,
-      "partial": 0,
-      "incorrect": 1
+      "correct": 0,
+      "partial": 3,
+      "incorrect": 2
     },
     "alumni": {
-      "total": 5,
-      "correct": 2,
-      "partial": 2,
-      "incorrect": 1
-    },
-    "alumni_business": {
       "total": 5,
       "correct": 4,
       "partial": 1,
       "incorrect": 0
+    },
+    "alumni_business": {
+      "total": 5,
+      "correct": 3,
+      "partial": 2,
+      "incorrect": 0
     }
   },
-  "avgResponseTime": 5134.133333333333,
-  "avgConfidence": 0.8800000000000002
+  "avgResponseTime": 5.466666666666667,
+  "avgConfidence": 0.7966666666666665
 }
