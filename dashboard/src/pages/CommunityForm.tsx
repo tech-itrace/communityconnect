@@ -10,19 +10,26 @@ import { useState, useEffect } from 'react';
 
 // Define community types
 const COMMUNITY_TYPES = [
-  'Alumini',
-  'Entrepreneur',
-  'Religious',
-  'Gated / Residential',
-  'Political'
+  { label: "Alumini", value: "alumini" },
+  { label: "Entrepreneur", value: "entrepreneur" },
+  { label: "Religious", value: "religious" },
+  { label: "Gated / Residential", value: "gated" },
+  { label: "Political", value: "political" }
 ];
+
 
 export function CommunityForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEdit = id !== 'new';
-  const loggedUser = { id: "100", name: "Anthoniselvi" };
+ const loggedUser = {
+  id: "100",
+  name: "Anthoniselvi",
+  phone: "9876543210",    
+  email: "test@gmail.com" 
+};
+
 
   const [formData, setFormData] = useState({
     name: '',
@@ -44,7 +51,6 @@ export function CommunityForm() {
     },
     enabled: isEdit,
   });
-
   const community = communityResponse?.data;
 
   useEffect(() => {
@@ -52,9 +58,13 @@ export function CommunityForm() {
       // Parse admins if it's a string, otherwise use as-is
       let parsedAdmins = [];
       try {
-        parsedAdmins = typeof community.admins === 'string' 
-          ? JSON.parse(community.admins) 
-          : community.admins || [];
+        parsedAdmins = community.admins.map(a => ({
+  id: a.id,
+  name: a.name,
+  phone: a.phone ?? "",
+  email: a.email ?? ""
+}));
+
       } catch (e) {
         console.error('Error parsing admins:', e);
         parsedAdmins = [];
@@ -74,49 +84,52 @@ export function CommunityForm() {
   }, [community]);
 
   // Save / Update community
-  const saveMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      console.log('Form submitted');
-      console.log('formData before processing:', JSON.stringify(data));
-      
-      if (isEdit) {
-        // When editing, convert admins array to JSON string
-        const payload = {
-          ...data,
-          admins: JSON.stringify(data.admins)
-        };
-        console.log('Edit Payload being sent:', JSON.stringify(payload));
-        return communityAPI.update(id!, payload);
-      } else {
-        // When creating, set admins as JSON string with logged-in user
-        const payload = {
-          name: data.name,
-          description: data.description,
-          type: data.type,
-          rules: data.rules,
-          is_bot_enable: data.is_bot_enable,
-          is_active: data.is_active,
-          created_by: loggedUser.id,
-          admins: JSON.stringify([loggedUser]) // Convert to JSON string
-        };
-        
-        console.log('Create Payload being sent:', JSON.stringify(payload));
-        return communityAPI.create(payload);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['community'] });
-      navigate('/community');
-    },
-    onError: (error: any) => {
-      console.error('Error saving community:', error);
-      const message =
-        error.response?.data?.error?.message ||
-        error.message ||
-        'Failed to save community';
-      alert(message);
-    },
-  });
+ const saveMutation = useMutation({
+  mutationFn: async (data: typeof formData) => {
+    const baseAdmin = {
+      id: loggedUser.id,
+      name: loggedUser.name,
+      phone: loggedUser.phone,
+      email: loggedUser.email,
+    };
+
+    if (isEdit) {
+      const payload = {
+        ...data,
+        admins: JSON.stringify(
+          data.admins.map(a => ({
+            id: a.id,
+            name: a.name,
+            phone: a.phone,
+            email: a.email
+          }))
+        )
+      };
+
+      return communityAPI.update(id!, payload);
+    } 
+    
+    else {
+      const payload = {
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        rules: data.rules,
+        is_bot_enable: data.is_bot_enable,
+        is_active: data.is_active,
+        created_by: loggedUser.id,
+        admins: JSON.stringify([baseAdmin])
+      };
+
+      return communityAPI.create(payload);
+    }
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["community"] });
+    navigate("/community");
+  }
+});
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -129,12 +142,12 @@ export function CommunityForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    console.log("Form submitted");
-    console.log("formData after submit:", JSON.stringify(formData));
-    e.preventDefault();
-    saveMutation.mutate(formData);
-  };
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  console.log("Form submitted:", formData);
+  saveMutation.mutate(formData);
+};
+
 
   if (isLoading && isEdit) {
     return (
@@ -219,11 +232,12 @@ export function CommunityForm() {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <option value="">Select Community Type</option>
-                  {COMMUNITY_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
+{COMMUNITY_TYPES.map((type) => (
+  <option key={type.value} value={type.value}>
+    {type.label}
+  </option>
+))}
+
                 </select>
               </div>
 
@@ -247,13 +261,12 @@ export function CommunityForm() {
                     {formData.admins.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-2">
                         {formData.admins.map((admin) => (
-                          <div
-                            key={admin.id}
-                            className="flex items-center gap-2 bg-secondary text-secondary-foreground px-3 py-1 rounded-md text-sm"
-                          >
-                             <span
-                        className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">{admin.name}</span>
-                          </div>
+                          <>
+                          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-primary text-white">
+  {admin.name.charAt(0).toUpperCase()}
+</div>
+<span className="text-sm font-medium">{admin.name}</span>
+</>
                         ))}
                       </div>
                     )}
