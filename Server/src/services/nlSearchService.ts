@@ -1,5 +1,7 @@
 import { parseQuery, generateResponse, generateSuggestions } from './llmService';
 import { searchMembers } from './semanticSearch';
+import { extractEntities, HybridExtractionResult } from './hybridExtractor';
+import { Intent } from './intentClassifier';
 import {
     NLSearchResult,
     SearchFilters,
@@ -10,8 +12,11 @@ import {
 
 /**
  * Convert extracted entities to search filters
+ * 
+ * @param entities - Extracted entities from query
+ * @param intent - Query intent for filter optimization (optional)
  */
-function entitiesToFilters(entities: ExtractedEntities): SearchFilters {
+function entitiesToFilters(entities: ExtractedEntities, intent?: Intent): SearchFilters {
     const filters: SearchFilters = {};
 
     // Map location to city filter
@@ -55,6 +60,27 @@ function entitiesToFilters(entities: ExtractedEntities): SearchFilters {
         filters.degree = [entities.degree];
     }
 
+    // Intent-specific filter optimization
+    if (intent) {
+        switch (intent) {
+            case 'find_business':
+                // For business queries, prioritize services/skills
+                if (!filters.services && !filters.skills) {
+                    // If no services specified, might want to filter for members with products/services
+                }
+                break;
+            case 'find_peers':
+                // For alumni queries, prioritize year/branch
+                break;
+            case 'find_specific_person':
+                // For specific person, reduce limit to exact matches
+                break;
+            case 'find_alumni_business':
+                // Hybrid - need both alumni info and business info
+                break;
+        }
+    }
+
     return filters;
 }
 
@@ -71,21 +97,23 @@ export async function processNaturalLanguageQuery(
     console.log(`[NL Search] Processing query: "${naturalQuery}"`);
 
     try {
-        // Step 1: Parse the natural language query
-        console.log(`[NL Search] Step 1: Parsing query with LLM...`);
-        const parsed: ParsedQuery = await parseQuery(naturalQuery, conversationContext);
+        // Step 1: Extract entities using hybrid approach (regex + LLM)
+        console.log(`[NL Search] Step 1: Extracting entities (hybrid)...`);
+        const extracted: HybridExtractionResult = await extractEntities(naturalQuery, conversationContext);
 
-        console.log(`[NL Search] ✓ Parsed - Intent: ${parsed.intent}, Confidence: ${parsed.confidence}`);
-        console.log(`[NL Search] Entities:`, JSON.stringify(parsed.entities, null, 2));
+        console.log(`[NL Search] ✓ Extracted - Intent: ${extracted.intent}, Method: ${extracted.method}`);
+        console.log(`[NL Search] ✓ Extraction time: ${extracted.extractionTime}ms, Confidence: ${extracted.confidence}`);
+        console.log(`[NL Search] ✓ Entities:`, JSON.stringify(extracted.entities, null, 2));
+        console.log(`[NL Search] ✓ Used LLM: ${extracted.metadata.llmUsed ? 'YES' : 'NO'}`);
 
         // Step 2: Convert entities to search filters
-        const filters = entitiesToFilters(parsed.entities);
+        const filters = entitiesToFilters(extracted.entities, extracted.intent);
         console.log(`[NL Search] ✓ Filters:`, JSON.stringify(filters, null, 2));
 
         // Step 3: Execute search with hybrid mode
         console.log(`[NL Search] Step 2: Executing semantic search...`);
         const searchParams: SearchParams = {
-            query: parsed.searchQuery,
+            query: naturalQuery, // Use original query for semantic search
             filters: filters,
             options: {
                 searchType: 'hybrid',
@@ -124,7 +152,7 @@ export async function processNaturalLanguageQuery(
         const conversationalResponse = await generateResponse(
             naturalQuery,
             memberResults,
-            parsed.confidence
+            extracted.confidence
         );
         console.log(`[NL Search] ✓ Response generated`);
 
@@ -150,10 +178,16 @@ export async function processNaturalLanguageQuery(
         const executionTime = Date.now() - startTime;
         const result: NLSearchResult = {
             understanding: {
-                intent: parsed.intent,
-                entities: parsed.entities,
-                confidence: parsed.confidence,
-                normalizedQuery: parsed.searchQuery
+                intent: extracted.intent as any, // Map Intent to ParsedQuery intent
+                entities: extracted.entities,
+                confidence: extracted.confidence,
+                normalizedQuery: naturalQuery,
+                intentMetadata: {
+                    primary: extracted.metadata.intentResult.primary,
+                    secondary: extracted.metadata.intentResult.secondary,
+                    intentConfidence: extracted.metadata.intentResult.confidence,
+                    matchedPatterns: extracted.metadata.intentResult.matchedPatterns
+                }
             },
             results: {
                 members: memberResults,
@@ -163,11 +197,18 @@ export async function processNaturalLanguageQuery(
                 conversational: conversationalResponse,
                 suggestions: suggestions
             },
-            executionTime: executionTime
+            executionTime: executionTime,
+            performance: {
+                extractionTime: extracted.extractionTime,
+                extractionMethod: extracted.method,
+                llmUsed: extracted.metadata.llmUsed,
+                searchTime: executionTime - extracted.extractionTime
+            }
         };
 
         console.log(`[NL Search] ========================================`);
         console.log(`[NL Search] ✓ COMPLETED in ${executionTime}ms`);
+        console.log(`[NL Search] Performance: Extraction ${extracted.extractionTime}ms (${extracted.method}), Total ${executionTime}ms`);
         console.log(`[NL Search] Results: ${result.results.members.length}, Confidence: ${result.understanding.confidence}`);
         console.log(`[NL Search] ========================================\n`);
 
@@ -176,6 +217,7 @@ export async function processNaturalLanguageQuery(
     } catch (error: any) {
         const executionTime = Date.now() - startTime;
         console.error(`[NL Search] ✗ ERROR after ${executionTime}ms:`, error.message);
+        console.error(`[NL Search] Stack:`, error.stack);
         console.error(`[NL Search] ========================================\n`);
 
         // Return error result with fallback

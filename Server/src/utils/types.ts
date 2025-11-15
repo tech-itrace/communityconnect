@@ -266,6 +266,12 @@ export interface NLSearchResult {
         entities: ExtractedEntities;
         confidence: number;
         normalizedQuery: string;
+        intentMetadata?: {
+            primary: string;
+            secondary?: string;
+            intentConfidence: number;
+            matchedPatterns: string[];
+        };
     };
     results: {
         members: MemberSearchResult[];
@@ -276,6 +282,12 @@ export interface NLSearchResult {
         suggestions?: string[];
     };
     executionTime: number;
+    performance?: {
+        extractionTime: number;
+        extractionMethod: 'regex' | 'llm' | 'hybrid' | 'cached';
+        llmUsed: boolean;
+        searchTime: number;
+    };
 }
 
 export interface NLSearchResponse {
