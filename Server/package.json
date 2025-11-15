@@ -14,6 +14,7 @@
         "test:ratelimit": "ts-node -r dotenv/config src/test-ratelimit.ts",
         "test:rbac": "ts-node -r dotenv/config src/test-rbac.ts",
         "test:audit": "ts-node -r dotenv/config src/test-audit.ts",
+        "test:pipeline": "jest fullPipeline.test.ts --verbose --maxWorkers=1",
         "check:env": "./check-environment.sh",
         "db:setup": "ts-node -r dotenv/config src/scripts/setupDatabase.ts",
         "db:add-roles": "ts-node -r dotenv/config src/scripts/addRoleColumn.ts",
