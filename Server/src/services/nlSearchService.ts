@@ -152,17 +152,21 @@ export async function processNaturalLanguageQuery(
         const conversationalResponse = await generateResponse(
             naturalQuery,
             memberResults,
-            extracted.confidence
+            extracted.confidence,
+            extracted.intent,      // Pass intent for template-based formatting
+            extracted.entities     // Pass entities for template-based formatting
         );
-        console.log(`[NL Search] ✓ Response generated`);
+        console.log(`[NL Search] ✓ Response generated (template-based)`);
 
         // Step 5: Generate follow-up suggestions
         console.log(`[NL Search] Step 4: Generating suggestions...`);
         const suggestions = await generateSuggestions(
             naturalQuery,
-            memberResults
+            memberResults,
+            extracted.intent,      // Pass intent for template-based suggestions
+            extracted.entities     // Pass entities for template-based suggestions
         );
-        console.log(`[NL Search] ✓ ${suggestions.length} suggestions generated`);
+        console.log(`[NL Search] ✓ ${suggestions.length} suggestions generated (template-based)`);
 
         // Build pagination info
         const pagination = {
