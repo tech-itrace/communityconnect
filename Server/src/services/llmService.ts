@@ -51,7 +51,109 @@ async function callLLM(systemPrompt: string, userMessage: string, temperature: n
 /**
  * Parse natural language query into structured format
  */
+// export async function parseQuery(naturalQuery: string, conversationContext?: string): Promise<ParsedQuery> {
+//     const startTime = Date.now();
+//     console.log(`[LLM Service] Parsing query: "${naturalQuery}"`);
+//     if (conversationContext) {
+//         console.log(`[LLM Service] Using conversation context from previous queries`);
+//     }
+
+//     // Build system prompt with conversation context if available
+//     let systemPrompt = `You are a search query parser for a business community network. Parse the following natural language query and extract structured information.`;
+
+//     if (conversationContext) {
+//         systemPrompt += `\n\n${conversationContext}\n\nConsider the conversation history above when parsing. If the current query appears to be a follow-up question (e.g., "show me their profiles", "who are they", "what about their skills"), use the context from previous queries to understand what the user is referring to.`;
+//     }
+
+//     systemPrompt += `
+
+// Extract the following in JSON format:
+// {
+//   "intent": "find_member | get_info | list_members | compare",
+//   "entities": {
+//     "skills": ["skill1", "skill2"] or null,
+//     "location": "city name" or null,
+//     "services": ["service1", "service2"] or null,
+//     "turnover_requirement": "high | medium | low" or null,
+//     "graduation_year": [year1, year2] or null,
+//     "degree": "degree name" or null
+//   },
+//   "search_query": "simplified search query for semantic search",
+//   "confidence": 0.0 to 1.0
+// }
+
+// Rules:
+// - Be GENEROUS with entity extraction - extract implied information too
+// - "IT industry" = extract skills: ["IT", "Information Technology", "software", "technology"]
+// - "consultant" = extract services: ["consulting"]
+// - For turnover: "good"/"high"/"successful" = high (>10Cr), "medium" = medium (2-10Cr), "low" = low (<2Cr)
+// - Normalize city names (e.g., "chennai" → "Chennai", "bangalore" → "Bangalore")
+// - For industry terms, convert to related skills and services
+// - Set confidence >= 0.7 for any reasonable query (only set < 0.7 if truly ambiguous like "find someone")
+// - search_query should be optimized for semantic similarity search - include synonyms and related terms
+// - Default intent is "find_member" unless clearly asking for something else
+
+// Examples:
+// - "IT industry" → skills: ["IT", "software", "technology"], search_query: "IT Information Technology software development"
+// - "consultant" → services: ["consulting"], search_query: "consultant consulting advisory"
+// - "AI expert" → skills: ["AI", "artificial intelligence"], search_query: "AI artificial intelligence machine learning"
+
+// Return ONLY valid JSON, no explanation or markdown formatting.`;
+
+//     try {
+//         const response = await callLLM(systemPrompt, naturalQuery, 0.1);
+
+//         // Clean response (remove markdown code blocks if present)
+//         let cleanedResponse = response.trim();
+//         if (cleanedResponse.startsWith('```json')) {
+//             cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+//         } else if (cleanedResponse.startsWith('```')) {
+//             cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
+//         }
+
+//         const parsed = JSON.parse(cleanedResponse);
+
+//         // Convert to our interface format
+//         const result: ParsedQuery = {
+//             intent: parsed.intent || 'find_member',
+//             entities: {
+//                 skills: parsed.entities?.skills || undefined,
+//                 location: parsed.entities?.location || undefined,
+//                 services: parsed.entities?.services || undefined,
+//                 turnoverRequirement: parsed.entities?.turnover_requirement || undefined,
+//                 graduationYear: parsed.entities?.graduation_year || undefined,
+//                 degree: parsed.entities?.degree || undefined
+//             },
+//             searchQuery: parsed.search_query || naturalQuery,
+//             confidence: parsed.confidence || 0.5
+//         };
+
+//         const duration = Date.now() - startTime;
+//         console.log(`[LLM Service] ✓ Query parsed in ${duration}ms, confidence: ${result.confidence}`);
+//         console.log(`[LLM Service] Entities:`, JSON.stringify(result.entities));
+
+//         return result;
+//     } catch (error: any) {
+//         console.error('[LLM Service] Failed to parse query:', error.message);
+
+//         // Return fallback parsed query with higher confidence
+//         // Use the natural query as-is for semantic search
+//         return {
+//             intent: 'find_member',
+//             entities: {},
+//             searchQuery: naturalQuery,
+//             confidence: 0.6  // Higher fallback confidence - let semantic search handle it
+//         };
+//     }
+// }
+
 export async function parseQuery(naturalQuery: string, conversationContext?: string): Promise<ParsedQuery> {
+    // Use mock in test / offline mode to avoid network/billing failures
+    if (isMockMode()) {
+        console.log('[LLM Service] MOCK mode active - using rule-based parser');
+        return mockParse(naturalQuery);
+    }
+
     const startTime = Date.now();
     console.log(`[LLM Service] Parsing query: "${naturalQuery}"`);
     if (conversationContext) {
@@ -83,20 +185,25 @@ Extract the following in JSON format:
 }
 
 Rules:
-- Be GENEROUS with entity extraction - extract implied information too
+- Be SMART about entity extraction - avoid duplicating the same term in both skills AND services
+- If a term could be either skill OR service, choose ONE based on context:
+  * Technical terms (software, AI, data science) → skills
+  * Business offerings (consulting, advisory, manufacturing) → services
 - "IT industry" = extract skills: ["IT", "Information Technology", "software", "technology"]
-- "consultant" = extract services: ["consulting"]
+- "consultant" = extract services: ["consulting"] (NOT skills)
 - For turnover: "good"/"high"/"successful" = high (>10Cr), "medium" = medium (2-10Cr), "low" = low (<2Cr)
 - Normalize city names (e.g., "chennai" → "Chennai", "bangalore" → "Bangalore")
-- For industry terms, convert to related skills and services
 - Set confidence >= 0.7 for any reasonable query (only set < 0.7 if truly ambiguous like "find someone")
 - search_query should be optimized for semantic similarity search - include synonyms and related terms
 - Default intent is "find_member" unless clearly asking for something else
+- NEVER duplicate the same concept in both skills and services
 
 Examples:
-- "IT industry" → skills: ["IT", "software", "technology"], search_query: "IT Information Technology software development"
-- "consultant" → services: ["consulting"], search_query: "consultant consulting advisory"
-- "AI expert" → skills: ["AI", "artificial intelligence"], search_query: "AI artificial intelligence machine learning"
+- "IT industry" → skills: ["IT", "software", "technology"], services: null
+- "consultant" → skills: null, services: ["consulting"]
+- "AI expert" → skills: ["AI", "artificial intelligence"], services: null
+- "consulting services" → skills: null, services: ["consulting"]
+- "software consultant" → skills: ["software"], services: ["consulting"]
 
 Return ONLY valid JSON, no explanation or markdown formatting.`;
 
@@ -112,6 +219,28 @@ Return ONLY valid JSON, no explanation or markdown formatting.`;
         }
 
         const parsed = JSON.parse(cleanedResponse);
+
+        // ADDITIONAL VALIDATION: Remove duplicates between skills and services
+        const skills = parsed.entities?.skills || [];
+        const services = parsed.entities?.services || [];
+        
+        // If same term appears in both, keep it only in the more appropriate field
+        const skillsLower = skills.map((s: string) => s.toLowerCase());
+        const servicesLower = services.map((s: string) => s.toLowerCase());
+        
+        const duplicates = skillsLower.filter((s: string) => servicesLower.includes(s));
+        
+        if (duplicates.length > 0) {
+            console.log(`[LLM Service] ⚠️ Found duplicates between skills and services: ${duplicates.join(', ')}`);
+            console.log(`[LLM Service] Removing from services, keeping in skills`);
+            
+            // Remove duplicates from services
+            const cleanedServices = services.filter((s: string) => 
+                !skillsLower.includes(s.toLowerCase())
+            );
+            
+            parsed.entities.services = cleanedServices.length > 0 ? cleanedServices : null;
+        }
 
         // Convert to our interface format
         const result: ParsedQuery = {
@@ -506,4 +635,70 @@ export async function getLLMResponse(message: string): Promise<string> {
         }
         return 'Sorry, I could not process your request.';
     }
+}
+
+// Simple mock-mode detector
+function isMockMode() {
+    return process.env.MOCK_LLM === 'true' || process.env.NODE_ENV === 'test';
+}
+
+// Very small rule-based mock parser used during tests / offline
+function mockParse(naturalQuery: string): ParsedQuery {
+    const q = naturalQuery.toLowerCase();
+    const result: ParsedQuery = {
+        intent: 'find_member',
+        entities: {},
+        searchQuery: naturalQuery,
+        confidence: 0.9
+    };
+
+    // year extraction
+    const yearMatch = q.match(/\b(19|20)\d{2}\b/);
+    if (yearMatch) {
+        result.entities = { graduationYear: [parseInt(yearMatch[0], 10)] as any };
+        return result;
+    }
+
+    // degree/branch detection (normalized)
+    const degreeMap: { pattern: RegExp; degree: string }[] = [
+        { pattern: /\b(textile|textile engineering)\b/, degree: 'Textile' },
+        { pattern: /\b(mechanical|mechanical engineering)\b/, degree: 'Mechanical' },
+        { pattern: /\b(civil|civil engineering)\b/, degree: 'Civil' },
+        { pattern: /\b(ece|electronics and communication|electronic and communication)\b/, degree: 'ECE' },
+        { pattern: /\b(mca|master of computer applications)\b/, degree: 'MCA' },
+        { pattern: /\b(it|information technology)\b/, degree: 'IT' },
+        { pattern: /\b(chemical|chemical engineering)\b/, degree: 'Chemical' },
+        { pattern: /\b(eee|electrical and electronics|electrical engineering)\b/, degree: 'EEE' }
+    ];
+
+    for (const entry of degreeMap) {
+        if (entry.pattern.test(q)) {
+            result.entities = { ...(result.entities || {}), degree: entry.degree } as any;
+            // do not return immediately — allow location/skills to also be detected
+            break;
+        }
+    }
+
+    // city detection (add more cities as needed)
+    const cities = ['chennai','bangalore','bengaluru','coimbatore','madurai','sivakasi','hyderabad'];
+    const foundCity = cities.find(c => q.includes(c));
+    if (foundCity) {
+        result.entities = { ...(result.entities || {}), location: foundCity.charAt(0).toUpperCase() + foundCity.slice(1) } as any;
+    }
+
+    // simple skill vs service rules
+    const serviceTerms = ['consultant','consulting','services','agency','company','manufacturer','manufacturing'];
+    const skillTerms = ['web development','web design','it','ai','digital marketing','software','machine learning'];
+
+    const foundServices = serviceTerms.filter(t => q.includes(t));
+    const foundSkills = skillTerms.filter(t => q.includes(t));
+
+    if (foundSkills.length > 0) {
+        result.entities = { ...(result.entities || {}), skills: foundSkills } as any;
+    } else if (foundServices.length > 0) {
+        // prefer services if service keywords present
+        result.entities = { ...(result.entities || {}), services: ['consulting'] } as any;
+    }
+
+    return result;
 }
