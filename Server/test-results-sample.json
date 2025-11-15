@@ -1,0 +1,28 @@
+{
+  "total": 15,
+  "correct": 10,
+  "partial": 3,
+  "incorrect": 2,
+  "byCategory": {
+    "entrepreneurs": {
+      "total": 5,
+      "correct": 4,
+      "partial": 0,
+      "incorrect": 1
+    },
+    "alumni": {
+      "total": 5,
+      "correct": 2,
+      "partial": 2,
+      "incorrect": 1
+    },
+    "alumni_business": {
+      "total": 5,
+      "correct": 4,
+      "partial": 1,
+      "incorrect": 0
+    }
+  },
+  "avgResponseTime": 5134.133333333333,
+  "avgConfidence": 0.8800000000000002
+}
