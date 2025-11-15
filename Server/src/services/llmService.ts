@@ -2,6 +2,8 @@ import axios from 'axios';
 import { ParsedQuery, ExtractedEntities, Member, MemberSearchResult } from '../utils/types';
 import { classifyIntent, Intent, IntentResult } from './intentClassifier';
 import { getLLMFactory, LLMProviderError } from './llm';
+import { formatResults, FormatterContext } from './responseFormatter';
+import { generateSuggestions as generateTemplateSuggestions, SuggestionContext } from './suggestionEngine';
 
 // ============================================================================
 // NORMALIZATION CONSTANTS
@@ -347,18 +349,64 @@ export async function parseQuery(naturalQuery: string, conversationContext?: str
 //             return `I found ${results.length} members matching your search. Top matches include ${topNames}. Would you like to refine your search or see more details?`;
 //         }
 //     }
-// }
+// =====================================================================
+// RESPONSE GENERATION (Template-Based with LLM Fallback)
+// =====================================================================
 
+/**
+ * Generate formatted response from search results
+ * Uses template-based formatting (Task 3.1) with LLM fallback for edge cases
+ * 
+ * @param originalQuery - Original search query
+ * @param results - Search results
+ * @param confidence - Extraction confidence score
+ * @param intent - Detected intent
+ * @param entities - Extracted entities
+ * @returns Formatted response string
+ */
 export async function generateResponse(
   originalQuery: string,
   results: MemberSearchResult[],
-  confidence: number
+  confidence: number,
+  intent?: Intent,
+  entities?: ExtractedEntities
 ): Promise<string> {
   const startTime = Date.now();
 
+  // Empty results handling
   if (results.length === 0) {
     return `I couldn't find any members matching "${originalQuery}". Try different keywords or locations.`;
   }
+
+  // Try template-based formatting first (fast, no API cost)
+  if (intent && entities) {
+    try {
+      const context: FormatterContext = {
+        query: originalQuery,
+        intent: intent,
+        entities: {
+          graduationYear: entities.graduationYear,
+          location: entities.location,
+          degree: entities.degree,
+          branch: entities.branch,
+          skills: entities.skills,
+          services: entities.services,
+          name: entities.name,
+          organizationName: entities.organizationName
+        },
+        resultCount: results.length
+      };
+
+      const formatted = formatResults(results, context);
+      console.log(`[LLM Service] ✓ Template response in ${Date.now() - startTime}ms`);
+      return formatted;
+    } catch (error: any) {
+      console.warn(`[LLM Service] Template formatting failed: ${error.message}, falling back to LLM`);
+    }
+  }
+
+  // Fallback to LLM for edge cases (legacy behavior)
+  console.log(`[LLM Service] Using LLM fallback (no intent/entities provided)`);
 
   const systemPrompt = `
 You are a member search assistant. Format results as simple comma-separated lines.
@@ -377,12 +425,12 @@ Show ALL members provided. No bold, no markdown, no extra text.`;
 
   try {
     const response = await callLLM(systemPrompt, userMessage, 0.2);
-    console.log(`[LLM Service] ✓ Response generated in ${Date.now() - startTime}ms`);
+    console.log(`[LLM Service] ✓ LLM response generated in ${Date.now() - startTime}ms`);
     return response.trim();
   } catch (error: any) {
-    console.error("[LLM Service] Fallback response used due to error:", error.message);
+    console.error("[LLM Service] LLM fallback failed:", error.message);
 
-    // Simple fallback with comma-separated format for ALL results
+    // Simple fallback format for ALL results
     const fallbackList = safeResults
       .map((r, i) => {
         const parts = [r.name];
@@ -392,20 +440,64 @@ Show ALL members provided. No bold, no markdown, no extra text.`;
 
         return `${i + 1}. ${parts.join(', ')}`;
       })
-    console.error('[LLM Service] Response generation failed:', error.message);
-    // Fallback
-    return safeResults
-      .map(r => `${r.id}. ${r.name}, ${r.email}, ${r.phone}, ${r.city}`)
       .join('\n');
+
+    return `Found ${results.length} members:\n\n${fallbackList}`;
   }
 }
 
 // =====================================================================
-// SUGGESTIONS
+// SUGGESTIONS (Template-Based with LLM Fallback)
 // =====================================================================
 
-export async function generateSuggestions(originalQuery: string, results: MemberSearchResult[]): Promise<string[]> {
+/**
+ * Generate follow-up query suggestions
+ * Uses template-based suggestions (Task 3.2) with LLM fallback for edge cases
+ * 
+ * @param originalQuery - Original search query
+ * @param results - Search results
+ * @param intent - Detected intent (optional)
+ * @param entities - Extracted entities (optional)
+ * @returns Array of 3 suggestion strings
+ */
+export async function generateSuggestions(
+  originalQuery: string,
+  results: MemberSearchResult[],
+  intent?: Intent,
+  entities?: ExtractedEntities
+): Promise<string[]> {
   const startTime = Date.now();
+
+  // Try template-based suggestions first (fast, no API cost)
+  if (intent && entities) {
+    try {
+      const context: SuggestionContext = {
+        query: originalQuery,
+        intent: intent,
+        entities: {
+          graduationYear: entities.graduationYear,
+          location: entities.location,
+          degree: entities.degree,
+          branch: entities.branch,
+          skills: entities.skills,
+          services: entities.services,
+          name: entities.name,
+          organizationName: entities.organizationName
+        },
+        resultCount: results.length,
+        hasResults: results.length > 0
+      };
+
+      const suggestions = generateTemplateSuggestions(results, context);
+      console.log(`[LLM Service] ✓ Template suggestions in ${Date.now() - startTime}ms`);
+      return suggestions;
+    } catch (error: any) {
+      console.warn(`[LLM Service] Template suggestions failed: ${error.message}, falling back to LLM`);
+    }
+  }
+
+  // Fallback to LLM for edge cases (legacy behavior)
+  console.log(`[LLM Service] Using LLM fallback for suggestions (no intent/entities provided)`);
 
   const systemPrompt = `Generate 3 relevant follow-up search suggestions based on results. Return JSON array only: ["...", "...", "..."]`;
 
@@ -422,13 +514,16 @@ export async function generateSuggestions(originalQuery: string, results: Member
     } catch {
       suggestions = getFallbackSuggestions(results);
     }
-    console.log(`[LLM Service] ✓ Suggestions in ${Date.now() - startTime}ms`);
+    console.log(`[LLM Service] ✓ LLM suggestions in ${Date.now() - startTime}ms`);
     return Array.isArray(suggestions) ? suggestions.slice(0, 3) : getFallbackSuggestions(results);
   } catch {
     return getFallbackSuggestions(results);
   }
 }
 
+/**
+ * Fallback suggestions when LLM and templates fail
+ */
 function getFallbackSuggestions(results: MemberSearchResult[]): string[] {
   const suggestions: string[] = [];
 
