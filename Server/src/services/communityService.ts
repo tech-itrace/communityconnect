@@ -1,4 +1,5 @@
 import { query } from "../config/db";
+import { randomUUID } from "crypto";
 
 export interface Community {
   id: string;
@@ -59,66 +60,6 @@ export async function getCommunityById(id: string): Promise<Community | null> {
     };
 }
 
-/** Create a new community */
-// export async function createCommunity(communityData: {
-//     name: string;
-//     description?: string;
-//     type?: string;
-//     admins?: any; // JSON field (will be string from frontend)
-//     rules?: string;
-//     is_bot_enable?: boolean;
-//     created_at?: Date;
-//     updated_at?: Date;
-//     is_active?: boolean;
-//     created_by?: string;
-// }): Promise<Community> {
-//     console.log(`[Community Service] Creating community: ${communityData.name}`);
-
-//     const {
-//         name,
-//         description,
-//         type,
-//         admins,
-//         rules,
-//         is_bot_enable = false,
-//         is_active = true,
-//         created_by,
-//     } = communityData;
-
-//     const queryText = `
-//         INSERT INTO community
-//         (name, description, type, admins, rules, is_bot_enable, is_active, created_by, created_at, updated_at) 
-//         VALUES
-//         ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-//         RETURNING id
-//     `;
-
-//     const values = [
-//         name,
-//         description,
-//         type,
-//         admins, // This is already a JSON string from frontend
-//         rules,
-//         is_bot_enable,
-//         is_active,
-//         created_by
-//     ];
-
-//     console.log('[Community Service] Query values:', values);
-
-//     const result = await query(queryText, values);
-
-//     const communityId = result.rows[0].id;
-
-//     const createdCommunity = await getCommunityById(communityId);
-    
-//     if (!createdCommunity) {
-//         throw new Error('Failed to retrieve created community');
-//     }
-
-//     return createdCommunity;
-// }
-
 /** Check if member exists */
 async function findMember(phone: string, email: string) {
   const sql = `
@@ -145,17 +86,18 @@ async function createTypeMember(type: string, memberId: string, data: any) {
   if (type === "alumini") {
     const sql = `
       INSERT INTO alumini_members
-      (id, college, graduation_year, degree, department, roll_no, current_organization, designation, member_id, is_active, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TRUE, NOW())
+      (id, college, graduation_year, degree, department, current_organization, designation, member_id, is_active, created_at, updated_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE, NOW(), NOW())
       RETURNING *
     `;
-
+const newId = randomUUID();
     const params = [
+        newId,
       data.college,
       data.graduation_year,
       data.degree,
       data.department,
-      data.roll_no,
+    //   data.roll_no,
       data.current_organization,
       data.designation,
       memberId
@@ -255,10 +197,11 @@ export async function createCommunity(communityData: {
       const newMember = await createMember(admin);
       memberId = newMember.id;
     }
-
+    console.log("memberId:" + memberId)
+console.log("communityData: " + JSON.stringify(communityData))
     // Step 3: Insert into type-specific table
     const typeMember = await createTypeMember(type!, memberId, communityData.member_type_data);
-
+console.log("typeMember: " + JSON.stringify(typeMember))
 
     // Step 4: Insert into community_members_types
     await addCommunityMemberMapping(
