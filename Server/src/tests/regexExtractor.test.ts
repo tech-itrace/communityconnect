@@ -10,7 +10,7 @@
  * - Cost: $0 (vs $0.10 for LLM)
  */
 
-import { extractEntitiesWithRegex, RegexExtractionResult } from '../services/regexExtractor';
+import { extractWithRegex, RegexExtractionResult } from '../services/regexExtractor';
 import { ExtractedEntities } from '../utils/types';
 
 interface QueryTestCase {
@@ -260,7 +260,7 @@ describe('Regex Entity Extraction Tests (15 queries)', () => {
             metrics.byCategory[testCase.category].total++;
 
             const startTime = Date.now();
-            const result = extractEntitiesWithRegex(testCase.query);
+            const result = extractWithRegex(testCase.query);
             const responseTime = Date.now() - startTime;
 
             totalTime += responseTime;

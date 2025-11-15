@@ -93,14 +93,28 @@ if [ -f ".env" ]; then
         check_warn "DATABASE_URL not found in .env"
     fi
     
+    # Check LLM provider configuration
+    if grep -q "LLM_PROVIDER_PRIMARY" .env; then
+        PRIMARY_PROVIDER=$(grep "LLM_PROVIDER_PRIMARY" .env | cut -d'=' -f2)
+        check_pass "LLM_PROVIDER_PRIMARY configured: $PRIMARY_PROVIDER"
+    else
+        check_warn "LLM_PROVIDER_PRIMARY not found (defaults to deepinfra)"
+    fi
+    
     if grep -q "DEEPINFRA_API_KEY" .env; then
         check_pass "DEEPINFRA_API_KEY configured"
     else
         check_warn "DEEPINFRA_API_KEY not found in .env"
     fi
+    
+    if grep -q "GOOGLE_API_KEY" .env; then
+        check_pass "GOOGLE_API_KEY configured (fallback provider)"
+    else
+        check_warn "GOOGLE_API_KEY not found (optional fallback)"
+    fi
 else
     check_fail ".env file not found"
-    echo "   Create .env file with DATABASE_URL and DEEPINFRA_API_KEY"
+    echo "   Create .env file with DATABASE_URL and API keys"
 fi
 echo ""
 

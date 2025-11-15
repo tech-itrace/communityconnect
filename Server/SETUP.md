@@ -46,20 +46,46 @@ Quick steps:
    NODE_ENV=development
    PORT=3000
    
-   # AI/LLM API Keys
+   # Multi-Provider LLM Configuration
+   LLM_PROVIDER_PRIMARY=deepinfra         # Primary provider
+   LLM_PROVIDER_FALLBACK=google_gemini    # Fallback provider
+   LLM_ENABLE_RETRY_BACKOFF=true          # Exponential backoff
+   LLM_RETRY_DELAY_MS=1000                # Base retry delay
+   LLM_MAX_RETRIES=3                      # Max retry attempts
+   
+   # API Keys
    DEEPINFRA_API_KEY=your_deepinfra_key_here
+   GOOGLE_API_KEY=your_google_api_key_here  # Optional (for fallback)
    
    # Database Configuration
    DATABASE_URL=postgresql://user:password@localhost:5432/community_connect
    # Or for Supabase:
    # DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+   
+   # Redis (for sessions and rate limiting)
+   REDIS_URL=redis://localhost:6379
    ```
 
-3. **Get a DeepInfra API Key** (if you don't have one):
+3. **Get API Keys**:
+   
+   **DeepInfra (Required):**
    - Go to [https://deepinfra.com](https://deepinfra.com)
    - Sign up and create an API key
-   - Add it to your `.env` file
-   - DeepInfra provides both LLM (Llama 3.1) and embeddings (BAAI/bge-base-en-v1.5)
+   - Provides: Llama 3.1 8B (inference) + BAAI/bge-base-en-v1.5 (embeddings)
+   - Free tier: 50 requests/minute
+   
+   **Google Gemini (Optional, for fallback):**
+   - Go to [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
+   - Create API key
+   - Enable "Generative Language API" in Google Cloud Console
+   - Setup billing account (required)
+   - Provides: Gemini 2.0 Flash (inference) + text-embedding-004 (embeddings)
+   - Free tier: 15 requests/minute
+   
+   **Comparison:**
+   - DeepInfra: Cheaper, open-source models, good for development
+   - Gemini: Faster responses, better JSON formatting, good for production
+   - Recommended: Use both with automatic fallback
 
 ## Installation Steps
 
@@ -147,14 +173,71 @@ Server running on http://localhost:3000
 
 ## Verification
 
-Test that everything is working:
+### 1. Test Server Health
 
 ```bash
-# Test basic server
-curl http://localhost:3000/api/messages/ \
+curl http://localhost:3000/api/health
+```
+
+### 2. Test LLM Providers
+
+```bash
+# Test multi-provider system
+npm test llmFactory
+
+# Expected output:
+# ✓ should initialize with available providers
+# ✓ should generate text with primary provider
+# ✓ should fallback to secondary provider when primary fails
+# ✓ All tests passing (7/7)
+```
+
+### 3. Test Natural Language Query
+
+```bash
+curl http://localhost:3000/api/search \
   -X POST \
   -H "Content-Type: application/json" \
-  -d '{"message": "Hello"}'
+  -d '{
+    "query": "Find 1995 batch mechanical engineers",
+    "phoneNumber": "9876543210"
+  }'
+```
+
+### 4. Verify Embeddings
+
+```bash
+# Check embedding count
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM member_embeddings;"
+
+# Should return: 48
+```
+
+## Testing the Multi-Provider System
+
+### Quick LLM Test
+
+Run the comprehensive LLM test suite:
+
+```bash
+# Fast mode (for development)
+LLM_ENABLE_RETRY_BACKOFF=false LLM_RETRY_DELAY_MS=100 npm test llmFactory
+
+# Full suite
+npm test llmServiceDomainSpecific
+```
+
+### Test Provider Fallback
+
+```bash
+# Test with DeepInfra primary
+LLM_PROVIDER_PRIMARY=deepinfra npm test llmFactory
+
+# Test with Gemini primary  
+LLM_PROVIDER_PRIMARY=google_gemini npm test llmFactory
+
+# Test DeepInfra only (no fallback)
+LLM_PROVIDER_FALLBACK=none npm test llmFactory
 ```
 
 ## Troubleshooting

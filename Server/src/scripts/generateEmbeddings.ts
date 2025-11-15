@@ -1,13 +1,9 @@
 import dotenv from 'dotenv';
-import axios from 'axios';
 import pool, { query } from '../config/db';
+import { getLLMFactory } from '../services/llm';
 
 // Load environment variables
 dotenv.config();
-
-// DeepInfra embedding model - BAAI/bge-base-en-v1.5
-// More cost-effective than OpenAI and produces 768-dimensional embeddings
-const DEEPINFRA_EMBEDDING_API_URL = 'https://api.deepinfra.com/v1/inference/BAAI/bge-base-en-v1.5';
 
 interface Member {
     id: string;
@@ -72,49 +68,34 @@ function buildSkillsText(member: Member): string {
 }
 
 async function generateEmbedding(text: string): Promise<number[]> {
-    const DEEPINFRA_API_KEY = process.env.DEEPINFRA_API_KEY;
-
-    if (!DEEPINFRA_API_KEY) {
-        throw new Error('DEEPINFRA_API_KEY is not set');
-    }
-
     try {
-        const response = await axios.post(
-            DEEPINFRA_EMBEDDING_API_URL,
-            {
-                inputs: [text],
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${DEEPINFRA_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
+        const llmFactory = getLLMFactory();
+        
+        const response = await llmFactory.getEmbedding({
+            text: text
+        });
 
-        // DeepInfra returns embeddings in response.data.embeddings array
-        const embedding = response.data?.embeddings?.[0];
-
-        if (!embedding || !Array.isArray(embedding)) {
-            throw new Error('Invalid embedding response from DeepInfra');
+        if (!response.embeddings || response.embeddings.length === 0) {
+            throw new Error('Invalid embedding response from LLM provider');
         }
 
-        return embedding;
+        // Return the first embedding (single text input)
+        return response.embeddings[0];
     } catch (error: any) {
         console.error('[Embeddings] Error generating embedding:', error.message);
-        if (error.response) {
-            console.error('[Embeddings] API Error:', error.response.status, error.response.data);
-        }
         throw error;
     }
 }
 
 async function generateEmbeddings() {
     console.log('[Embeddings] Starting embeddings generation...');
-    console.log('[Embeddings] Using DeepInfra BAAI/bge-base-en-v1.5 model (768 dimensions)');
+    console.log('[Embeddings] Using LLM Factory with automatic provider fallback');
+    console.log('[Embeddings] Providers: DeepInfra (BAAI/bge-base-en-v1.5) → Gemini (text-embedding-004)');
+    console.log('[Embeddings] Both models produce 768-dimensional embeddings');
 
-    if (!process.env.DEEPINFRA_API_KEY) {
-        console.error('[Embeddings] ❌ DEEPINFRA_API_KEY is not set in environment variables');
+    // Verify at least one API key is set
+    if (!process.env.DEEPINFRA_API_KEY && !process.env.GOOGLE_API_KEY) {
+        console.error('[Embeddings] ❌ No API keys configured. Set DEEPINFRA_API_KEY or GOOGLE_API_KEY');
         process.exit(1);
     }
 
@@ -163,12 +144,18 @@ async function generateEmbeddings() {
                     console.log(`[Embeddings] Processed ${processedCount}/${members.length} members...`);
                 }
 
-                // Rate limiting - OpenAI has limits
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Rate limiting - brief pause between requests
+                await new Promise(resolve => setTimeout(resolve, 200));
 
             } catch (error) {
                 console.error(`[Embeddings] Error processing member ${member.name}:`, error);
                 errorCount++;
+                
+                // If we hit too many errors, check if it's a provider issue
+                if (errorCount > 5 && errorCount > processedCount * 0.3) {
+                    console.error('[Embeddings] Too many errors, stopping to prevent wasted API calls');
+                    throw new Error('High error rate detected');
+                }
             }
         }
 
