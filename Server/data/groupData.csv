@@ -1,0 +1,11 @@
+id,name,createdBy,createdAt,description
+1,XYZ Alumni Group,system,2024-01-15,Group for system administrators
+2,Marketing Team,john.doe,2024-02-10,Handles marketing campaigns and content
+3,Development Squad,alice.w,2024-03-05,Developers working on core features
+4,HR Committee,susan.k,2024-04-01,Manages recruitment and employee policies
+5,Finance Panel,michael.b,2024-05-20,Oversees budgeting and financial planning
+6,Customer Support Team,support.bot,2024-06-14,Team assisting customers with issues
+7,Design Crew,emma.l,2024-07-02,Responsible for product UI/UX design
+8,Religious Group,robert.t,2024-07-18,Quality Assurance and testing processes
+9,Sales Unit,sarah.m,2024-08-22,Handles product sales and client relationships
+10,Operations Task Force,mark.p,2024-09-10,Coordinates company-wide operations

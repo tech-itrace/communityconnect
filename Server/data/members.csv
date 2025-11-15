@@ -1,0 +1,51 @@
+Name,YearOfGraduation,Degree,Branch,WorkingKnowledge,Email,PhoneNumber,Address,CityOrTown,OrganizationName,Designation,GroupId
+Aarav Kumar,2020,B.E,Computer Science,React,aarav.kumar@example.com,9876543101,12 MG Road,Bengaluru,TCS,Software Engineer,1
+Ananya Singh,2019,B.Tech,IT,Node.js,ananya.singh@example.com,9876543102,45 Lake View,Hyderabad,Infosys,Backend Developer,2
+Rohit Sharma,2018,B.E,Mechanical,AutoCAD,rohit.sharma@example.com,9876543103,78 Crescent Park,Chennai,Ashok Leyland,Mechanical Engineer,3
+Priya Patel,2021,B.Sc,Computer Science,Python,priya.patel@example.com,9876543104,90 River Lane,Ahmedabad,Wipro,Data Analyst,1
+Vikram Mehta,2022,B.Tech,ECE,Embedded C,vikram.mehta@example.com,9876543105,34 Green Street,Pune,Bosch,Embedded Engineer,4
+Sneha Reddy,2020,MCA,Computer Applications,Java,sneha.reddy@example.com,9876543106,11 Hill View,Hyderabad,Cognizant,Associate Developer,5
+Karthik Nair,2019,B.E,Electrical,Matlab,karthik.nair@example.com,9876543107,67 Palm Road,Kochi,Siemens,Electrical Engineer,3
+Meera Joseph,2021,B.Tech,Civil,AutoCAD,meera.joseph@example.com,9876543108,22 Mission Road,Bengaluru,L&T,Civil Engineer,2
+Arjun Verma,2020,BCA,Computer Applications,JavaScript,arjun.verma@example.com,9876543109,77 Sunrise Street,Mumbai,Accenture,Frontend Developer,4
+Divya Iyer,2022,B.Com,Commerce,Accounting,divya.iyer@example.com,9876543110,56 Silver Park,Chennai,Deloitte,Accountant,5
+Harish Gupta,2018,B.E,Mechanical,SolidWorks,harish.gupta@example.com,9876543111,89 Rose Avenue,Jaipur,Maruti Suzuki,Design Engineer,1
+Sana Farooq,2019,B.Tech,IT,Angular,sana.farooq@example.com,9876543112,66 Pearl Street,Delhi,HCL,UI Developer,2
+Rajesh Pillai,2020,B.E,ECE,VLSI,rajesh.pillai@example.com,9876543113,21 Lotus Lane,Kochi,Intel,VLSI Engineer,3
+Nisha Kapoor,2021,MBA,Finance,Excel,nisha.kapoor@example.com,9876543114,92 Park Towers,Mumbai,KPMG,Financial Analyst,4
+Ashwin Rao,2022,B.Tech,Computer Science,Docker,ashwin.rao@example.com,9876543115,43 Nehru Street,Pune,Capgemini,DevOps Engineer,5
+Pooja Jain,2020,B.Sc,IT,PHP,pooja.jain@example.com,9876543116,38 City Center,Indore,Zoho,Web Developer,1
+Uday Menon,2019,B.E,Civil,STAAD Pro,uday.menon@example.com,9876543117,72 West End,Kochi,L&T,Structural Engineer,2
+Ritu Mishra,2018,BCA,Computer Applications,HTML,CSS,ritu.mishra@example.com,9876543118,44 Garden Colony,Varanasi,TCS,Frontend Intern,3
+Sudeep Varma,2021,B.Tech,ECE,IoT,sudeep.varma@example.com,9876543119,99 Green Woods,Hyderabad,Bosch,IoT Engineer,4
+Aishwarya Das,2022,B.Com,Accounting,Tally,aishwarya.das@example.com,9876543120,12 Market Road,Kolkata,PwC,Audit Associate,5
+Kiran Sahu,2019,B.E,EEE,Power Systems,kiran.sahu@example.com,9876543121,58 Skyline Enclave,Bhubaneswar,Adani,Electrical Analyst,1
+Sonal Mehta,2020,B.Tech,Computer Science,Java,sonal.mehta@example.com,9876543122,81 Central Plaza,Surat,Wipro,Java Developer,2
+Naveen Prasad,2021,MCA,Computer Applications,C++,naveen.prasad@example.com,9876543123,25 Jain Street,Bengaluru,Infosys,Software Engineer,3
+Shreya Kulkarni,2018,B.Tech,IT,SQL,shreya.kulkarni@example.com,9876543124,90 Garden Bay,Pune,Cognizant,Database Analyst,4
+Tarun Malhotra,2022,B.Sc,Computer Science,Python,tarun.malhotra@example.com,9876543125,34 Horizon Road,Mumbai,TCS,ML Intern,5
+Lakshmi Rao,2019,B.E,CSE,React Native,lakshmi.rao@example.com,9876543126,67 Temple Road,Chennai,Accenture,Mobile Developer,1
+Manoj Singh,2020,B.Tech,ECE,Networking,manoj.singh@example.com,9876543127,12 Phase 2,Noida,Cisco,Network Engineer,2
+Radhika S,2021,BCA,Computer Applications,MySQL,radhika.s@example.com,9876543128,76 Old Town,Mysuru,Zoho,Junior Developer,3
+Sathish Kumar,2018,B.E,Mechanical,Catia,sathish.kumar@example.com,9876543129,92 High Street,Chennai,BMW,Design Engineer,4
+Farhan Ali,2022,MBA,Marketing,SEO,farhan.ali@example.com,9876543130,55 MG Layout,Bengaluru,Flipkart,Marketing Analyst,5
+Anjali Menon,2019,B.Tech,Civil,Revit,anjali.menon@example.com,9876543131,87 St. Thomas Road,Kochi,L&T,Architectural Designer,1
+Rakesh Pandey,2020,B.E,EEE,Power BI,rakesh.pandey@example.com,9876543132,19 Sector 4,Gurgaon,Siemens,Data Engineer,2
+Sahana Rao,2021,B.Tech,CSE,Git,sahana.rao@example.com,9876543133,66 Coral Street,Chennai,Capgemini,Software Developer,3
+Aravind Krishnan,2018,MCA,Computer Applications,.NET,aravind.k@example.com,9876543134,22 North Street,Bengaluru,Infosys,.NET Engineer,4
+Neha Bhat,2022,B.Sc,IT,Cloud Computing,neha.bhat@example.com,9876543135,98 Lotus Garden,Pune,Wipro,Cloud Associate,5
+Yashwant Desai,2019,B.Tech,ECE,Arduino,yashwant.desai@example.com,9876543136,45 Rajpath,Ahmedabad,Bosch,Electronics Engineer,1
+Pavitra Sharma,2020,B.Com,Accounting,MS Office,pavitra.sharma@example.com,9876543137,73 Market View,Jaipur,KPMG,Accounts Executive,2
+Sriram Iyer,2021,B.E,Mechanical,Thermodynamics,sriram.iyer@example.com,9876543138,54 South Lane,Coimbatore,Ashok Leyland,Mechanical Analyst,3
+Nagma Sultana,2022,B.Tech,CSE,TypeScript,nagma.sultana@example.com,9876543139,77 East Road,Hyderabad,Google,Software Intern,4
+Vinay Kulkarni,2018,B.E,IT,Kubernetes,vinay.kulkarni@example.com,9876543140,65 Sector 9,Pune,IBM,DevOps Analyst,5
+Harini Rajan,2019,MBA,HR,Recruitment,harini.rajan@example.com,9876543141,36 Park Avenue,Chennai,Zoho,HR Executive,1
+Ankit Chauhan,2020,B.Tech,ECE,FPGA,ankit.chauhan@example.com,9876543142,81 Mill Road,Delhi,Intel,Hardware Engineer,2
+Swathi Menon,2021,BCA,Computer Applications,HTML,swathi.menon@example.com,9876543143,55 Orchid Place,Kochi,Infosys,Frontend Developer,3
+Deepak Reddy,2018,B.E,Civil,Construction,deepak.reddy@example.com,9876543144,90 Lake City,Hyderabad,L&T,Site Engineer,4
+Rekha S,2022,B.Tech,IT,Node.js,rekha.s@example.com,9876543145,48 Green Field,Bengaluru,TCS,Backend Intern,5
+Varun Shah,2019,B.Tech,CSE,Flutter,varun.shah@example.com,9876543146,12 MG Road,Indore,Cognizant,App Developer,1
+Keerthana R,2020,B.Com,Finance,Taxation,keerthana.r@example.com,9876543147,22 VIP Colony,Madurai,PwC,Tax Associate,2
+Mahesh Gowda,2021,B.E,EEE,Power Electronics,mahesh.gowda@example.com,9876543148,45 Market Street,Bengaluru,ABB,Electrical Engineer,3
+Soumya Jain,2018,B.Tech,CSE,JavaScript,soumya.jain@example.com,9876543149,98 Blossom Road,Delhi,HCL,Software Engineer,4
+Ranjith Kumar,2022,B.Sc,CS,Python,ranjith.kumar@example.com,9876543150,65 River Park,Chennai,Infosys,Data Intern,5
