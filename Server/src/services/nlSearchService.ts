@@ -2,6 +2,7 @@ import { parseQuery, generateResponse, generateSuggestions } from './llmService'
 import { searchMembers } from './semanticSearch';
 import { extractEntities, HybridExtractionResult } from './hybridExtractor';
 import { Intent } from './intentClassifier';
+import { logPerformance, PerformanceMetrics } from '../middlewares/performanceMonitor';
 import {
     NLSearchResult,
     SearchFilters,
@@ -129,6 +130,7 @@ export async function processNaturalLanguageQuery(
 
         // Step 4: Generate conversational response
         console.log(`[NL Search] Step 3: Generating conversational response...`);
+        const formatStartTime = Date.now();
 
         // Convert ScoredMember to MemberSearchResult
         const memberResults = searchResponse.members.map(member => ({
@@ -156,7 +158,8 @@ export async function processNaturalLanguageQuery(
             extracted.intent,      // Pass intent for template-based formatting
             extracted.entities     // Pass entities for template-based formatting
         );
-        console.log(`[NL Search] ✓ Response generated (template-based)`);
+        const formatTime = Date.now() - formatStartTime;
+        console.log(`[NL Search] ✓ Response generated (template-based) in ${formatTime}ms`);
 
         // Step 5: Generate follow-up suggestions
         console.log(`[NL Search] Step 4: Generating suggestions...`);
@@ -178,8 +181,11 @@ export async function processNaturalLanguageQuery(
             hasPreviousPage: (searchParams.options?.page || 1) > 1
         };
 
+        // Calculate final execution time and component times
+        const totalExecutionTime = Date.now() - startTime;
+        const searchTime = totalExecutionTime - extracted.extractionTime - formatTime;
+
         // Build result
-        const executionTime = Date.now() - startTime;
         const result: NLSearchResult = {
             understanding: {
                 intent: extracted.intent as any, // Map Intent to ParsedQuery intent
@@ -201,20 +207,37 @@ export async function processNaturalLanguageQuery(
                 conversational: conversationalResponse,
                 suggestions: suggestions
             },
-            executionTime: executionTime,
+            executionTime: totalExecutionTime,
             performance: {
                 extractionTime: extracted.extractionTime,
                 extractionMethod: extracted.method,
                 llmUsed: extracted.metadata.llmUsed,
-                searchTime: executionTime - extracted.extractionTime
+                searchTime: searchTime
             }
         };
 
         console.log(`[NL Search] ========================================`);
-        console.log(`[NL Search] ✓ COMPLETED in ${executionTime}ms`);
-        console.log(`[NL Search] Performance: Extraction ${extracted.extractionTime}ms (${extracted.method}), Total ${executionTime}ms`);
+        console.log(`[NL Search] ✓ COMPLETED in ${totalExecutionTime}ms`);
+        console.log(`[NL Search] Performance: Extraction ${extracted.extractionTime}ms (${extracted.method}), Search ${searchTime}ms, Format ${formatTime}ms`);
         console.log(`[NL Search] Results: ${result.results.members.length}, Confidence: ${result.understanding.confidence}`);
         console.log(`[NL Search] ========================================\n`);
+
+        // Log performance metrics (async, don't await to avoid blocking)
+        const perfMetrics: PerformanceMetrics = {
+            query: naturalQuery,
+            intent: extracted.intent,
+            extractionMethod: extracted.method,
+            extractionTime: extracted.extractionTime,
+            searchTime: searchTime,
+            formatTime: formatTime,
+            totalTime: totalExecutionTime,
+            resultCount: memberResults.length,
+            confidence: extracted.confidence,
+            timestamp: new Date(),
+        };
+        logPerformance(perfMetrics).catch(err => {
+            console.warn(`[NL Search] Performance logging failed: ${err}`);
+        });
 
         return result;
 
