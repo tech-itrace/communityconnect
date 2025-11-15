@@ -141,24 +141,41 @@ async function createMember(member: { id: string; name: string; phone: string; e
 }
 
 /** Insert into community type-specific table */
-async function createTypeMember(type: string, memberId: string) {
-  let table = "";
+async function createTypeMember(type: string, memberId: string, data: any) {
+  if (type === "alumini") {
+    const sql = `
+      INSERT INTO alumini_members
+      (id, college, graduation_year, degree, department, roll_no, current_organization, designation, member_id, is_active, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TRUE, NOW())
+      RETURNING *
+    `;
 
-  if (type === "religious") table = "religious_members";
-  if (type === "alumni") table = "alumni_members";
-  if (type === "entrepreneur") table = "entrepreneur_members";
+    const params = [
+      data.college,
+      data.graduation_year,
+      data.degree,
+      data.department,
+      data.roll_no,
+      data.current_organization,
+      data.designation,
+      memberId
+    ];
 
-  if (!table) return null;
+    const res = await query(sql, params);
+    return res.rows[0];
+  }
 
-  const sql = `
-    INSERT INTO ${table} (member_id, is_active, created_at)
-    VALUES ($1, TRUE, NOW())
-    RETURNING id
-  `;
+  if (type === "entrepreneur") {
+    // fill later
+  }
 
-  const res = await query(sql, [memberId]);
-  return res.rows[0];
+  if (type === "religious") {
+    // fill later
+  }
+
+  return null;
 }
+
 
 /** Mapping table */
 async function addCommunityMemberMapping(communityId: string, memberId: string, memberTypeId: string | null) {
@@ -179,6 +196,7 @@ export async function createCommunity(communityData: {
   is_bot_enable?: boolean;
   is_active?: boolean;
   created_by?: string;
+  member_type_data?: any;
 }): Promise<Community> {
 
   console.log(`[Community Service] Creating community: ${communityData.name}`);
@@ -239,7 +257,8 @@ export async function createCommunity(communityData: {
     }
 
     // Step 3: Insert into type-specific table
-    const typeMember = await createTypeMember(type!, memberId);
+    const typeMember = await createTypeMember(type!, memberId, communityData.member_type_data);
+
 
     // Step 4: Insert into community_members_types
     await addCommunityMemberMapping(
