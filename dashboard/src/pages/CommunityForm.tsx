@@ -41,6 +41,15 @@ export function CommunityForm() {
     is_active: true,
     created_by: loggedUser.id,
   });
+const [memberDetails, setMemberDetails] = useState({
+  college: "",
+  graduation_year: "",
+  degree: "",
+  department: "",
+  roll_no: "",
+  current_organization: "",
+  designation: "",
+});
 
   // Fetch single community for editing
   const { data: communityResponse, isLoading } = useQuery({
@@ -96,14 +105,8 @@ export function CommunityForm() {
     if (isEdit) {
       const payload = {
         ...data,
-        admins: JSON.stringify(
-          data.admins.map(a => ({
-            id: a.id,
-            name: a.name,
-            phone: a.phone,
-            email: a.email
-          }))
-        )
+      admins: JSON.stringify([baseAdmin]),
+member_type_data: formData.type === "alumini" ? memberDetails : null
       };
 
       return communityAPI.update(id!, payload);
@@ -111,15 +114,17 @@ export function CommunityForm() {
     
     else {
       const payload = {
-        name: data.name,
-        description: data.description,
-        type: data.type,
-        rules: data.rules,
-        is_bot_enable: data.is_bot_enable,
-        is_active: data.is_active,
-        created_by: loggedUser.id,
-        admins: JSON.stringify([baseAdmin])
-      };
+  name: data.name,
+  description: data.description,
+  type: data.type,
+  rules: data.rules,
+  is_bot_enable: data.is_bot_enable,
+  is_active: data.is_active,
+  created_by: loggedUser.id,
+  admins: JSON.stringify([baseAdmin]),
+  member_type_data: formData.type === "alumini" ? memberDetails : null
+};
+
 
       return communityAPI.create(payload);
     }
@@ -135,6 +140,18 @@ export function CommunityForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    if (name === "type") {
+  // Reset member details when type changes
+  setMemberDetails({
+    college: "",
+    graduation_year: "",
+    degree: "",
+    department: "",
+    roll_no: "",
+    current_organization: "",
+    designation: "",
+  });
+}
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -284,6 +301,101 @@ const handleSubmit = (e: React.FormEvent) => {
                 />
               </div>
             </div>
+
+            {/* Alumni Form */}
+{formData.type === "alumini" && (
+  <div className="border p-4 rounded-md bg-muted/20 space-y-4">
+    <h2 className="font-semibold text-lg">Alumni Member Details</h2>
+
+    <div>
+      <label className="text-sm font-medium">College *</label>
+      <Input
+        name="college"
+        value={memberDetails.college}
+        onChange={(e) =>
+          setMemberDetails({ ...memberDetails, college: e.target.value })
+        }
+        required
+      />
+    </div>
+
+    <div>
+      <label className="text-sm font-medium">Graduation Year *</label>
+      <Input
+        name="graduation_year"
+        value={memberDetails.graduation_year}
+        onChange={(e) =>
+          setMemberDetails({ ...memberDetails, graduation_year: e.target.value })
+        }
+        required
+      />
+    </div>
+
+    <div>
+      <label className="text-sm font-medium">Degree *</label>
+      <Input
+        name="degree"
+        value={memberDetails.degree}
+        onChange={(e) =>
+          setMemberDetails({ ...memberDetails, degree: e.target.value })
+        }
+        required
+      />
+    </div>
+
+    <div>
+      <label className="text-sm font-medium">Department *</label>
+      <Input
+        name="department"
+        value={memberDetails.department}
+        onChange={(e) =>
+          setMemberDetails({ ...memberDetails, department: e.target.value })
+        }
+        required
+      />
+    </div>
+
+    <div>
+      <label className="text-sm font-medium">Roll No *</label>
+      <Input
+        name="roll_no"
+        value={memberDetails.roll_no}
+        onChange={(e) =>
+          setMemberDetails({ ...memberDetails, roll_no: e.target.value })
+        }
+        required
+      />
+    </div>
+
+    <div>
+      <label className="text-sm font-medium">Current Organization *</label>
+      <Input
+        name="current_organization"
+        value={memberDetails.current_organization}
+        onChange={(e) =>
+          setMemberDetails({
+            ...memberDetails,
+            current_organization: e.target.value,
+          })
+        }
+        required
+      />
+    </div>
+
+    <div>
+      <label className="text-sm font-medium">Designation *</label>
+      <Input
+        name="designation"
+        value={memberDetails.designation}
+        onChange={(e) =>
+          setMemberDetails({ ...memberDetails, designation: e.target.value })
+        }
+        required
+      />
+    </div>
+  </div>
+)}
+
 
             <div className="flex justify-end gap-2 pt-4">
               <Link to="/community">
