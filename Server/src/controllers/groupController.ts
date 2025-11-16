@@ -14,6 +14,7 @@ import {
     addMembersToGroup
 } from '../services/groupService';
 import { ApiErrorResponse } from '../utils/types';
+import { PAGINATION } from '../config/constants';
 
 /**
  * GET /api/groups/:id
@@ -98,13 +99,13 @@ export async function getAllGroupsHandler(req: Request, res: Response) {
             return res.status(400).json(errorResponse);
         }
 
-        if (limit < 1 || limit > 100) {
+        if (limit < PAGINATION.MIN_LIMIT || limit > PAGINATION.MAX_LIMIT) {
             const errorResponse: ApiErrorResponse = {
                 success: false,
                 error: {
                     code: 'INVALID_PARAMETERS',
                     message: 'Invalid parameters',
-                    details: { limit: 'Limit must be between 1 and 100' }
+                    details: { limit: `Limit must be between ${PAGINATION.MIN_LIMIT} and ${PAGINATION.MAX_LIMIT}` }
                 }
             };
             return res.status(400).json(errorResponse);

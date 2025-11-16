@@ -6,6 +6,7 @@
 
 import { Request, Response } from 'express';
 import pool from '../config/db';
+import { ANALYTICS } from '../config/constants';
 
 /**
  * GET /api/analytics/overview
@@ -225,7 +226,7 @@ export async function getRoleDistributionHandler(req: Request, res: Response) {
         `);
 
         // Recent role changes
-        const days = req.query.days ? parseInt(req.query.days as string) : 30;
+        const days = req.query.days ? parseInt(req.query.days as string) : ANALYTICS.DEFAULT_DAYS;
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
 
@@ -268,7 +269,7 @@ export async function getRoleDistributionHandler(req: Request, res: Response) {
 export async function getUserActivityHandler(req: Request, res: Response) {
     try {
         const { phone } = req.params;
-        const days = req.query.days ? parseInt(req.query.days as string) : 30;
+        const days = req.query.days ? parseInt(req.query.days as string) : ANALYTICS.DEFAULT_DAYS;
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
 
@@ -302,7 +303,7 @@ export async function getUserActivityHandler(req: Request, res: Response) {
 
         // Recent actions
         const recentActions = await pool.query(`
-            SELECT 
+            SELECT
                 action,
                 resource_type,
                 status,
@@ -310,7 +311,7 @@ export async function getUserActivityHandler(req: Request, res: Response) {
             FROM audit_logs
             WHERE phone = $1
             ORDER BY created_at DESC
-            LIMIT 50
+            LIMIT ${ANALYTICS.TOP_ITEMS_LIMIT}
         `, [phone]);
 
         res.json({

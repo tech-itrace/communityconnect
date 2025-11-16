@@ -1,3 +1,15 @@
+/**
+ * Community Controller
+ *
+ * Handles community-related API endpoints
+ *
+ * Refactored: 2025-01-17
+ * - Removed try-catch blocks (using asyncHandler)
+ * - Standardized error responses
+ * - Added proper error classes
+ * - Cleaner, more maintainable code
+ */
+
 import { Request, Response } from "express";
 import {
   getCommunityById,
@@ -6,60 +18,74 @@ import {
   updateCommunity,
   deleteCommunity,
 } from "../services/communityService";
+import {
+  asyncHandler,
+  NotFoundError,
+  successResponse,
+  createdResponse
+} from "../utils/errors";
 
-export async function getAllCommunitiesHandler(req: Request, res: Response) {
-  try {
-    const communities = await getAllCommunity();
-    res.status(200).json({ success: true, community: communities });
-  } catch (error) {
-    console.error("[Community Controller] Error fetching all:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-}
+/**
+ * GET /api/community
+ * Get all communities
+ */
+export const getAllCommunitiesHandler = asyncHandler(async (req: Request, res: Response) => {
+  const communities = await getAllCommunity();
+  successResponse(res, { communities });
+});
 
-export async function getCommunityByIdHandler(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const community = await getCommunityById(id);
-    if (!community)
-      return res.status(404).json({ success: false, message: "Community not found" });
-    res.status(200).json({ success: true, community: community });
-  } catch (error) {
-    console.error("[Community Controller] Error fetching by ID:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-}
+/**
+ * GET /api/community/:id
+ * Get a single community by ID
+ */
+export const getCommunityByIdHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
 
-export async function createCommunityHandler(req: Request, res: Response) {
-  try {
-    const newCommunity = await createCommunity(req.body);
-    res.status(201).json({ success: true, community: newCommunity });
-  } catch (error) {
-    console.error("[Community Controller] Error creating:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-}
+  const community = await getCommunityById(id);
 
-export async function updateCommunityHandler(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const updated = await updateCommunity(id, req.body);
-    if (!updated)
-      return res.status(404).json({ success: false, message: "Community not found" });
-    res.status(200).json({ success: true, community: updated });
-  } catch (error) {
-    console.error("[Community Controller] Error updating:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
+  if (!community) {
+    throw new NotFoundError('Community', id);
   }
-}
 
-export async function deleteCommunityHandler(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    await deleteCommunity(id);
-    res.status(200).json({ success: true, message: "Community deleted" });
-  } catch (error) {
-    console.error("[Community Controller] Error deleting:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
+  successResponse(res, { community });
+});
+
+/**
+ * POST /api/community
+ * Create a new community
+ * Requires: Admin or Super Admin role
+ */
+export const createCommunityHandler = asyncHandler(async (req: Request, res: Response) => {
+  const newCommunity = await createCommunity(req.body);
+  createdResponse(res, { community: newCommunity });
+});
+
+/**
+ * PUT /api/community/:id
+ * Update an existing community
+ * Requires: Admin or Super Admin role
+ */
+export const updateCommunityHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const updated = await updateCommunity(id, req.body);
+
+  if (!updated) {
+    throw new NotFoundError('Community', id);
   }
-}
+
+  successResponse(res, { community: updated });
+});
+
+/**
+ * DELETE /api/community/:id
+ * Delete a community (soft delete)
+ * Requires: Super Admin role
+ */
+export const deleteCommunityHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  await deleteCommunity(id);
+
+  successResponse(res, { message: 'Community deleted successfully' });
+});

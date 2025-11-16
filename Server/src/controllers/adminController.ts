@@ -9,6 +9,7 @@ import pool from '../config/db';
 import { Role } from '../utils/types';
 import { logRoleChange } from '../services/auditService';
 import { getAuditLogs, getAuditStats, getMostActiveUsers, exportAuditReport, AuditLogFilter } from '../services/auditService';
+import { PAGINATION } from '../config/constants';
 
 /**
  * Promote a user to admin or super_admin
@@ -251,7 +252,7 @@ export async function getAuditLogsHandler(req: Request, res: Response) {
             resourceType: req.query.resourceType as string,
             status: req.query.status as 'success' | 'failure',
             userRole: req.query.userRole as Role,
-            limit: req.query.limit ? parseInt(req.query.limit as string) : 100,
+            limit: req.query.limit ? parseInt(req.query.limit as string) : PAGINATION.MAX_LIMIT,
             offset: req.query.offset ? parseInt(req.query.offset as string) : 0
         };
 

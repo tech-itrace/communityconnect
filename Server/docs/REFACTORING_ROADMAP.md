@@ -190,10 +190,10 @@ Priority 5: Others                                    ⏳ Later
 - [x] Created documentation
 
 ### Phase 1 (This Week)
-- [ ] Add global error handler to app.ts
-- [ ] Refactor communityController
-- [ ] Remove duplicated mappings from memberService
-- [ ] Replace magic numbers across codebase
+- [x] Add global error handler to app.ts
+- [x] Refactor communityController
+- [x] Remove duplicated mappings from memberService
+- [x] Replace magic numbers across codebase
 
 ### Phase 2 (Next Week)
 - [ ] Refactor memberController

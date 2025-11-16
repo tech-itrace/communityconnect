@@ -13,6 +13,7 @@ import {
     PaginationInfo,
     ApiErrorResponse
 } from '../utils/types';
+import { VALIDATION } from '../config/constants';
 
 /**
  * POST /api/search/members
@@ -144,8 +145,8 @@ function validateSearchRequest(request: SearchMembersRequest): { valid: boolean;
 
     // Validate limit
     if (request.limit !== undefined) {
-        if (!Number.isInteger(request.limit) || request.limit < 1 || request.limit > 50) {
-            errors.limit = 'Limit must be between 1 and 50';
+        if (!Number.isInteger(request.limit) || request.limit < VALIDATION.MAX_RESULTS_MIN || request.limit > VALIDATION.MAX_RESULTS_MAX) {
+            errors.limit = `Limit must be between ${VALIDATION.MAX_RESULTS_MIN} and ${VALIDATION.MAX_RESULTS_MAX}`;
         }
     }
 

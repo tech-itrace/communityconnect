@@ -6,6 +6,7 @@ import logger from './middlewares/logger';
 import errorHandler from './middlewares/errorHandler';
 import { rateLimiters } from './middlewares/rateLimiter';
 import routes from './routes/index';
+import { errorHandler as globalErrorHandler, notFoundHandler } from './utils/errors';
 
 // Load environment variables
 const envPath = path.resolve(__dirname, '../.env');
@@ -43,7 +44,13 @@ app.use(rateLimiters.global);
 // Routes
 app.use('/api', routes);
 
-// Error handler
-app.use(errorHandler);
+// 404 Handler - catches all undefined routes
+app.use(notFoundHandler);
+
+// Global Error Handler - catches all errors (including async)
+app.use(globalErrorHandler);
+
+// Legacy error handler (kept for backwards compatibility, will be removed after testing)
+// app.use(errorHandler);
 
 export default app;

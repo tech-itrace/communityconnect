@@ -15,10 +15,12 @@ import {
     PaginationInfo,
     GetMembersRequest
 } from '../utils/types';
+import { mapRowToMember, mapRowsToMembers } from '../utils/mappers';
+import { PAGINATION } from '../config/constants';
 
-const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
-const MAX_LIMIT = 100;
+const DEFAULT_PAGE = PAGINATION.DEFAULT_PAGE;
+const DEFAULT_LIMIT = PAGINATION.DEFAULT_LIMIT;
+const MAX_LIMIT = PAGINATION.MAX_LIMIT;
 
 /**
  * Get a single member by ID
@@ -38,28 +40,7 @@ export async function getMemberById(id: string): Promise<Member | null> {
         return null;
     }
 
-    const row = result.rows[0];
-
-    return {
-        id: row.id,
-        name: row.name,
-        yearOfGraduation: row.year_of_graduation,
-        degree: row.degree,
-        branch: row.branch,
-        workingAs: row.working_as,
-        organization: row.organization,
-        designation: row.designation,
-        city: row.city,
-        phone: row.phone,
-        email: row.email,
-        skills: row.skills,
-        productsServices: row.products_services,
-        annualTurnover: row.annual_turnover,
-        role: row.role,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
-    };
+    return mapRowToMember(result.rows[0]);
 }
 
 /**
@@ -127,27 +108,8 @@ export async function getAllMembers(request: GetMembersRequest = {}): Promise<Pa
 
     const result = await query(queryText, params);
 
-    // Map results to Member objects
-    const members: Member[] = result.rows.map(row => ({
-        id: row.id,
-        name: row.name,
-        yearOfGraduation: row.year_of_graduation,
-        degree: row.degree,
-        branch: row.branch,
-        workingAs: row.working_as,
-        organization: row.organization,
-        designation: row.designation,
-        city: row.city,
-        phone: row.phone,
-        email: row.email,
-        skills: row.skills,
-        productsServices: row.products_services,
-        annualTurnover: row.annual_turnover,
-        role: row.role,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
-    }));
+    // Map results to Member objects using mapper
+    const members = mapRowsToMembers(result.rows);
 
     // Get total count for pagination
     const countQuery = `

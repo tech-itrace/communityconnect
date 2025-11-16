@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { processNaturalLanguageQuery, createClarificationResponse } from '../services/nlSearchService';
 import { validateMember, getOrCreateSession, addToHistory, buildConversationContext } from '../services/conversationService';
 import { NLSearchRequest, NLSearchResponse, ApiErrorResponse } from '../utils/types';
+import { VALIDATION } from '../config/constants';
 
 /**
  * Process natural language search query
@@ -66,13 +67,13 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
         console.log(`[NL Controller] ✓ Authenticated: ${memberValidation.memberName}`);
 
         // Validate query length
-        if (body.query.length > 500) {
+        if (body.query.length > VALIDATION.QUERY_MAX_LENGTH) {
             const errorResponse: ApiErrorResponse = {
                 success: false,
                 error: {
                     code: 'QUERY_TOO_LONG',
-                    message: 'Query must be less than 500 characters',
-                    details: { length: body.query.length, maxLength: 500 }
+                    message: `Query must be less than ${VALIDATION.QUERY_MAX_LENGTH} characters`,
+                    details: { length: body.query.length, maxLength: VALIDATION.QUERY_MAX_LENGTH }
                 }
             };
             res.status(400).json(errorResponse);
@@ -82,15 +83,15 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
         // Extract options
         const includeResponse = body.options?.includeResponse !== false; // Default: true
         const includeSuggestions = body.options?.includeSuggestions !== false; // Default: true
-        const maxResults = body.options?.maxResults || 10;
+        const maxResults = body.options?.maxResults || VALIDATION.MAX_RESULTS_DEFAULT;
 
         // Validate maxResults
-        if (maxResults < 1 || maxResults > 50) {
+        if (maxResults < VALIDATION.MAX_RESULTS_MIN || maxResults > VALIDATION.MAX_RESULTS_MAX) {
             const errorResponse: ApiErrorResponse = {
                 success: false,
                 error: {
                     code: 'INVALID_MAX_RESULTS',
-                    message: 'maxResults must be between 1 and 50',
+                    message: `maxResults must be between ${VALIDATION.MAX_RESULTS_MIN} and ${VALIDATION.MAX_RESULTS_MAX}`,
                     details: { maxResults }
                 }
             };
@@ -127,7 +128,7 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
 
         // Check if confidence is too low - ask for clarification
         // Lower threshold to 0.3 - only ask for clarification if truly ambiguous
-        if (result.understanding.confidence < 0.3) {
+        if (result.understanding.confidence < VALIDATION.CONFIDENCE_THRESHOLD) {
             console.log(`[NL Controller] ⚠ Low confidence (${result.understanding.confidence}), asking for clarification`);
 
             const response: NLSearchResponse = {
