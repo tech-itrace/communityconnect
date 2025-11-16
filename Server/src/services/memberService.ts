@@ -27,7 +27,7 @@ export async function getMemberById(id: string): Promise<Member | null> {
     console.log(`[Member Service] Fetching member with ID: ${id}`);
 
     const queryText = `
-        SELECT * FROM community_members
+        SELECT * FROM members
         WHERE id = $1 AND is_active = TRUE
     `;
 
@@ -119,7 +119,7 @@ export async function getAllMembers(request: GetMembersRequest = {}): Promise<Pa
 
     // Build and execute query
     const queryText = `
-        SELECT * FROM community_members
+        SELECT * FROM members
         WHERE ${conditions.join(' AND ')}
         ORDER BY ${sortField} ${sortOrder}
         LIMIT ${limitParam} OFFSET ${offsetParam}
@@ -152,7 +152,7 @@ export async function getAllMembers(request: GetMembersRequest = {}): Promise<Pa
     // Get total count for pagination
     const countQuery = `
         SELECT COUNT(*) as count
-        FROM community_members
+        FROM members
         WHERE ${conditions.join(' AND ')}
     `;
 
@@ -190,7 +190,7 @@ export async function getMemberStats(): Promise<MemberStats> {
             COUNT(*) FILTER (WHERE is_active = TRUE) as active_members,
             COUNT(DISTINCT city) FILTER (WHERE city IS NOT NULL) as unique_cities,
             COUNT(DISTINCT degree) FILTER (WHERE degree IS NOT NULL) as unique_degrees
-        FROM community_members
+        FROM members
     `;
 
     const statsResult = await query(statsQuery);
@@ -201,7 +201,7 @@ export async function getMemberStats(): Promise<MemberStats> {
         WITH skills_split AS (
             SELECT 
                 TRIM(unnest(string_to_array(working_knowledge, ','))) as skill
-            FROM community_members
+            FROM members
             WHERE working_knowledge IS NOT NULL AND working_knowledge != ''
         )
         SELECT 
@@ -225,7 +225,7 @@ export async function getMemberStats(): Promise<MemberStats> {
         SELECT 
             city,
             COUNT(*) as count
-        FROM community_members
+        FROM members
         WHERE city IS NOT NULL AND city != ''
         GROUP BY city
         ORDER BY count DESC
@@ -259,7 +259,7 @@ export async function getMemberStats(): Promise<MemberStats> {
 export async function getUniqueCities(): Promise<string[]> {
     const queryText = `
         SELECT DISTINCT city
-        FROM community_members
+        FROM members
         WHERE city IS NOT NULL AND city != ''
         ORDER BY city
     `;
@@ -272,7 +272,7 @@ export async function getUniqueSkills(): Promise<string[]> {
     const queryText = `
         WITH skills_split AS (
             SELECT TRIM(unnest(string_to_array(working_knowledge, ','))) as skill
-            FROM community_members
+            FROM members
             WHERE working_knowledge IS NOT NULL AND working_knowledge != ''
         )
         SELECT DISTINCT skill
@@ -321,7 +321,7 @@ export async function createMember(memberData: {
     } = memberData;
 
     const queryText = `
-        INSERT INTO community_members 
+        INSERT INTO members 
         (phone, name, email, city, working_knowledge, degree, branch, organization_name, designation, role, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
         RETURNING *
@@ -403,7 +403,7 @@ export async function updateMember(
     values.push(id);
 
     const queryText = `
-        UPDATE community_members 
+        UPDATE members 
         SET ${updates.join(', ')}
         WHERE id = $${paramIndex}
         RETURNING *
@@ -424,21 +424,41 @@ export async function updateMember(
 export async function deleteMember(id: string): Promise<boolean> {
     console.log(`[Member Service] Deleting member ID: ${id}`);
 
-    const queryText = 'DELETE FROM community_members WHERE id = $1 RETURNING id';
+    const queryText = 'DELETE FROM members WHERE id = $1 RETURNING id';
     const result = await query(queryText, [id]);
 
     return result.rows.length > 0;
 }
 
 /**
- * Check if a member exists by phone number
+ * Get member by phone number with their highest role
  */
 export async function getMemberByPhone(phoneNumber: string): Promise<Member | null> {
     console.log(`[Member Service] Fetching member by phone: ${phoneNumber}`);
 
     const queryText = `
-        SELECT * FROM community_members
-        WHERE phone = $1
+        SELECT 
+            m.*,
+            COALESCE(
+                MAX(
+                    CASE 
+                        WHEN cm.role = 'super_admin' THEN 3
+                        WHEN cm.role = 'admin' THEN 2
+                        WHEN cm.role = 'member' THEN 1
+                        ELSE 0
+                    END
+                ),
+                1
+            ) as role_level,
+            CASE 
+                WHEN MAX(CASE WHEN cm.role = 'super_admin' THEN 3 ELSE 0 END) = 3 THEN 'super_admin'
+                WHEN MAX(CASE WHEN cm.role = 'admin' THEN 2 ELSE 0 END) = 2 THEN 'admin'
+                ELSE 'member'
+            END as role
+        FROM members m
+        LEFT JOIN community_memberships cm ON m.id = cm.member_id AND cm.is_active = true
+        WHERE m.phone = $1
+        GROUP BY m.id
     `;
 
     const result = await query(queryText, [phoneNumber]);
@@ -508,7 +528,7 @@ export async function bulkCreateMembers(membersData: Array<{
 
             // Create member
             const queryText = `
-                INSERT INTO community_members 
+                INSERT INTO members 
                 (phone, name, email, city, working_knowledge, degree, branch, organization_name, designation, role, created_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
                 RETURNING id

@@ -1,0 +1,144 @@
+graph TB
+    subgraph "Client Layer"
+        WA[WhatsApp via Twilio]
+        FE[Frontend Dashboard]
+        API_CLIENT[API Clients]
+    end
+
+    subgraph "API Gateway Layer"
+        CORS[CORS Middleware]
+        RL[Rate Limiter<br/>Redis-backed]
+        AUTH[Authorization RBAC<br/>Phone-based Auth]
+        LOGGER[Logger & Audit]
+    end
+
+    subgraph "Controller Layer"
+        BOT[Bot Controller<br/>WhatsApp Messages]
+        COMM[Community Controller]
+        MEM[Member Controller]
+        SEARCH[Search Controller]
+        NL[NL Search Controller]
+        ADMIN[Admin Controller]
+        ANALYTICS[Analytics Controller]
+    end
+
+    subgraph "Service Layer - Core"
+        MS[Member Service<br/>CRUD & Stats]
+        CS[Community Service<br/>Multi-Community]
+        GS[Group Service]
+        SS[Session Service<br/>Redis]
+        CONV[Conversation Service]
+    end
+
+    subgraph "Service Layer - AI/Search"
+        NLS[NL Search Service<br/>Pipeline Orchestrator]
+        SEM[Semantic Search<br/>pgvector]
+        INTENT[Intent Classifier<br/>Naive Bayes]
+        EXTRACT[Hybrid Extractor<br/>Regex + LLM]
+        RESP[Response Formatter]
+        SUGG[Suggestion Engine]
+    end
+
+    subgraph "LLM System - Multi-Provider"
+        FACTORY[LLM Factory<br/>Circuit Breaker]
+        DEEP[DeepInfra Provider<br/>Llama 3.1 8B]
+        GEM[Gemini Provider<br/>2.0 Flash]
+        LLMSVC[LLM Service<br/>Domain Prompts]
+    end
+
+    subgraph "Data Layer"
+        PG[(PostgreSQL 14+<br/>with pgvector)]
+        REDIS[(Redis 6+<br/>Cache & Sessions)]
+    end
+
+    subgraph "Database Tables"
+        T1[communities]
+        T2[members]
+        T3[community_memberships]
+        T4[alumni_profiles<br/>entrepreneur_profiles<br/>resident_profiles]
+        T5[member_embeddings<br/>768-dim vectors]
+        T6[search_queries<br/>search_cache]
+    end
+
+    %% Client connections
+    WA --> BOT
+    FE --> COMM
+    FE --> MEM
+    FE --> SEARCH
+    API_CLIENT --> SEARCH
+
+    %% Middleware chain
+    WA --> CORS --> RL --> AUTH --> LOGGER
+    FE --> CORS --> RL --> AUTH --> LOGGER
+    API_CLIENT --> CORS --> RL --> AUTH --> LOGGER
+
+    LOGGER --> BOT
+    LOGGER --> COMM
+    LOGGER --> MEM
+    LOGGER --> SEARCH
+    LOGGER --> NL
+    LOGGER --> ADMIN
+    LOGGER --> ANALYTICS
+
+    %% Controller to Service connections
+    BOT --> NLS
+    COMM --> CS
+    MEM --> MS
+    SEARCH --> NLS
+    NL --> NLS
+    ADMIN --> MS
+    ADMIN --> CS
+    ANALYTICS --> NLS
+
+    %% Core Services to Database
+    MS --> PG
+    CS --> PG
+    GS --> PG
+    SS --> REDIS
+    CONV --> REDIS
+
+    %% NL Search Pipeline
+    NLS --> INTENT
+    NLS --> EXTRACT
+    NLS --> SEM
+    NLS --> RESP
+    NLS --> SUGG
+
+    %% AI Services connections
+    INTENT --> LLMSVC
+    EXTRACT --> LLMSVC
+    SEM --> PG
+    RESP --> LLMSVC
+    SUGG --> LLMSVC
+
+    %% LLM System
+    LLMSVC --> FACTORY
+    FACTORY --> DEEP
+    FACTORY --> GEM
+
+    %% Database tables
+    PG --> T1
+    PG --> T2
+    PG --> T3
+    PG --> T4
+    PG --> T5
+    PG --> T6
+
+    %% Styling
+    classDef client fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef middleware fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef controller fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef service fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef ai fill:#ffe0b2,stroke:#e65100,stroke-width:2px
+    classDef llm fill:#ffccbc,stroke:#bf360c,stroke-width:2px
+    classDef data fill:#ffebee,stroke:#b71c1c,stroke-width:2px
+    classDef tables fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+
+    class WA,FE,API_CLIENT client
+    class CORS,RL,AUTH,LOGGER middleware
+    class BOT,COMM,MEM,SEARCH,NL,ADMIN,ANALYTICS controller
+    class MS,CS,GS,SS,CONV service
+    class NLS,SEM,INTENT,EXTRACT,RESP,SUGG ai
+    class FACTORY,DEEP,GEM,LLMSVC llm
+    class PG,REDIS data
+    class T1,T2,T3,T4,T5,T6 tables

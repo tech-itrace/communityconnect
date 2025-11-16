@@ -10,7 +10,7 @@ import {
 export async function getAllCommunitiesHandler(req: Request, res: Response) {
   try {
     const communities = await getAllCommunity();
-    res.status(200).json({ success: true, data: communities });
+    res.status(200).json({ success: true, community: communities });
   } catch (error) {
     console.error("[Community Controller] Error fetching all:", error);
     res.status(500).json({ success: false, message: "Server Error" });
@@ -23,7 +23,7 @@ export async function getCommunityByIdHandler(req: Request, res: Response) {
     const community = await getCommunityById(id);
     if (!community)
       return res.status(404).json({ success: false, message: "Community not found" });
-    res.status(200).json({ success: true, data: community });
+    res.status(200).json({ success: true, community: community });
   } catch (error) {
     console.error("[Community Controller] Error fetching by ID:", error);
     res.status(500).json({ success: false, message: "Server Error" });
@@ -33,7 +33,7 @@ export async function getCommunityByIdHandler(req: Request, res: Response) {
 export async function createCommunityHandler(req: Request, res: Response) {
   try {
     const newCommunity = await createCommunity(req.body);
-    res.status(201).json({ success: true, data: newCommunity });
+    res.status(201).json({ success: true, community: newCommunity });
   } catch (error) {
     console.error("[Community Controller] Error creating:", error);
     res.status(500).json({ success: false, message: "Server Error" });
@@ -46,7 +46,7 @@ export async function updateCommunityHandler(req: Request, res: Response) {
     const updated = await updateCommunity(id, req.body);
     if (!updated)
       return res.status(404).json({ success: false, message: "Community not found" });
-    res.status(200).json({ success: true, data: updated });
+    res.status(200).json({ success: true, community: updated });
   } catch (error) {
     console.error("[Community Controller] Error updating:", error);
     res.status(500).json({ success: false, message: "Server Error" });

@@ -17,47 +17,51 @@ export interface Community {
 
 /** Get community by ID */
 export async function getCommunityById(id: string): Promise<Community | null> {
-    console.log(`[Community Service] Fetching Community with ID: ${id}`);
+  console.log(`[Community Service] Fetching Community with ID: ${id}`);
 
-    const queryText = `
+  const queryText = `
         SELECT 
-            id,
-            name,
-            description,
-            type,
-            rules,
-            admins,
-            is_bot_enable,
-            is_active,
-            created_at,
-            updated_at,
-            created_by
-        FROM community
-        WHERE id = $1 AND is_active = TRUE
+            c.*,
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', m.id,
+                        'name', m.name,
+                        'phone', m.phone,
+                        'email', m.email
+                    )
+                ) FILTER (WHERE ca.member_id IS NOT NULL),
+                '[]'::json
+            ) as admins
+        FROM communities c
+        LEFT JOIN community_admins ca ON c.id = ca.community_id AND ca.revoked_at IS NULL
+        LEFT JOIN members m ON ca.member_id = m.id
+        WHERE c.id = $1 AND c.is_active = TRUE
+        GROUP BY c.id
     `;
 
-    const result = await query(queryText, [id]);
+  const result = await query(queryText, [id]);
 
-    if (result.rows.length === 0) {
-        console.log(`[Community Service] Community not found: ${id}`);
-        return null;
-    }
+  if (result.rows.length === 0) {
+    console.log(`[Community Service] Community not found: ${id}`);
+    return null;
+  }
 
-    const row = result.rows[0];
+  const row = result.rows[0];
 
-    return {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        type: row.type,
-        admins: row.admins, 
-        rules: row.rules,
-        is_bot_enable: row.is_bot_enable,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-        is_active: row.is_active,
-        created_by: row.created_by,
-    };
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    type: row.type,
+    rules: row.rules,
+    admins: row.admins,
+    is_bot_enable: row.is_bot_enabled,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    is_active: row.is_active,
+    created_by: row.created_by,
+  };
 }
 
 /** Check if member exists */
@@ -90,14 +94,14 @@ async function createTypeMember(type: string, memberId: string, data: any) {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE, NOW(), NOW())
       RETURNING *
     `;
-const newId = randomUUID();
+    const newId = randomUUID();
     const params = [
-        newId,
+      newId,
       data.college,
       data.graduation_year,
       data.degree,
       data.department,
-    //   data.roll_no,
+      //   data.roll_no,
       data.current_organization,
       data.designation,
       memberId
@@ -133,7 +137,7 @@ export async function createCommunity(communityData: {
   name: string;
   description?: string;
   type?: string;
-  admins?: any; 
+  admins?: any;
   rules?: string;
   is_bot_enable?: boolean;
   is_active?: boolean;
@@ -159,9 +163,9 @@ export async function createCommunity(communityData: {
 
   // Step 1: Create Community
   const insertCommunitySQL = `
-    INSERT INTO community
-    (name, description, type, admins, rules, is_bot_enable, is_active, created_by, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+    INSERT INTO communities
+    (name, description, type, rules, is_bot_enabled, is_active, created_by, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
     RETURNING id
   `;
 
@@ -169,7 +173,6 @@ export async function createCommunity(communityData: {
     name,
     description,
     type,
-    admins, 
     rules,
     is_bot_enable,
     is_active,
@@ -198,10 +201,10 @@ export async function createCommunity(communityData: {
       memberId = newMember.id;
     }
     console.log("memberId:" + memberId)
-console.log("communityData: " + JSON.stringify(communityData))
+    console.log("communityData: " + JSON.stringify(communityData))
     // Step 3: Insert into type-specific table
     const typeMember = await createTypeMember(type!, memberId, communityData.member_type_data);
-console.log("typeMember: " + JSON.stringify(typeMember))
+    console.log("typeMember: " + JSON.stringify(typeMember))
 
     // Step 4: Insert into community_members_types
     await addCommunityMemberMapping(
@@ -221,9 +224,25 @@ console.log("typeMember: " + JSON.stringify(typeMember))
 /** Get all communities */
 export async function getAllCommunity(): Promise<Community[]> {
   const queryText = `
-    SELECT * FROM community
-    WHERE is_active = true
-    ORDER BY created_at DESC;
+    SELECT 
+      c.*,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', m.id,
+            'name', m.name,
+            'phone', m.phone,
+            'email', m.email
+          )
+        ) FILTER (WHERE ca.member_id IS NOT NULL),
+        '[]'::json
+      ) as admins
+    FROM communities c
+    LEFT JOIN community_admins ca ON c.id = ca.community_id AND ca.revoked_at IS NULL
+    LEFT JOIN members m ON ca.member_id = m.id
+    WHERE c.is_active = true
+    GROUP BY c.id
+    ORDER BY c.created_at DESC;
   `;
   const result = await query(queryText);
   return result.rows;
@@ -234,14 +253,13 @@ export async function updateCommunity(
   id: string,
   updates: Partial<Community>
 ): Promise<Community | null> {
-  // ✅ Only allow columns that actually exist in your "community" table
+  // ✅ Only allow columns that actually exist in your "communities" table
   const allowedFields = [
     "name",
     "description",
     "type",
     "rules",
-    "admins",
-    "is_bot_enable",
+    "is_bot_enabled",
     "is_active",
     "created_by",
   ];
@@ -259,7 +277,7 @@ export async function updateCommunity(
   const values = filteredEntries.map(([, value]) => value);
 
   const queryText = `
-    UPDATE community
+    UPDATE communities
     SET ${setClause}, updated_at = NOW()
     WHERE id = $1
     RETURNING *;
@@ -277,7 +295,7 @@ export async function updateCommunity(
 /** Soft delete (set is_active = false) */
 export async function deleteCommunity(id: string): Promise<boolean> {
   const queryText = `
-    UPDATE community
+    UPDATE communities
     SET is_active = false, updated_at = NOW()
     WHERE id = $1;
   `;
