@@ -1,0 +1,215 @@
+[1;33m[WARNING][0m ⚠️  DATABASE MIGRATION WARNING ⚠️
+[1;33m[WARNING][0m This will migrate your database to v2.0 schema
+[1;33m[WARNING][0m Estimated downtime: 5 minutes - 2 hours (data-dependent)
+[0;34m[INFO][0m What will happen:
+[0;34m[INFO][0m   1. Full backup of current database
+[0;34m[INFO][0m   2. Data quality audit
+[0;34m[INFO][0m   3. Schema migration (old tables renamed)
+[0;34m[INFO][0m   4. Data migration to new structure
+[0;34m[INFO][0m   5. Search index rebuild
+[0;34m[INFO][0m   6. Verification checks
+[1;33m[WARNING][0m Prerequisites:
+[1;33m[WARNING][0m   ✓ Database backup verified
+[1;33m[WARNING][0m   ✓ Sufficient disk space (2x current DB size)
+[1;33m[WARNING][0m   ✓ No active user sessions
+[1;33m[WARNING][0m   ✓ Maintenance window scheduled
+[0;32m[11:42:07][0m === PHASE 1: PRE-MIGRATION ===
+[0;32m[11:42:07][0m Creating full database backup...
+[0;32m[11:42:07][0m ✓ Backup created: backups/migration_20251116_114204/full_backup.dump (400K)
+[0;32m[11:42:07][0m Creating SQL text backup...
+[0;32m[11:42:08][0m ✓ SQL backup created: backups/migration_20251116_114204/full_backup.sql.gz (388K)
+[0;32m[11:42:08][0m Exporting critical data as CSV...
+[0;32m[11:42:08][0m ✓ CSV exports created
+[0;32m[11:42:08][0m ✓ Backup manifest created
+[0;32m[11:42:08][0m Running data quality audit...
+[0;32m[11:42:08][0m ✓ Audit report saved
+[0;32m[11:42:08][0m Testing backup integrity...
+[0;32m[11:42:08][0m ✓ Backup integrity verified
+[0;32m[11:42:08][0m ✓ Backup checksum: 6ff4526c5d74c388...
+[0;32m[11:42:08][0m ✓ Pre-migration checks passed
+[0;34m[INFO][0m Backup location: backups/migration_20251116_114204
+[1;33m[WARNING][0m CRITICAL: This backup contains ALL your data
+[1;33m[WARNING][0m Location: backups/migration_20251116_114204
+[1;33m[WARNING][0m Size: 400K
+[0;32m[11:42:18][0m === PHASE 2: SCHEMA MIGRATION ===
+[0;32m[11:42:18][0m Renaming existing tables...
+[0;32m[11:42:18][0m ✓ Old tables renamed
+[0;32m[11:42:18][0m Installing new schema...
+SET
+SET
+SET
+SET
+CREATE EXTENSION
+CREATE EXTENSION
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+COMMENT
+CREATE INDEX
+psql:docs/communityconnect_schema_final.sql:98: ERROR:  relation "idx_members_email" already exists
+psql:docs/communityconnect_schema_final.sql:99: ERROR:  relation "idx_members_active" already exists
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+COMMENT
+COMMENT
+COMMENT
+psql:docs/communityconnect_schema_final.sql:377: ERROR:  relation "idx_embeddings_profile" already exists
+psql:docs/communityconnect_schema_final.sql:381: ERROR:  relation "idx_embeddings_skills" already exists
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE INDEX
+psql:docs/communityconnect_schema_final.sql:494: ERROR:  relation "idx_queries_type" already exists
+psql:docs/communityconnect_schema_final.sql:495: ERROR:  relation "idx_queries_created" already exists
+CREATE INDEX
+psql:docs/communityconnect_schema_final.sql:522: ERROR:  syntax error at or near "("
+LINE 21:     UNIQUE(community_id, query_hash, COALESCE(member_type_fi...
+                                                      ^
+COMMENT
+psql:docs/communityconnect_schema_final.sql:527: ERROR:  column "community_id" does not exist
+psql:docs/communityconnect_schema_final.sql:528: ERROR:  relation "idx_cache_expires" already exists
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+COMMENT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+psql:docs/communityconnect_schema_final.sql:814: ERROR:  column "community_id" does not exist
+CREATE VIEW
+COMMENT
+psql:docs/communityconnect_schema_final.sql:915: ERROR:  aggregate function calls cannot be nested
+LINE 25:         COUNT(*)
+                 ^
+psql:docs/communityconnect_schema_final.sql:917: ERROR:  relation "v_embedding_quality_metrics" does not exist
+INSERT 0 3
+DO
+[0;32m[11:42:19][0m ✓ New schema installed
+[0;32m[11:42:19][0m ✓ New tables created:     15
+[0;32m[11:42:19][0m === PHASE 3: DATA MIGRATION ===
+[0;32m[11:42:19][0m Creating default community...
+[0;32m[11:42:19][0m ✓ Default community created: 8a0c3909-3636-4a22-bdb9-dbdb121ff1a0
+
+INSERT01
+[0;32m[11:42:19][0m Migrating members table...
+[0;32m[11:42:19][0m ✓ Migrated members:     51
+[0;32m[11:42:19][0m Creating community memberships...
+[0;32m[11:42:19][0m ✓ Created memberships:      0
+[0;32m[11:42:19][0m Migrating alumni profiles...
+[0;32m[11:42:19][0m Migrating entrepreneur profiles...
+[0;32m[11:42:19][0m Migrating resident profiles...
+[0;32m[11:42:20][0m ✓ Alumni profiles:      0
+[0;32m[11:42:20][0m ✓ Entrepreneur profiles:      0
+[0;32m[11:42:20][0m ✓ Resident profiles:      0
+[0;32m[11:42:20][0m Migrating existing embeddings...
+[0;32m[11:42:20][0m ✓ Migrated embeddings:      0
+[0;32m[11:42:20][0m === PHASE 4: POST-MIGRATION ===
+[0;32m[11:42:20][0m Rebuilding full-text search index...
+[0;32m[11:42:20][0m ✓ Search index rebuilt
+[0;32m[11:42:20][0m Optimizing database...
+[0;32m[11:42:20][0m ✓ Database optimized
+[0;32m[11:42:20][0m Scheduling contextual embeddings generation...
+[0;34m[INFO][0m Run: cd Server && npm run generate:contextual-embeddings
+[0;32m[11:42:20][0m ✓ Embedding job scheduled
+[0;32m[11:42:20][0m === PHASE 5: VERIFICATION ===
+[0;32m[11:42:20][0m ✓ Verification report created
+[1;33m[WARNING][0m Found     51 members without memberships!
+[0;32m[11:42:20][0m === PHASE 6: CLEANUP ===
+[0;32m[11:42:25][0m Dropping old tables...
+[0;32m[11:42:25][0m ✓ Old tables dropped
+[0;32m[11:42:25][0m ✓ Cleanup complete

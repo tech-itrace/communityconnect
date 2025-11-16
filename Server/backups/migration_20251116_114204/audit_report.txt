@@ -1,0 +1,14 @@
+ Members with null phone: 0
+
+ Members with null name: 0
+
+ Duplicate phones: 0
+
+ Invalid phone formats: 51
+
+ Invalid emails: 0
+
+ Total members: 51
+
+ Members with embeddings: 51
+

@@ -1,0 +1,18 @@
+Community Connect Database Backup
+Created: Sun Nov 16 11:42:08 IST 2025
+Database URL: postgresql://community_user:dev_password_123@localhost:5432/community_connect
+Backup Type: Pre-Migration (v1.0 → v2.0)
+
+Files:
+- full_backup.dump      : PostgreSQL custom format (for pg_restore)
+- full_backup.sql.gz    : SQL text format (compressed)
+- community_members.csv : Members table export
+- member_embeddings.csv : Embeddings table export
+- audit_report.txt      : Pre-migration data quality report
+- verification_report.txt : Post-migration verification (added after migration)
+
+Restore Instructions:
+1. Full restore: pg_restore -d DATABASE_URL -c full_backup.dump
+2. SQL restore: gunzip -c full_backup.sql.gz | psql DATABASE_URL
+3. CSV import: \COPY table_name FROM 'file.csv' CSV HEADER
+Backup Checksum (SHA-256): 6ff4526c5d74c38831389825aa862d4ed31f3563f4945bd2318ad792971c2381
