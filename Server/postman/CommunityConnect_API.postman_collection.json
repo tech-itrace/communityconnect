@@ -1,0 +1,873 @@
+{
+	"info": {
+		"_postman_id": "cc-api-collection-2025",
+		"name": "CommunityConnect API - Refactored",
+		"description": "Complete API collection for CommunityConnect platform after Phase 1 & 2 refactoring.\n\nIncludes:\n- Member Management\n- Community Management\n- Group Management\n- Search (Semantic & NL)\n- Admin Operations\n- Analytics\n\nAll endpoints use standardized error handling and validation.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Members",
+			"item": [
+				{
+					"name": "Get Member by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561",
+								"description": "User's phone number for authentication"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/members/{{member_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "members", "{{member_id}}"]
+						},
+						"description": "Fetch a single member by UUID.\n\n**Authentication**: Phone number in header\n**Validation**: UUID format required\n**Returns**: Member object with all fields"
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/members/123e4567-e89b-12d3-a456-426614174000",
+									"host": ["{{base_url}}"],
+									"path": ["api", "members", "123e4567-e89b-12d3-a456-426614174000"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"member\": {\n        \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n        \"name\": \"John Doe\",\n        \"phone\": \"919876543210\",\n        \"email\": \"john@example.com\",\n        \"city\": \"Chennai\",\n        \"degree\": \"B.Tech\",\n        \"branch\": \"Computer Science\",\n        \"yearOfGraduation\": 2020,\n        \"organization\": \"Tech Corp\",\n        \"designation\": \"Software Engineer\",\n        \"skills\": \"JavaScript, Python, React\",\n        \"role\": \"member\",\n        \"isActive\": true,\n        \"createdAt\": \"2024-01-15T10:30:00Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00Z\"\n    }\n}"
+						},
+						{
+							"name": "Invalid UUID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/members/invalid-id",
+									"host": ["{{base_url}}"],
+									"path": ["api", "members", "invalid-id"]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"VALIDATION_ERROR\",\n        \"message\": \"Invalid member ID format - must be a valid UUID\"\n    }\n}"
+						},
+						{
+							"name": "Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/members/123e4567-e89b-12d3-a456-426614174999",
+									"host": ["{{base_url}}"],
+									"path": ["api", "members", "123e4567-e89b-12d3-a456-426614174999"]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"NOT_FOUND\",\n        \"message\": \"Member not found: 123e4567-e89b-12d3-a456-426614174999\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Members",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/members?page=1&limit=10&sortBy=name&sortOrder=asc&city=Chennai&degree=B.Tech",
+							"host": ["{{base_url}}"],
+							"path": ["api", "members"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (min: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Results per page (min: 1, max: 100)"
+								},
+								{
+									"key": "sortBy",
+									"value": "name",
+									"description": "Sort field: name | turnover | year"
+								},
+								{
+									"key": "sortOrder",
+									"value": "asc",
+									"description": "Sort order: asc | desc"
+								},
+								{
+									"key": "city",
+									"value": "Chennai",
+									"description": "Filter by city (optional)"
+								},
+								{
+									"key": "degree",
+									"value": "B.Tech",
+									"description": "Filter by degree (optional)"
+								},
+								{
+									"key": "year",
+									"value": "2020",
+									"description": "Filter by graduation year (optional)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get paginated list of members with optional filters.\n\n**Query Params**:\n- `page`: 1-based page number\n- `limit`: 1-100 results per page\n- `sortBy`: name, turnover, year\n- `sortOrder`: asc, desc\n- `city`: Filter by city (partial match)\n- `degree`: Filter by degree (partial match)\n- `year`: Filter by graduation year (exact match)"
+					}
+				},
+				{
+					"name": "Get Member Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/members/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "members", "stats"]
+						},
+						"description": "Get member statistics including:\n- Total members\n- Active members\n- Unique cities\n- Unique degrees\n- Top skills\n- Top cities"
+					}
+				},
+				{
+					"name": "Create Member",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561",
+								"description": "Admin phone number"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone\": \"919876543210\",\n    \"name\": \"Jane Smith\",\n    \"email\": \"jane@example.com\",\n    \"city\": \"Mumbai\",\n    \"working_knowledge\": \"React, Node.js, MongoDB\",\n    \"degree\": \"B.Tech\",\n    \"branch\": \"Computer Science\",\n    \"organization_name\": \"StartupXYZ\",\n    \"designation\": \"Full Stack Developer\",\n    \"role\": \"member\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/members",
+							"host": ["{{base_url}}"],
+							"path": ["api", "members"]
+						},
+						"description": "Create a new member.\n\n**Required**: phone, name\n**Optional**: All other fields\n**Returns**: 201 with created member\n**Errors**: 409 if phone already exists"
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"phone\": \"919876543210\",\n    \"name\": \"Jane Smith\",\n    \"email\": \"jane@example.com\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/members",
+									"host": ["{{base_url}}"],
+									"path": ["api", "members"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"member\": {\n        \"id\": \"987e6543-e21b-12d3-a456-426614174000\",\n        \"phone\": \"919876543210\",\n        \"name\": \"Jane Smith\",\n        \"email\": \"jane@example.com\",\n        \"role\": \"member\",\n        \"createdAt\": \"2025-01-17T12:00:00Z\"\n    }\n}"
+						},
+						{
+							"name": "Duplicate Phone",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"phone\": \"919840061561\",\n    \"name\": \"Duplicate User\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/members",
+									"host": ["{{base_url}}"],
+									"path": ["api", "members"]
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"CONFLICT\",\n        \"message\": \"A member with this phone number already exists\",\n        \"details\": {\n            \"phone\": \"919840061561\"\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Member",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"city\": \"Bangalore\",\n    \"designation\": \"Senior Software Engineer\",\n    \"organization_name\": \"New Tech Corp\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/members/{{member_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "members", "{{member_id}}"]
+						},
+						"description": "Update an existing member.\n\n**All fields optional** - only send fields to update\n**Returns**: Updated member object"
+					}
+				},
+				{
+					"name": "Delete Member",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561",
+								"description": "Super admin phone"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/members/{{member_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "members", "{{member_id}}"]
+						},
+						"description": "Delete a member (hard delete).\n\n**Requires**: Super Admin role\n**Returns**: Success confirmation"
+					}
+				},
+				{
+					"name": "Bulk Import Members (CSV)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561",
+								"description": "Admin phone number"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/path/to/members.csv",
+									"description": "CSV file with member data"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/members/bulk/import",
+							"host": ["{{base_url}}"],
+							"path": ["api", "members", "bulk", "import"]
+						},
+						"description": "Bulk import members from CSV file.\n\n**CSV Columns** (case-insensitive):\n- phone (required)\n- name (required)\n- email\n- city\n- working_knowledge / skills\n- degree\n- branch\n- organization_name\n- designation\n\n**Returns**: Import summary with success/fail counts"
+					},
+					"response": [
+						{
+							"name": "Import Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/api/members/bulk/import",
+									"host": ["{{base_url}}"],
+									"path": ["api", "members", "bulk", "import"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"message\": \"Bulk import completed: 45 members imported successfully\",\n    \"data\": {\n        \"successCount\": 45,\n        \"failedCount\": 5,\n        \"duplicates\": 3,\n        \"totalProcessed\": 50,\n        \"errors\": [\n            {\n                \"row\": 12,\n                \"error\": \"Missing required fields (phone or name)\",\n                \"data\": { \"name\": \"Incomplete User\" }\n            },\n            {\n                \"row\": 25,\n                \"error\": \"Member with this phone number already exists\",\n                \"data\": { \"phone\": \"919999999999\", \"name\": \"Duplicate\" }\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Suggestions (Autocomplete)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/search/suggestions?type=cities",
+							"host": ["{{base_url}}"],
+							"path": ["api", "search", "suggestions"],
+							"query": [
+								{
+									"key": "type",
+									"value": "cities",
+									"description": "cities | skills | services | (empty for all)"
+								}
+							]
+						},
+						"description": "Get autocomplete suggestions.\n\n**Types**:\n- `cities`: All unique cities\n- `skills`: All unique skills\n- `services`: All unique services\n- (no type): All three combined"
+					}
+				}
+			],
+			"description": "Member management endpoints (fully refactored with asyncHandler)"
+		},
+		{
+			"name": "Communities",
+			"item": [
+				{
+					"name": "Get All Communities",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/communities",
+							"host": ["{{base_url}}"],
+							"path": ["api", "communities"]
+						},
+						"description": "Get all communities.\n\n**Returns**: Array of communities with metadata"
+					}
+				},
+				{
+					"name": "Get Community by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/communities/{{community_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "communities", "{{community_id}}"]
+						},
+						"description": "Get a single community by ID.\n\n**Returns**: Community object with members"
+					}
+				},
+				{
+					"name": "Create Community (with Transaction)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561",
+								"description": "Super admin phone"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"IIT Alumni Network\",\n    \"description\": \"Alumni network for IIT graduates\",\n    \"type\": \"alumni\",\n    \"rules\": \"Be respectful and professional\",\n    \"is_bot_enable\": true,\n    \"created_by\": \"919840061561\",\n    \"admins\": [\n        {\n            \"name\": \"Admin User\",\n            \"phone\": \"919840061561\",\n            \"email\": \"admin@iit-alumni.com\"\n        }\n    ],\n    \"member_type_data\": {\n        \"college\": \"IIT Delhi\",\n        \"graduation_year\": 2015,\n        \"degree\": \"B.Tech\",\n        \"department\": \"Computer Science\",\n        \"current_organization\": \"Tech Corp\",\n        \"designation\": \"Senior Engineer\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/communities",
+							"host": ["{{base_url}}"],
+							"path": ["api", "communities"]
+						},
+						"description": "Create a new community with transaction safety.\n\n**Steps** (all-or-nothing):\n1. Create community\n2. Create/find admin members\n3. Create type-specific profiles\n4. Link members to community\n\n**If any step fails, everything rolls back!**"
+					}
+				}
+			],
+			"description": "Community management (refactored with asyncHandler and transactions)"
+		},
+		{
+			"name": "Groups",
+			"item": [
+				{
+					"name": "Get All Groups",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/groups?page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "groups"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get paginated groups.\n\n**Uses**: PAGINATION constants"
+					}
+				},
+				{
+					"name": "Get Group by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/groups/{{group_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "groups", "{{group_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Create Group",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Tech Enthusiasts\",\n    \"description\": \"Group for technology discussions\",\n    \"members\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/groups",
+							"host": ["{{base_url}}"],
+							"path": ["api", "groups"]
+						}
+					}
+				},
+				{
+					"name": "Add Members to Group (with Transaction)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"members\": [\n        {\n            \"name\": \"Member One\",\n            \"phone\": \"919111111111\",\n            \"email\": \"member1@example.com\"\n        },\n        {\n            \"name\": \"Member Two\",\n            \"phone\": \"919222222222\",\n            \"email\": \"member2@example.com\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/groups/{{group_id}}/members",
+							"host": ["{{base_url}}"],
+							"path": ["api", "groups", "{{group_id}}", "members"]
+						},
+						"description": "Add members to group with transaction safety.\n\n**Transaction wraps**:\n1. Check if members exist\n2. Create new members if needed\n3. Add all to group\n\n**If any step fails, all rollback!**"
+					}
+				}
+			],
+			"description": "Group management (refactored with withTransaction)"
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "Natural Language Search",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phoneNumber\": \"919840061561\",\n    \"query\": \"Find software engineers in Chennai with React experience\",\n    \"options\": {\n        \"maxResults\": 10,\n        \"includeResponse\": true,\n        \"includeSuggestions\": true\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/search/query",
+							"host": ["{{base_url}}"],
+							"path": ["api", "search", "query"]
+						},
+						"description": "Natural language search with AI understanding.\n\n**Uses**: VALIDATION constants for limits\n**Embedding**: embeddingService (extracted)\n**Max query length**: 500 chars\n**Max results**: 1-50"
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"phoneNumber\": \"919840061561\",\n    \"query\": \"React developers in Mumbai\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/search/query",
+									"host": ["{{base_url}}"],
+									"path": ["api", "search", "query"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"query\": \"React developers in Mumbai\",\n    \"understanding\": {\n        \"intent\": \"find_members\",\n        \"entities\": {\n            \"skills\": [\"React\"],\n            \"location\": \"Mumbai\"\n        },\n        \"confidence\": 0.95,\n        \"normalizedQuery\": \"Find members with React skills in Mumbai\"\n    },\n    \"results\": {\n        \"members\": [\n            {\n                \"id\": \"...\",\n                \"name\": \"Developer Name\",\n                \"city\": \"Mumbai\",\n                \"skills\": \"React, Node.js\",\n                \"relevanceScore\": 0.92\n            }\n        ],\n        \"pagination\": {\n            \"currentPage\": 1,\n            \"totalPages\": 1,\n            \"totalResults\": 5\n        }\n    },\n    \"response\": {\n        \"conversational\": \"I found 5 React developers in Mumbai...\",\n        \"suggestions\": [\"Refine by experience level\", \"Filter by company\"]\n    },\n    \"executionTime\": 450\n}"
+						},
+						{
+							"name": "Query Too Long",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"phoneNumber\": \"919840061561\",\n    \"query\": \"Very long query that exceeds 500 characters...\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/search/query",
+									"host": ["{{base_url}}"],
+									"path": ["api", "search", "query"]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"QUERY_TOO_LONG\",\n        \"message\": \"Query must be less than 500 characters\",\n        \"details\": {\n            \"length\": 750,\n            \"maxLength\": 500\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Semantic Search",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"experienced full stack developer\",\n    \"filters\": {\n        \"city\": \"Chennai\",\n        \"skills\": [\"JavaScript\", \"React\"]\n    },\n    \"searchType\": \"hybrid\",\n    \"page\": 1,\n    \"limit\": 10,\n    \"sortBy\": \"relevance\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/search/members",
+							"host": ["{{base_url}}"],
+							"path": ["api", "search", "members"]
+						},
+						"description": "Hybrid semantic + keyword search.\n\n**Search Types**:\n- hybrid: Vector + keyword (default)\n- semantic: Vector similarity only\n- keyword: Full-text search only\n\n**Uses**: embeddingService for vectors"
+					}
+				}
+			],
+			"description": "Search endpoints (uses extracted embeddingService)"
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Promote User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561",
+								"description": "Super admin phone"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone\": \"919876543210\",\n    \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/promote",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "promote"]
+						},
+						"description": "Promote user to admin or super_admin.\n\n**Roles**: admin | super_admin\n**Requires**: Super admin privileges"
+					}
+				},
+				{
+					"name": "Get Audit Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/audit-logs?limit=100&phone=919876543210&action=role.promote",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "audit-logs"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100",
+									"description": "Max records (uses PAGINATION.MAX_LIMIT)"
+								},
+								{
+									"key": "phone",
+									"value": "919876543210",
+									"description": "Filter by user phone"
+								},
+								{
+									"key": "action",
+									"value": "role.promote",
+									"description": "Filter by action"
+								},
+								{
+									"key": "startDate",
+									"value": "2025-01-01",
+									"description": "Filter from date",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get audit logs with filters.\n\n**Default limit**: PAGINATION.MAX_LIMIT (100)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Analytics",
+			"item": [
+				{
+					"name": "Get Overview",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/overview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "overview"]
+						},
+						"description": "Get system overview statistics."
+					}
+				},
+				{
+					"name": "Get Role Distribution",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/roles?days=30",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "roles"],
+							"query": [
+								{
+									"key": "days",
+									"value": "30",
+									"description": "Time window (default: ANALYTICS.DEFAULT_DAYS = 30)"
+								}
+							]
+						},
+						"description": "Get role distribution stats.\n\n**Default days**: ANALYTICS.DEFAULT_DAYS (30)"
+					}
+				},
+				{
+					"name": "Get User Activity",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "phone",
+								"value": "919840061561"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/user-activity/919876543210?days=30",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "user-activity", "919876543210"],
+							"query": [
+								{
+									"key": "days",
+									"value": "30",
+									"description": "Time window (default: 30)"
+								}
+							]
+						},
+						"description": "Get activity for specific user.\n\n**Limit**: ANALYTICS.TOP_ITEMS_LIMIT (50) recent actions"
+					}
+				}
+			],
+			"description": "Analytics endpoints (use ANALYTICS constants)"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-add timestamp to requests",
+					"pm.environment.set('timestamp', new Date().toISOString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Common tests for all requests",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+					"});",
+					"",
+					"pm.test('Response has success field', function () {",
+					"    const jsonData = pm.response.json();",
+					"    pm.expect(jsonData).to.have.property('success');",
+					"});",
+					"",
+					"// Check error format if request failed",
+					"if (pm.response.code >= 400) {",
+					"    pm.test('Error response has proper structure', function () {",
+					"        const jsonData = pm.response.json();",
+					"        pm.expect(jsonData).to.have.property('error');",
+					"        pm.expect(jsonData.error).to.have.property('code');",
+					"        pm.expect(jsonData.error).to.have.property('message');",
+					"    });",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "member_id",
+			"value": "123e4567-e89b-12d3-a456-426614174000",
+			"type": "string"
+		},
+		{
+			"key": "community_id",
+			"value": "456e7890-e12b-34d5-a678-426614174000",
+			"type": "string"
+		},
+		{
+			"key": "group_id",
+			"value": "789e0123-e45b-67d8-a901-426614174000",
+			"type": "string"
+		},
+		{
+			"key": "admin_phone",
+			"value": "919840061561",
+			"type": "string",
+			"description": "Super admin phone number"
+		},
+		{
+			"key": "test_phone",
+			"value": "919876543210",
+			"type": "string",
+			"description": "Test member phone number"
+		}
+	]
+}

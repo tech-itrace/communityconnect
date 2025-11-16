@@ -1,0 +1,16 @@
+phone,name,email,city,working_knowledge,degree,branch,organization_name,designation
+919111111111,Alice Johnson,alice@techcorp.com,Chennai,"React, Node.js, MongoDB, TypeScript",B.Tech,Computer Science,TechCorp India,Senior Full Stack Developer
+919222222222,Bob Smith,bob@startupxyz.com,Mumbai,"Python, Django, PostgreSQL, AWS",M.Tech,Electronics,StartupXYZ,Technical Lead
+919333333333,Carol White,carol@enterprise.com,Bangalore,"Java, Spring Boot, Microservices, Kubernetes",B.Tech,Information Technology,Enterprise Solutions Inc,Solution Architect
+919444444444,David Brown,david@ailab.com,Hyderabad,"Machine Learning, TensorFlow, Python, NLP",M.S.,Computer Science,AI Research Lab,ML Engineer
+919555555555,Emma Davis,emma@fintech.com,Pune,"JavaScript, Angular, Node.js, Docker",B.Tech,Computer Science,FinTech Innovations,Frontend Lead
+919666666666,Frank Miller,frank@cloudservices.com,Delhi,"AWS, Terraform, Kubernetes, DevOps",B.E.,Information Science,Cloud Services Ltd,DevOps Architect
+919777777777,Grace Lee,grace@datascience.com,Kolkata,"Data Science, R, Python, Tableau",M.Tech,Data Science,Analytics Corp,Data Scientist
+919888888888,Henry Wilson,henry@mobileapps.com,Ahmedabad,"React Native, Flutter, iOS, Android",B.Tech,Computer Science,Mobile Apps Studio,Mobile Developer
+919999999999,Ivy Martinez,ivy@securityfirm.com,Jaipur,"Cybersecurity, Ethical Hacking, Penetration Testing",M.S.,Cybersecurity,SecureIT Solutions,Security Analyst
+919000000001,Jack Anderson,jack@blockchain.com,Chandigarh,"Blockchain, Solidity, Ethereum, Web3",B.Tech,Computer Science,BlockChain Ventures,Blockchain Developer
+919000000002,Kelly Thomas,kelly@uxdesign.com,Lucknow,"UI/UX Design, Figma, Adobe XD, User Research",B.Des,Design,UX Design Agency,Senior UX Designer
+919000000003,Liam Jackson,liam@gaming.com,Indore,"Unity, C#, Game Development, 3D Modeling",B.Tech,Computer Science,Gaming Studio Pro,Game Developer
+919000000004,Mia Rodriguez,mia@iot.com,Bhopal,"IoT, Embedded Systems, C, Arduino",M.Tech,Electronics,IoT Innovations,IoT Engineer
+919000000005,Noah Garcia,noah@quantfinance.com,Surat,"Quantitative Finance, Python, R, Trading Algorithms",M.S.,Financial Engineering,Quant Trading Firm,Quantitative Analyst
+919000000006,Olivia Martinez,olivia@ai-startup.com,Nagpur,"Deep Learning, Computer Vision, OpenCV, PyTorch",Ph.D.,Artificial Intelligence,AI Startup Hub,Research Scientist
