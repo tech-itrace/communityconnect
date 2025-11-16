@@ -20,12 +20,14 @@ const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Validate if phone number belongs to an active community member
+ * Updated for multi-community schema
  */
-export async function validateMember(phoneNumber: string): Promise<{ 
-    isValid: boolean; 
-    memberName?: string; 
+export async function validateMember(phoneNumber: string): Promise<{
+    isValid: boolean;
+    memberName?: string;
     memberId?: string;
     role?: 'member' | 'admin' | 'super_admin';
+    communityId?: string;
 }> {
     console.log(`[Conversation Service] Validating phone number: ${phoneNumber.substring(0, 3)}***`);
 
@@ -33,11 +35,24 @@ export async function validateMember(phoneNumber: string): Promise<{
         // Normalize phone number (remove spaces, dashes, etc.)
         const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
 
-        // Query database for member with this phone number (include role)
+        // Query database for member with this phone number
+        // For now, we'll get their first active membership (main-community)
         const result = await query(
-            `SELECT id, name, phone, role, is_active 
-             FROM community_members 
-             WHERE phone ILIKE $1 AND is_active = TRUE
+            `SELECT 
+                m.id, 
+                m.name, 
+                m.phone, 
+                cm.role, 
+                cm.community_id,
+                c.slug as community_slug,
+                cm.is_active 
+             FROM members m
+             JOIN community_memberships cm ON m.id = cm.member_id
+             JOIN communities c ON cm.community_id = c.id
+             WHERE m.phone ILIKE $1 
+               AND cm.is_active = TRUE 
+               AND m.is_active = TRUE
+             ORDER BY c.slug = 'main-community' DESC
              LIMIT 1`,
             [normalizedPhone]
         );
@@ -48,13 +63,14 @@ export async function validateMember(phoneNumber: string): Promise<{
         }
 
         const member = result.rows[0];
-        console.log(`[Conversation Service] ✓ Valid member: ${member.name} (${member.role})`);
+        console.log(`[Conversation Service] ✓ Valid member: ${member.name} (${member.role}) in ${member.community_slug}`);
 
         return {
             isValid: true,
             memberName: member.name,
             memberId: member.id,
-            role: member.role || 'member'
+            role: member.role || 'member',
+            communityId: member.community_id
         };
     } catch (error: any) {
         console.error(`[Conversation Service] Error validating member:`, error.message);

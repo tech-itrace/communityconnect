@@ -1,0 +1,75 @@
+{
+  "totalQueries": 15,
+  "successfulQueries": 15,
+  "failedQueries": 0,
+  "correctExtractions": 10,
+  "partialExtractions": 2,
+  "incorrectExtractions": 3,
+  "overallAccuracy": 66.66666666666666,
+  "avgTotalTime": 2029.2666666666667,
+  "avgExtractionTime": 942.4666666666667,
+  "avgSearchTime": 1084.1333333333334,
+  "avgFormatTime": 0.6666666666666666,
+  "p50Time": 1102,
+  "p95Time": 14691,
+  "p99Time": 14691,
+  "regexOnlyQueries": 14,
+  "llmFallbackQueries": 1,
+  "hybridQueries": 0,
+  "regexUsagePercent": 93.33333333333333,
+  "llmUsagePercent": 6.666666666666667,
+  "byComplexity": {
+    "simple": {
+      "count": 9,
+      "avgTime": 2688,
+      "accuracy": 88.88888888888889,
+      "regexUsage": 88.88888888888889
+    },
+    "medium": {
+      "count": 4,
+      "avgTime": 1047,
+      "accuracy": 25,
+      "regexUsage": 100
+    },
+    "complex": {
+      "count": 2,
+      "avgTime": 1029.5,
+      "accuracy": 50,
+      "regexUsage": 100
+    }
+  },
+  "byCategory": {
+    "entrepreneurs": {
+      "count": 5,
+      "accuracy": 80,
+      "avgTime": 3947
+    },
+    "alumni": {
+      "count": 5,
+      "accuracy": 100,
+      "avgTime": 1078
+    },
+    "alumni_business": {
+      "count": 5,
+      "accuracy": 20,
+      "avgTime": 1062.8
+    }
+  },
+  "byIntent": {
+    "find_business": {
+      "count": 8,
+      "accuracy": 50,
+      "avgTime": 2860.875
+    },
+    "find_peers": {
+      "count": 5,
+      "accuracy": 100,
+      "avgTime": 1078
+    },
+    "find_alumni_business": {
+      "count": 2,
+      "accuracy": 50,
+      "avgTime": 1081
+    }
+  }
+}

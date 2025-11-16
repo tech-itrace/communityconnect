@@ -111,6 +111,7 @@ export interface SearchParams {
     query?: string;
     filters?: SearchFilters;
     options?: SearchOptions;
+    communityId?: string; // Multi-community support: scope search to specific community
 }
 
 // ============================================================================
@@ -119,20 +120,21 @@ export interface SearchParams {
 
 export interface MemberSearchResult {
     id: string;
-    name: string;
-    email: string;
-    phone: string;
-    city: string;
-    organization: string;
-    designation: string;
-    skills: string;
-    productsServices: string;
-    annualTurnover: number;
-    yearOfGraduation: number;
-    degree: string;
-    branch: string;
-    relevanceScore: number;
-    matchedFields: string[];
+    name?: string;
+    email?: string;
+    phone?: string;
+    city?: string;
+    organization?: string;
+    designation?: string;
+    skills?: string;
+    productsServices?: string;
+    annualTurnover?: number;
+    yearOfGraduation?: number;
+    degree?: string;
+    branch?: string;
+    relevanceScore?: number;
+    matchedFields?: string[];
+    location?: string;
 }
 
 export interface PaginationInfo {
@@ -183,6 +185,7 @@ export interface ScoredMember extends Member {
     semanticScore?: number;
     keywordScore?: number;
     matchedFields: string[];
+    isExactMatch?: boolean;
 }
 
 export interface EmbeddingResult {
@@ -220,10 +223,16 @@ export interface GetMembersRequest {
 // ============================================================================
 
 export interface ParsedQuery {
-    intent: 'find_member' | 'get_info' | 'list_members' | 'compare';
+    intent: 'find_member' | 'get_info' | 'list_members' | 'compare' | 'find_business' | 'find_peers' | 'find_specific_person' | 'find_alumni_business';
     entities: ExtractedEntities;
     searchQuery: string;
     confidence: number;
+    intentMetadata?: {
+        primary: string;
+        secondary?: string;
+        intentConfidence: number;
+        matchedPatterns: string[];
+    };
 }
 
 export interface ExtractedEntities {
@@ -233,6 +242,9 @@ export interface ExtractedEntities {
     turnoverRequirement?: 'high' | 'medium' | 'low';
     graduationYear?: number[];
     degree?: string;
+    branch?: string[];
+    name?: string;
+    organizationName?: string;
 }
 
 export interface NLSearchRequest {
@@ -255,6 +267,12 @@ export interface NLSearchResult {
         entities: ExtractedEntities;
         confidence: number;
         normalizedQuery: string;
+        intentMetadata?: {
+            primary: string;
+            secondary?: string;
+            intentConfidence: number;
+            matchedPatterns: string[];
+        };
     };
     results: {
         members: MemberSearchResult[];
@@ -265,6 +283,12 @@ export interface NLSearchResult {
         suggestions?: string[];
     };
     executionTime: number;
+    performance?: {
+        extractionTime: number;
+        extractionMethod: 'regex' | 'llm' | 'hybrid' | 'cached';
+        llmUsed: boolean;
+        searchTime: number;
+    };
 }
 
 export interface NLSearchResponse {

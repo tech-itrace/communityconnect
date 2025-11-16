@@ -1,0 +1,106 @@
+================================================================================
+FULL PIPELINE TEST REPORT - PHASE 4, TASK 4.1
+================================================================================
+
+📊 OVERALL SUMMARY
+--------------------------------------------------------------------------------
+Total Queries Tested: 15
+Successful: 15 | Failed: 0
+
+🎯 ACCURACY METRICS
+--------------------------------------------------------------------------------
+Overall Accuracy: 66.7% (Target: 90-95%)
+  ✓ Correct: 10 (66.7%)
+  ⚠ Partial: 2 (13.3%)
+  ✗ Incorrect: 3 (20.0%)
+
+⚡ PERFORMANCE METRICS
+--------------------------------------------------------------------------------
+Average Total Time: 2029ms (Baseline: 2500-4000ms)
+  - Extraction: 942ms
+  - Search: 1084ms
+  - Formatting: 1ms
+
+Response Time Percentiles:
+  - p50 (median): 1102ms
+  - p95: 14691ms (Target: <800ms)
+  - p99: 14691ms
+
+🔧 METHOD USAGE
+--------------------------------------------------------------------------------
+Regex Only: 14 queries (93.3%) [Target: 80%]
+LLM Fallback: 1 queries (6.7%) [Target: 20%]
+Hybrid: 0 queries
+
+📈 PERFORMANCE BY COMPLEXITY
+--------------------------------------------------------------------------------
+SIMPLE:
+  Queries: 9
+  Accuracy: 88.9%
+  Avg Time: 2688ms
+  Regex Usage: 88.9%
+
+MEDIUM:
+  Queries: 4
+  Accuracy: 25.0%
+  Avg Time: 1047ms
+  Regex Usage: 100.0%
+
+COMPLEX:
+  Queries: 2
+  Accuracy: 50.0%
+  Avg Time: 1030ms
+  Regex Usage: 100.0%
+
+📁 PERFORMANCE BY CATEGORY
+--------------------------------------------------------------------------------
+entrepreneurs:
+  Queries: 5
+  Accuracy: 80.0%
+  Avg Time: 3947ms
+
+alumni:
+  Queries: 5
+  Accuracy: 100.0%
+  Avg Time: 1078ms
+
+alumni_business:
+  Queries: 5
+  Accuracy: 20.0%
+  Avg Time: 1063ms
+
+🎯 PERFORMANCE BY INTENT
+--------------------------------------------------------------------------------
+find_business:
+  Queries: 8
+  Accuracy: 50.0%
+  Avg Time: 2861ms
+
+find_peers:
+  Queries: 5
+  Accuracy: 100.0%
+  Avg Time: 1078ms
+
+find_alumni_business:
+  Queries: 2
+  Accuracy: 50.0%
+  Avg Time: 1081ms
+
+⚠️  INCORRECT EXTRACTIONS (Top 10)
+--------------------------------------------------------------------------------
+#102: "Find mechanical engineers who are entrepreneurs"
+  Expected: {"branch":["Mechanical","Mechanical Engineering"]}
+  Actual: {"branch":["Mechanical","Mechanical Engineering"]}
+  Intent: Expected find_alumni_business, Got find_business
+
+#103: "Looking for batchmates running IT companies"
+  Expected: {"skills":["IT","software","technology"]}
+  Actual: {"branch":["IT","Information Technology"],"skills":["IT"]}
+  Intent: Expected find_alumni_business, Got find_alumni_business
+
+#104: "Find 1992 passout with businesses in manufacturing"
+  Expected: {"graduationYear":[1992],"skills":["manufacturing"]}
+  Actual: {"graduationYear":[1992],"location":"Manufacturing","branch":["IT","Information Technology"],"skills":["Manufacturing"]}
+  Intent: Expected find_alumni_business, Got find_business
+
+================================================================================

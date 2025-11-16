@@ -246,7 +246,6 @@ sudo -u postgres psql -d community_connect -c "\dx vector"
    # Open Command Prompt or PowerShell
    psql --version
    # Should show: psql (PostgreSQL) 16.x
-   ```
 
 **Step 2: Install pgvector Extension**
 

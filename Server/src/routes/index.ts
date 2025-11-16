@@ -6,6 +6,7 @@ import whatsappRouter from './whatsapp';
 import adminRouter from './admin';
 import groupsRouter from './groups';
 import analyticsRouter from './analytics';
+import performanceRouter from './performance';
 import { getRedisHealth } from '../config/redis';
 
 const router = Router();
@@ -34,6 +35,9 @@ router.use('/admin', adminRouter);
 
 // Analytics routes (Phase 2: Day 5)
 router.use('/analytics', analyticsRouter);
+
+// Performance monitoring routes (Phase 4: Task 4.2)
+router.use('/performance', performanceRouter);
 
 // WhatsApp webhook
 router.use('/whatsapp', whatsappRouter);

@@ -1,0 +1,42 @@
+{
+  "summary": {
+    "total": 0,
+    "simple": {
+      "total": 0,
+      "accuracy": 0
+    },
+    "medium": {
+      "total": 0,
+      "accuracy": 0
+    },
+    "complex": {
+      "total": 0,
+      "accuracy": 0
+    }
+  },
+  "report": {
+    "total": 0,
+    "byBucket": {
+      "simple": {
+        "total": 0,
+        "correct": 0,
+        "partial": 0,
+        "incorrect": 0
+      },
+      "medium": {
+        "total": 0,
+        "correct": 0,
+        "partial": 0,
+        "incorrect": 0
+      },
+      "complex": {
+        "total": 0,
+        "correct": 0,
+        "partial": 0,
+        "incorrect": 0
+      }
+    },
+    "falseNegatives": [],
+    "falsePositives": []
+  }
+}

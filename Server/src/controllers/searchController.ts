@@ -96,7 +96,7 @@ export async function searchMembersHandler(req: Request, res: Response) {
         };
 
         const executionTime = Date.now() - startTime;
-
+console.log("formatted members : ", formattedMembers);
         // Build response
         const response: SearchResponse = {
             success: true,

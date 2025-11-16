@@ -1,0 +1,69 @@
+        section        
+-----------------------
+ === RECORD COUNTS ===
+(1 row)
+
+     ?column?      
+-------------------
+ Members (old): 51
+(1 row)
+
+     ?column?      
+-------------------
+ Members (new): 51
+(1 row)
+
+    ?column?    
+----------------
+ Memberships: 0
+(1 row)
+
+      ?column?      
+--------------------
+ Alumni profiles: 0
+(1 row)
+
+         ?column?         
+--------------------------
+ Entrepreneur profiles: 0
+(1 row)
+
+       ?column?       
+----------------------
+ Resident profiles: 0
+(1 row)
+
+       ?column?       
+----------------------
+ Embeddings (old): 51
+(1 row)
+
+      ?column?       
+---------------------
+ Embeddings (new): 0
+(1 row)
+
+         section          
+--------------------------
+ === INTEGRITY CHECKS ===
+(1 row)
+
+            ?column?             
+---------------------------------
+ Members without memberships: 51
+(1 row)
+
+            ?column?             
+---------------------------------
+ Memberships without profiles: 0
+(1 row)
+
+       section       
+---------------------
+ === SAMPLE DATA ===
+(1 row)
+
+ name | phone | member_type | role 
+------+-------+-------------+------
+(0 rows)
+

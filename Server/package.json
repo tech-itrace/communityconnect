@@ -14,16 +14,22 @@
         "test:ratelimit": "ts-node -r dotenv/config src/test-ratelimit.ts",
         "test:rbac": "ts-node -r dotenv/config src/test-rbac.ts",
         "test:audit": "ts-node -r dotenv/config src/test-audit.ts",
+        "test:pipeline": "jest fullPipeline.test.ts --verbose --maxWorkers=1",
         "check:env": "./check-environment.sh",
         "db:setup": "ts-node -r dotenv/config src/scripts/setupDatabase.ts",
         "db:add-roles": "ts-node -r dotenv/config src/scripts/addRoleColumn.ts",
         "db:create-audit": "ts-node -r dotenv/config src/scripts/createAuditTable.ts",
         "import:members": "ts-node -r dotenv/config src/scripts/importMembers.ts",
-        "generate:embeddings": "ts-node -r dotenv/config src/scripts/generateEmbeddings.ts"
+        "import:members:multi": "ts-node -r dotenv/config src/scripts/importMembersMultiCommunity.ts",
+        "generate:embeddings": "ts-node -r dotenv/config src/scripts/generateEmbeddings.ts",
+        "migrate:memberships": "ts-node -r dotenv/config src/scripts/migrateMembersToMultiCommunity.ts",
+        "generate:contextual-embeddings": "ts-node -r dotenv/config src/scripts/generateContextualEmbeddings.ts"
     },
     "author": "tech-itrace",
     "license": "MIT",
     "dependencies": {
+        "ajv": "^8.17.1",
+        "@google/generative-ai": "^0.24.1",
         "axios": "^1.6.0",
         "cors": "^2.8.5",
         "csv-parse": "^5.5.2",
@@ -35,6 +41,7 @@
         "uuid": "^9.0.1"
     },
     "devDependencies": {
+        "@types/ajv": "^0.0.5",
         "@types/cors": "^2.8.19",
         "@types/express": "^4.17.23",
         "@types/jest": "^29.5.14",
@@ -46,6 +53,7 @@
         "@types/uuid": "^9.0.7",
         "jest": "^29.7.0",
         "supertest": "^7.1.4",
+        "ts-jest": "^29.4.5",
         "ts-node-dev": "^2.0.0",
         "typescript": "^5.2.2"
     }

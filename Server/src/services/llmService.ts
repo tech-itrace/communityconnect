@@ -1,349 +1,574 @@
 import axios from 'axios';
 import { ParsedQuery, ExtractedEntities, Member, MemberSearchResult } from '../utils/types';
+import { classifyIntent, Intent, IntentResult } from './intentClassifier';
+import { getLLMFactory, LLMProviderError } from './llm';
+import { formatResults, FormatterContext } from './responseFormatter';
+import { generateSuggestions as generateTemplateSuggestions, SuggestionContext } from './suggestionEngine';
 
-const DEEPINFRA_API_URL = 'https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3.1-8B-Instruct';
+// ============================================================================
+// NORMALIZATION CONSTANTS
+// ============================================================================
+
+const CITY_NORMALIZATION: Record<string, string> = {
+  'chennai': 'Chennai',
+  'bangalore': 'Bangalore',
+  'bengaluru': 'Bangalore',
+  'mumbai': 'Mumbai',
+  'delhi': 'Delhi',
+  'hyderabad': 'Hyderabad',
+  'pune': 'Pune',
+  'coimbatore': 'Coimbatore'
+};
+
+const BRANCH_NORMALIZATION: Record<string, string> = {
+  'mechanical': 'Mechanical',
+  'mech': 'Mechanical',
+  'civil': 'Civil',
+  'ece': 'ECE',
+  'electronics': 'ECE',
+  'cse': 'CSE',
+  'computer science': 'CSE',
+  'it': 'IT',
+  'information technology': 'IT',
+  'eee': 'EEE',
+  'electrical': 'EEE'
+};
+
+// ============================================================================
+// DOMAIN-SPECIFIC PROMPTS BY INTENT
+// ============================================================================
 
 /**
- * Make a generic LLM call with system + user message
+ * Get domain-specific extraction rules based on intent (CONDENSED)
+ */
+function getDomainSpecificRules(intent: Intent): string {
+  const baseRules = `
+**DATABASE FIELDS**:
+year_of_graduation, degree, branch, working_knowledge, city, organization_name, designation, annual_turnover
+
+**KEY MAPPINGS**:
+- "passout"/"batch"/"graduated" → year_of_graduation
+- "mechanical"/"civil"/"ECE" → branch
+- "web dev"/"IT"/"consulting" → working_knowledge
+- "Chennai"/"Bangalore" → city (capitalize)
+- "95" → 1995, "98" → 1998 (year normalization)
+`;
+
+  switch (intent) {
+    case 'find_business':
+      return baseRules + `
+**BUSINESS RULES**:
+Extract service/industry keywords to working_knowledge.
+Example: "web dev company Chennai" → {"working_knowledge":["web development","website"],"city":"Chennai"}`;
+
+    case 'find_peers':
+      return baseRules + `
+**ALUMNI RULES**:
+Extract year and branch. "1995 passout mechanical" → {"year_of_graduation":[1995],"branch":["Mechanical"]}`;
+
+    case 'find_specific_person':
+      return baseRules + `
+**PERSON RULES**:
+Extract name. "Find Sivakumar from USAM" → {"name":"Sivakumar","organization_name":"USAM"}`;
+
+    case 'find_alumni_business':
+      return baseRules + `
+**ALUMNI+BUSINESS RULES**:
+Extract both. "1995 batch IT services" → {"year_of_graduation":[1995],"working_knowledge":["IT"]}`;
+
+    default:
+      return baseRules;
+  }
+}
+
+/**
+ * Build compact system prompt
+ */
+function buildSystemPrompt(intent: Intent, conversationContext?: string): string {
+  let prompt = `Extract entities from query for alumni/business directory search.
+
+${getDomainSpecificRules(intent)}`;
+
+  if (conversationContext) {
+    prompt += `\nContext: ${conversationContext.substring(0, 200)}`;
+  }
+
+  prompt += `
+
+Output JSON:
+{
+  "entities": {
+    "year_of_graduation": [year] or null,
+    "branch": ["name"] or null,
+    "working_knowledge": ["skill"] or null,
+    "city": "Name" or null,
+    "organization_name": "Name" or null,
+    "name": "PersonName" or null
+  },
+  "search_query": "optimized text",
+  "confidence": 0-1
+}
+
+Rules: Extract all entities, normalize values, be generous. JSON only.`;
+
+  return prompt;
+}
+
+/**
+ * Make a generic LLM call with system + user message (using LLM factory)
  */
 async function callLLM(systemPrompt: string, userMessage: string, temperature: number = 0.3): Promise<string> {
-    const DEEPINFRA_API_KEY = process.env.DEEPINFRA_API_KEY;
+  try {
+    const llmFactory = getLLMFactory();
 
-    if (!DEEPINFRA_API_KEY) {
-        throw new Error('DEEPINFRA_API_KEY is not configured');
+    const response = await llmFactory.generate({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage }
+      ],
+      temperature,
+      maxTokens: 1000,
+      stopSequences: ["<|eot_id|>", "<|end_of_text|>", "<|eom_id|>"]
+    });
+
+    return response.text;
+  } catch (error) {
+    if (error instanceof LLMProviderError) {
+      console.error(`[LLM Service] All providers failed: ${error.message}`);
+    } else {
+      console.error('[LLM Service] Unexpected error:', error);
     }
-
-    // Format the input with system prompt and user message
-    const formattedInput = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n${userMessage}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`;
-
-    const payload = {
-        input: formattedInput,
-        temperature: temperature,
-        max_tokens: 1000,
-        stop: [
-            "<|eot_id|>",
-            "<|end_of_text|>",
-            "<|eom_id|>"
-        ]
-    };
-
-    try {
-        const response = await axios.post(DEEPINFRA_API_URL, payload, {
-            headers: {
-                'Authorization': `Bearer ${DEEPINFRA_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            timeout: 10000 // 10 second timeout
-        });
-
-        const generatedText = response.data?.results?.[0]?.generated_text || '';
-        return generatedText.trim();
-    } catch (error: any) {
-        console.error('[LLM Service] API error:', error.message);
-        if (error.response) {
-            console.error('[LLM Service] Error status:', error.response.status);
-            console.error('[LLM Service] Error data:', JSON.stringify(error.response.data));
-        }
-        throw new Error('LLM API call failed');
-    }
+    throw new Error('LLM API call failed');
+  }
 }
 
 /**
  * Parse natural language query into structured format
+ * Now uses intent classification to provide domain-specific prompts
  */
 export async function parseQuery(naturalQuery: string, conversationContext?: string): Promise<ParsedQuery> {
-    const startTime = Date.now();
-    console.log(`[LLM Service] Parsing query: "${naturalQuery}"`);
-    if (conversationContext) {
-        console.log(`[LLM Service] Using conversation context from previous queries`);
+  const startTime = Date.now();
+  console.log(`[LLM Service] Parsing query: "${naturalQuery}"`);
+
+  // Step 1: Classify intent using Naive Bayes
+  const intentResult = await classifyIntent(naturalQuery);
+  console.log(`[LLM Service] Intent classified: ${intentResult.primary} (confidence: ${intentResult.confidence})`);
+
+  if (conversationContext) {
+    console.log(`[LLM Service] Using conversation context from previous queries`);
+  }
+
+  // Step 2: Build intent-specific system prompt
+  const systemPrompt = buildSystemPrompt(intentResult.primary, conversationContext);
+
+  try {
+    const response = await callLLM(systemPrompt, naturalQuery, 0.1);
+
+    console.log(`[LLM Service] Raw response:`, response.substring(0, 200));
+
+    // Clean response - extract JSON from various markdown formats
+    let cleanedResponse = response.trim();
+
+    // Remove markdown code blocks
+    cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+    // Try to extract JSON object from text (look for first { to last })
+    const firstBrace = cleanedResponse.indexOf('{');
+    const lastBrace = cleanedResponse.lastIndexOf('}');
+
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleanedResponse = cleanedResponse.substring(firstBrace, lastBrace + 1);
     }
 
-    // Build system prompt with conversation context if available
-    let systemPrompt = `You are a search query parser for a business community network. Parse the following natural language query and extract structured information.`;
+    console.log(`[LLM Service] Cleaned response:`, cleanedResponse.substring(0, 200));
 
-    if (conversationContext) {
-        systemPrompt += `\n\n${conversationContext}\n\nConsider the conversation history above when parsing. If the current query appears to be a follow-up question (e.g., "show me their profiles", "who are they", "what about their skills"), use the context from previous queries to understand what the user is referring to.`;
-    }
+    const parsed = JSON.parse(cleanedResponse);
 
-    systemPrompt += `
+    console.log(`[LLM Service] Parsed entities:`, JSON.stringify(parsed.entities));
 
-Extract the following in JSON format:
-{
-  "intent": "find_member | get_info | list_members | compare",
-  "entities": {
-    "skills": ["skill1", "skill2"] or null,
-    "location": "city name" or null,
-    "services": ["service1", "service2"] or null,
-    "turnover_requirement": "high | medium | low" or null,
-    "graduation_year": [year1, year2] or null,
-    "degree": "degree name" or null
-  },
-  "search_query": "simplified search query for semantic search",
-  "confidence": 0.0 to 1.0
-}
+    // Convert to our interface format with intent from classifier
+    const result: ParsedQuery = {
+      intent: intentResult.primary, // Use classified intent, not LLM's
+      entities: {
+        skills: parsed.entities?.working_knowledge || undefined,
+        location: parsed.entities?.city || undefined,
+        services: parsed.entities?.working_knowledge || undefined,
+        turnoverRequirement: parsed.entities?.annual_turnover || undefined,
+        graduationYear: parsed.entities?.year_of_graduation || undefined,
+        degree: parsed.entities?.degree || undefined,
+        branch: parsed.entities?.branch || undefined,
+        name: parsed.entities?.name || undefined,
+        organizationName: parsed.entities?.organization_name || undefined
+      },
+      searchQuery: parsed.search_query || naturalQuery,
+      confidence: Math.max(parsed.confidence || 0.5, intentResult.confidence), // Use higher confidence
+      intentMetadata: {
+        primary: intentResult.primary,
+        secondary: intentResult.secondary,
+        intentConfidence: intentResult.confidence,
+        matchedPatterns: intentResult.matchedPatterns
+      }
+    };
 
-Rules:
-- Be GENEROUS with entity extraction - extract implied information too
-- "IT industry" = extract skills: ["IT", "Information Technology", "software", "technology"]
-- "consultant" = extract services: ["consulting"]
-- For turnover: "good"/"high"/"successful" = high (>10Cr), "medium" = medium (2-10Cr), "low" = low (<2Cr)
-- Normalize city names (e.g., "chennai" → "Chennai", "bangalore" → "Bangalore")
-- For industry terms, convert to related skills and services
-- Set confidence >= 0.7 for any reasonable query (only set < 0.7 if truly ambiguous like "find someone")
-- search_query should be optimized for semantic similarity search - include synonyms and related terms
-- Default intent is "find_member" unless clearly asking for something else
+    const duration = Date.now() - startTime;
+    console.log(`[LLM Service] ✓ Query parsed in ${duration}ms, confidence: ${result.confidence}`);
+    console.log(`[LLM Service] Entities:`, JSON.stringify(result.entities));
 
-Examples:
-- "IT industry" → skills: ["IT", "software", "technology"], search_query: "IT Information Technology software development"
-- "consultant" → services: ["consulting"], search_query: "consultant consulting advisory"
-- "AI expert" → skills: ["AI", "artificial intelligence"], search_query: "AI artificial intelligence machine learning"
+    return result;
+  } catch (error: any) {
+    console.error('[LLM Service] Failed to parse query:', error.message);
+    console.error('[LLM Service] Error stack:', error.stack);
 
-Return ONLY valid JSON, no explanation or markdown formatting.`;
-
-    try {
-        const response = await callLLM(systemPrompt, naturalQuery, 0.1);
-
-        // Clean response (remove markdown code blocks if present)
-        let cleanedResponse = response.trim();
-        if (cleanedResponse.startsWith('```json')) {
-            cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-        } else if (cleanedResponse.startsWith('```')) {
-            cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
-        }
-
-        const parsed = JSON.parse(cleanedResponse);
-
-        // Convert to our interface format
-        const result: ParsedQuery = {
-            intent: parsed.intent || 'find_member',
-            entities: {
-                skills: parsed.entities?.skills || undefined,
-                location: parsed.entities?.location || undefined,
-                services: parsed.entities?.services || undefined,
-                turnoverRequirement: parsed.entities?.turnover_requirement || undefined,
-                graduationYear: parsed.entities?.graduation_year || undefined,
-                degree: parsed.entities?.degree || undefined
-            },
-            searchQuery: parsed.search_query || naturalQuery,
-            confidence: parsed.confidence || 0.5
-        };
-
-        const duration = Date.now() - startTime;
-        console.log(`[LLM Service] ✓ Query parsed in ${duration}ms, confidence: ${result.confidence}`);
-        console.log(`[LLM Service] Entities:`, JSON.stringify(result.entities));
-
-        return result;
-    } catch (error: any) {
-        console.error('[LLM Service] Failed to parse query:', error.message);
-
-        // Return fallback parsed query with higher confidence
-        // Use the natural query as-is for semantic search
-        return {
-            intent: 'find_member',
-            entities: {},
-            searchQuery: naturalQuery,
-            confidence: 0.6  // Higher fallback confidence - let semantic search handle it
-        };
-    }
+    // Return fallback with intent classification
+    return {
+      intent: intentResult.primary,
+      entities: {},
+      searchQuery: naturalQuery,
+      confidence: Math.max(0.6, intentResult.confidence), // Use intent confidence
+      intentMetadata: {
+        primary: intentResult.primary,
+        secondary: intentResult.secondary,
+        intentConfidence: intentResult.confidence,
+        matchedPatterns: intentResult.matchedPatterns
+      }
+    };
+  }
 }
 
 /**
  * Generate conversational response based on search results
  */
-export async function generateResponse(
-    originalQuery: string,
-    results: MemberSearchResult[],
-    confidence: number
-): Promise<string> {
-    const startTime = Date.now();
-    console.log(`[LLM Service] Generating response for ${results.length} results`);
+// export async function generateResponse(
+//     originalQuery: string,
+//     results: MemberSearchResult[],
+//     confidence: number
+// ): Promise<string> {
+//     const startTime = Date.now();
+//     console.log(`[LLM Service] Generating response for ${results.length} results`);
 
-    // Handle no results
-    if (results.length === 0) {
-        return `I couldn't find any members matching "${originalQuery}". You might want to try searching for related skills, different locations, or browse all members.`;
-    }
+//     // Handle no results
+//     if (results.length === 0) {
+//         return `I couldn't find any members matching "${originalQuery}". You might want to try searching for related skills, different locations, or browse all members.`;
+//     }
 
-    // Prepare results summary (top 5 max)
-    const topResults = results.slice(0, 5);
-    const resultsSummary = topResults.map((member, idx) => {
-        const skills = member.skills ? ` (${member.skills.split(',').slice(0, 3).join(', ')})` : '';
-        const location = member.city ? ` - ${member.city}` : '';
-        const org = member.organization ? ` at ${member.organization}` : '';
-        return `${idx + 1}. ${member.name}${org}${location}${skills}`;
-    }).join('\n');
+//     // Prepare results summary (top 5 max)
+//     const topResults = results.slice(0, 5);
+//     const resultsSummary = topResults.map((member, idx) => {
+//         const skills = member.skills ? ` (${member.skills.split(',').slice(0, 3).join(', ')})` : '';
+//         const location = member.city ? ` - ${member.city}` : '';
+//         const org = member.organization ? ` at ${member.organization}` : '';
+//         return `${idx + 1}. ${member.name}${org}${location}${skills}`;
+//     }).join('\n');
 
-    const systemPrompt = `You are a helpful assistant for a business community network. Generate a natural, conversational response based on the search results.
+// const systemPrompt = `# Business Community Search Assistant - System Prompt
 
-Generate a response that:
-1. Acknowledges the user's request
-2. Summarizes what was found (mention the count)
-3. Highlights top matches (names, key skills, locations)
-4. Is friendly and professional
-5. Is 2-3 sentences long
-6. Ends with a helpful question or suggestion
+// You are a friendly, professional assistant for a business networking platform. 
+// Your goal is to generate a short, conversational response based on the member search results provided.
 
-Example: "I found 5 members in Chennai with AI expertise. The top matches include John Doe (CEO with ML experience at TechCorp), Jane Smith (AI Consultant), and Mike Johnson (Data Scientist). Would you like more details about any of them?"
+// ## OBJECTIVE
+// Generate a concise, natural summary that:
+// 1. Acknowledges the user’s search or intent.
+// 2. Mentions how many members were found.
+// 3. Displays up to 3 top matches using a clear, multi-line format.
+// 4. Sounds conversational, human-like, and professional.
+// 5. Ends with a helpful question or suggestion for next steps.
 
-Keep it concise and natural. Do NOT use bullet points or lists in the response.`;
+// ## STYLE GUIDELINES
+// - Tone: Friendly, professional, confident.
+// - Voice: Speak naturally as “I,” the assistant.
+// - Use line breaks and bullet/numbered formatting for clarity.
+// - Skip missing fields gracefully (don’t show “undefined” or empty labels).
 
-    const userMessage = `Original Query: "${originalQuery}"
-Number of Results: ${results.length}
-Top Matches:
-${resultsSummary}
+// ## DISPLAY FORMAT
+// When presenting results, use this layout for each member:
 
-Generate a natural response:`;
+// 1️⃣ **Name:** <Full Name>  
+//    **Email:** <Email Address>  
+//    **Contact:** <Phone Number>  
+//    **Place:** <City or Location>
 
-    try {
-        const response = await callLLM(systemPrompt, userMessage, 0.7);
-        const duration = Date.now() - startTime;
-        console.log(`[LLM Service] ✓ Response generated in ${duration}ms`);
-        return response;
-    } catch (error: any) {
-        console.error('[LLM Service] Failed to generate response:', error.message);
-        // Fallback response
-        if (results.length === 1) {
-            return `I found 1 member matching your search: ${results[0].name}${results[0].city ? ` from ${results[0].city}` : ''}. Would you like more details?`;
-        } else {
-            const topNames = topResults.map(r => r.name).slice(0, 3).join(', ');
-            return `I found ${results.length} members matching your search. Top matches include ${topNames}. Would you like to refine your search or see more details?`;
-        }
-    }
-}
+// (Show up to 3 members only. If more exist, mention that there are additional matches.)
+
+// ## SPECIAL CASES
+// - **1 result:** Present full details in the display format.
+// - **2–5 results:** Show all results in the display format.
+// - **6+ results:** Say “I found several members” and show the top 3.
+// - **No results:** Politely acknowledge that and suggest refining the search.
+
+// ## OUTPUT EXAMPLES
+
+// **Example 1 (Single Result):**
+// I found one member matching your search:
+
+// **Name:** John Doe  
+// **Email:** john.doe@example.com  
+// **Contact:** +91 98765 43210  
+// **Place:** Chennai  
+
+// Would you like me to help you connect with John?
+
+// **Example 2 (Multiple Results):**
+// I found 5 members in Chennai with AI expertise. Here are the top matches:
+
+// 1️⃣ **Name:** Sarah Lee  
+//    **Email:** sarah.lee@bizconnect.com  
+//    **Contact:** +91 90234 56789  
+//    **Place:** Chennai  
+
+// 2️⃣ **Name:** Ravi Kumar  
+//    **Email:** ravi.kumar@innoventures.in  
+//    **Contact:** +91 98765 43210  
+//    **Place:** Coimbatore  
+
+// 3️⃣ **Name:** Priya Menon  
+//    **Email:** priya.menon@brandhive.com  
+//    **Place:** Bengaluru  
+
+// Would you like to view more results or connect with any of them?`
+
+
+//     const userMessage = `Original Query: "${originalQuery}"
+// Number of Results: ${results.length}
+// Top Matches:
+// ${resultsSummary}
+
+// Generate a natural response:`;
+
+//     try {
+//         const response = await callLLM(systemPrompt, userMessage, 0.7);
+//         const duration = Date.now() - startTime;
+//         console.log(`[LLM Service] ✓ Response generated in ${duration}ms`);
+//         return response;
+//     } catch (error: any) {
+//         console.error('[LLM Service] Failed to generate response:', error.message);
+//         // Fallback response
+//         if (results.length === 1) {
+//             return `I found 1 member matching your search: ${results[0].name}${results[0].city ? ` from ${results[0].city}` : ''}. Would you like more details?`;
+//         } else {
+//             const topNames = topResults.map(r => r.name).slice(0, 3).join(', ');
+//             return `I found ${results.length} members matching your search. Top matches include ${topNames}. Would you like to refine your search or see more details?`;
+//         }
+//     }
+// =====================================================================
+// RESPONSE GENERATION (Template-Based with LLM Fallback)
+// =====================================================================
 
 /**
- * Generate follow-up suggestions based on query and results
+ * Generate formatted response from search results
+ * Uses template-based formatting (Task 3.1) with LLM fallback for edge cases
+ * 
+ * @param originalQuery - Original search query
+ * @param results - Search results
+ * @param confidence - Extraction confidence score
+ * @param intent - Detected intent
+ * @param entities - Extracted entities
+ * @returns Formatted response string
+ */
+export async function generateResponse(
+  originalQuery: string,
+  results: MemberSearchResult[],
+  confidence: number,
+  intent?: Intent,
+  entities?: ExtractedEntities
+): Promise<string> {
+  const startTime = Date.now();
+
+  // Empty results handling
+  if (results.length === 0) {
+    return `I couldn't find any members matching "${originalQuery}". Try different keywords or locations.`;
+  }
+
+  // Try template-based formatting first (fast, no API cost)
+  if (intent && entities) {
+    try {
+      const context: FormatterContext = {
+        query: originalQuery,
+        intent: intent,
+        entities: {
+          graduationYear: entities.graduationYear,
+          location: entities.location,
+          degree: entities.degree,
+          branch: entities.branch,
+          skills: entities.skills,
+          services: entities.services,
+          name: entities.name,
+          organizationName: entities.organizationName
+        },
+        resultCount: results.length
+      };
+
+      const formatted = formatResults(results, context);
+      console.log(`[LLM Service] ✓ Template response in ${Date.now() - startTime}ms`);
+      return formatted;
+    } catch (error: any) {
+      console.warn(`[LLM Service] Template formatting failed: ${error.message}, falling back to LLM`);
+    }
+  }
+
+  // Fallback to LLM for edge cases (legacy behavior)
+  console.log(`[LLM Service] Using LLM fallback (no intent/entities provided)`);
+
+  const systemPrompt = `
+You are a member search assistant. Format results as simple comma-separated lines.
+Each line: Number. Name, Email, Phone, City
+Show ALL members provided. No bold, no markdown, no extra text.`;
+
+  const safeResults = results.slice(0, 50).map((r, i) => ({
+    id: i + 1,
+    name: r.name || '',
+    email: r.email || '',
+    phone: r.phone || '',
+    city: r.city || '',
+  }));
+
+  const userMessage = `Format these ${safeResults.length} members as simple lines:\n${JSON.stringify(safeResults)}`;
+
+  try {
+    const response = await callLLM(systemPrompt, userMessage, 0.2);
+    console.log(`[LLM Service] ✓ LLM response generated in ${Date.now() - startTime}ms`);
+    return response.trim();
+  } catch (error: any) {
+    console.error("[LLM Service] LLM fallback failed:", error.message);
+
+    // Simple fallback format for ALL results
+    const fallbackList = safeResults
+      .map((r, i) => {
+        const parts = [r.name];
+        if (r.email) parts.push(r.email);
+        if (r.phone) parts.push(r.phone);
+        if (r.city) parts.push(r.city);
+
+        return `${i + 1}. ${parts.join(', ')}`;
+      })
+      .join('\n');
+
+    return `Found ${results.length} members:\n\n${fallbackList}`;
+  }
+}
+
+// =====================================================================
+// SUGGESTIONS (Template-Based with LLM Fallback)
+// =====================================================================
+
+/**
+ * Generate follow-up query suggestions
+ * Uses template-based suggestions (Task 3.2) with LLM fallback for edge cases
+ * 
+ * @param originalQuery - Original search query
+ * @param results - Search results
+ * @param intent - Detected intent (optional)
+ * @param entities - Extracted entities (optional)
+ * @returns Array of 3 suggestion strings
  */
 export async function generateSuggestions(
-    originalQuery: string,
-    results: MemberSearchResult[]
+  originalQuery: string,
+  results: MemberSearchResult[],
+  intent?: Intent,
+  entities?: ExtractedEntities
 ): Promise<string[]> {
-    const startTime = Date.now();
-    console.log(`[LLM Service] Generating suggestions`);
+  const startTime = Date.now();
 
-    const systemPrompt = `Based on the search query and results, suggest 3 natural follow-up questions the user might ask.
-
-Generate 3 natural follow-up questions as a JSON array:
-["suggestion 1", "suggestion 2", "suggestion 3"]
-
-Suggestions should be:
-- Natural and conversational
-- Relevant to the search context
-- Actionable (can be directly searched)
-- Varied (different types of refinements)
-
-Examples:
-- "Show me members with higher annual turnover"
-- "Find similar members in Bangalore"
-- "Who has experience in both AI and consulting?"
-- "List members who provide consulting services"
-- "Find members graduated after 2010"
-
-Return ONLY a JSON array, no explanation or markdown formatting.`;
-
-    const userMessage = `Query: "${originalQuery}"
-Results Found: ${results.length}
-${results.length > 0 ? `Top Skills: ${Array.from(new Set(results.flatMap(r => r.skills?.split(',') || []))).slice(0, 5).join(', ')}` : ''}
-${results.length > 0 ? `Cities: ${Array.from(new Set(results.map(r => r.city).filter(Boolean))).slice(0, 3).join(', ')}` : ''}
-
-Generate 3 follow-up suggestions:`;
-
+  // Try template-based suggestions first (fast, no API cost)
+  if (intent && entities) {
     try {
-        const response = await callLLM(systemPrompt, userMessage, 0.8);
+      const context: SuggestionContext = {
+        query: originalQuery,
+        intent: intent,
+        entities: {
+          graduationYear: entities.graduationYear,
+          location: entities.location,
+          degree: entities.degree,
+          branch: entities.branch,
+          skills: entities.skills,
+          services: entities.services,
+          name: entities.name,
+          organizationName: entities.organizationName
+        },
+        resultCount: results.length,
+        hasResults: results.length > 0
+      };
 
-        // Clean response
-        let cleanedResponse = response.trim();
-        if (cleanedResponse.startsWith('```json')) {
-            cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-        } else if (cleanedResponse.startsWith('```')) {
-            cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
-        }
-
-        const suggestions = JSON.parse(cleanedResponse);
-        const duration = Date.now() - startTime;
-        console.log(`[LLM Service] ✓ Suggestions generated in ${duration}ms`);
-
-        if (Array.isArray(suggestions) && suggestions.length > 0) {
-            return suggestions.slice(0, 3);
-        }
-
-        return getFallbackSuggestions(results);
+      const suggestions = generateTemplateSuggestions(results, context);
+      console.log(`[LLM Service] ✓ Template suggestions in ${Date.now() - startTime}ms`);
+      return suggestions;
     } catch (error: any) {
-        console.error('[LLM Service] Failed to generate suggestions:', error.message);
-        return getFallbackSuggestions(results);
+      console.warn(`[LLM Service] Template suggestions failed: ${error.message}, falling back to LLM`);
     }
+  }
+
+  // Fallback to LLM for edge cases (legacy behavior)
+  console.log(`[LLM Service] Using LLM fallback for suggestions (no intent/entities provided)`);
+
+  const systemPrompt = `Generate 3 relevant follow-up search suggestions based on results. Return JSON array only: ["...", "...", "..."]`;
+
+  const userMessage = `Query: "${originalQuery}", Found: ${results.length} members. Suggestions?`;
+
+  try {
+    const response = await callLLM(systemPrompt, userMessage, 0.7);
+    // Try to parse JSON from response
+    let suggestions: any;
+    try {
+      // Extract JSON from markdown or plain response
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      suggestions = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response);
+    } catch {
+      suggestions = getFallbackSuggestions(results);
+    }
+    console.log(`[LLM Service] ✓ LLM suggestions in ${Date.now() - startTime}ms`);
+    return Array.isArray(suggestions) ? suggestions.slice(0, 3) : getFallbackSuggestions(results);
+  } catch {
+    return getFallbackSuggestions(results);
+  }
 }
 
 /**
- * Get fallback suggestions if LLM fails
+ * Fallback suggestions when LLM and templates fail
  */
 function getFallbackSuggestions(results: MemberSearchResult[]): string[] {
-    const suggestions: string[] = [];
+  const suggestions: string[] = [];
 
-    if (results.length > 0) {
-        // Extract unique cities
-        const cities = Array.from(new Set(results.map(r => r.city).filter(Boolean)));
-        if (cities.length > 1) {
-            suggestions.push(`Show me members only in ${cities[0]}`);
-        }
-
-        // Extract unique skills
-        const allSkills = results.flatMap(r => r.skills?.split(',').map(s => s.trim()) || []);
-        const uniqueSkills = Array.from(new Set(allSkills)).slice(0, 3);
-        if (uniqueSkills.length > 0) {
-            suggestions.push(`Find members with ${uniqueSkills[0]} skills`);
-        }
-
-        suggestions.push('Show members with consulting services');
-    } else {
-        suggestions.push('Search by location (e.g., Chennai, Bangalore)');
-        suggestions.push('Find members with specific skills');
-        suggestions.push('Browse all members');
+  if (results.length > 0) {
+    // Extract unique cities
+    const cities = Array.from(new Set(results.map(r => r.city).filter(Boolean)));
+    if (cities.length > 1) {
+      suggestions.push(`Show me members only in ${cities[0]}`);
     }
 
-    return suggestions.slice(0, 3);
+    // Extract unique skills
+    const allSkills = results.flatMap(r => r.skills?.split(',').map(s => s.trim()) || []);
+    const uniqueSkills = Array.from(new Set(allSkills)).slice(0, 3);
+    if (uniqueSkills.length > 0) {
+      suggestions.push(`Find members with ${uniqueSkills[0]} skills`);
+    }
+
+    suggestions.push('Show members with consulting services');
+  } else {
+    suggestions.push('Search by location (e.g., Chennai, Bangalore)');
+    suggestions.push('Find members with specific skills');
+    suggestions.push('Browse all members');
+  }
+
+  return suggestions.slice(0, 3);
 }
 
 /**
- * Legacy function for backward compatibility
+ * Legacy function for backward compatibility (using LLM factory)
  */
 export async function getLLMResponse(message: string): Promise<string> {
-    const DEEPINFRA_API_KEY = process.env.DEEPINFRA_API_KEY;
+  try {
+    const llmFactory = getLLMFactory();
 
-    console.log('[getLLMResponse] All env vars:', Object.keys(process.env));
-    console.log('[getLLMResponse] DEEPINFRA_API_KEY exists:', !!DEEPINFRA_API_KEY);
+    const response = await llmFactory.generate({
+      messages: [
+        { role: 'user', content: message }
+      ],
+      temperature: 0.7,
+      maxTokens: 500
+    });
 
-    if (!DEEPINFRA_API_KEY) {
-        console.error('[getLLMResponse] ERROR: DEEPINFRA_API_KEY is not set!');
-        return 'API key configuration error.';
-    }
-
-    const formattedInput = `<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n${message}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`;
-
-    const payload = {
-        input: formattedInput,
-        stop: [
-            "<|eot_id|>",
-            "<|end_of_text|>",
-            "<|eom_id|>"
-        ]
-    };
-
-    try {
-        const response = await axios.post(DEEPINFRA_API_URL, payload, {
-            headers: {
-                'Authorization': `Bearer ${DEEPINFRA_API_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const generatedText = response.data?.results?.[0]?.generated_text || '';
-        return generatedText;
-    } catch (error: any) {
-        console.error('[getLLMResponse] LLM API error:', error.message);
-        if (error.response) {
-            console.error('[getLLMResponse] Error status:', error.response.status);
-            console.error('[getLLMResponse] Error data:', JSON.stringify(error.response.data));
-        }
-        return 'Sorry, I could not process your request.';
-    }
+    return response.text;
+  } catch (error) {
+    console.error('[getLLMResponse] LLM API error:', error);
+    return 'Sorry, I could not process your request.';
+  }
 }

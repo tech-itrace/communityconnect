@@ -1,0 +1,1707 @@
+[
+  {
+    "testCase": {
+      "id": 1,
+      "query": "Find web development company in Chennai",
+      "category": "entrepreneurs",
+      "subcategory": "service_based",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_business",
+        "entities": {
+          "skills": [
+            "web development",
+            "website design"
+          ],
+          "location": "Chennai"
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "location": "Chennai",
+        "skills": [
+          "Web Development"
+        ]
+      },
+      "confidence": 0.75,
+      "method": "regex",
+      "extractionTime": 39,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "location": "Chennai",
+            "skills": [
+              "Web Development"
+            ]
+          },
+          "confidence": 0.75,
+          "matched_patterns": [
+            "location",
+            "skills"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "confidence": 0.74,
+          "matchedPatterns": [
+            "\\b(?:web\\s+development|IT\\s+consulting|digital\\s+marketing|HR\\s+services|manufacturing|packaging)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 2011,
+    "searchResults": [],
+    "formattedResponse": "I couldn't find any members matching from **Chennai** .\n\nTry different keywords, locations, or time periods.",
+    "formatTime": 3,
+    "totalTime": 2057,
+    "status": "success",
+    "accuracy": "partial"
+  },
+  {
+    "testCase": {
+      "id": 2,
+      "query": "Looking for IT consulting services in Bangalore",
+      "category": "entrepreneurs",
+      "subcategory": "service_based",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_business",
+        "entities": {
+          "skills": [
+            "IT consulting",
+            "IT services"
+          ],
+          "location": "Bangalore"
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "location": "Bangalore",
+        "branch": [
+          "IT",
+          "Information Technology"
+        ],
+        "skills": [
+          "IT",
+          "It Consulting"
+        ],
+        "services": [
+          "Consulting",
+          "Services"
+        ]
+      },
+      "confidence": 0.95,
+      "method": "regex",
+      "extractionTime": 13,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "location": "Bangalore",
+            "branch": [
+              "IT",
+              "Information Technology"
+            ],
+            "skills": [
+              "IT",
+              "It Consulting"
+            ],
+            "services": [
+              "Consulting",
+              "Services"
+            ]
+          },
+          "confidence": 0.95,
+          "matched_patterns": [
+            "location",
+            "branch",
+            "skills",
+            "services"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "confidence": 0.74,
+          "matchedPatterns": [
+            "\\b(?:web\\s+development|IT\\s+consulting|digital\\s+marketing|HR\\s+services|manufacturing|packaging)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1104,
+    "searchResults": [],
+    "formattedResponse": "I couldn't find any members matching in **IT** from **Bangalore** offering **Consulting** .\n\nTry different keywords, locations, or time periods.",
+    "formatTime": 0,
+    "totalTime": 1119,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 3,
+      "query": "Who provides digital marketing services?",
+      "category": "entrepreneurs",
+      "subcategory": "service_based",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_business",
+        "entities": {
+          "skills": [
+            "digital marketing",
+            "marketing"
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "branch": [
+          "IT",
+          "Information Technology"
+        ],
+        "skills": [
+          "Digital Marketing"
+        ],
+        "services": [
+          "Services"
+        ]
+      },
+      "confidence": 0.85,
+      "method": "regex",
+      "extractionTime": 14,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "branch": [
+              "IT",
+              "Information Technology"
+            ],
+            "skills": [
+              "Digital Marketing"
+            ],
+            "services": [
+              "Services"
+            ]
+          },
+          "confidence": 0.85,
+          "matched_patterns": [
+            "branch",
+            "skills",
+            "services"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "confidence": 0.74,
+          "matchedPatterns": [
+            "\\b(?:web\\s+development|IT\\s+consulting|digital\\s+marketing|HR\\s+services|manufacturing|packaging)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1014,
+    "searchResults": [],
+    "formattedResponse": "I couldn't find any members matching in **IT** offering **Services** .\n\nTry different keywords, locations, or time periods.",
+    "formatTime": 0,
+    "totalTime": 1030,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 4,
+      "query": "Find textile manufacturers in Tamil Nadu",
+      "category": "entrepreneurs",
+      "subcategory": "service_based",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_business",
+        "entities": {
+          "skills": [
+            "textile",
+            "manufacturing"
+          ],
+          "location": "Tamil Nadu"
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "location": "Tamil Nadu",
+        "branch": [
+          "Textile",
+          "Textile Engineering"
+        ],
+        "skills": [
+          "Textile",
+          "textile manufacturing"
+        ],
+        "services": [
+          "textile manufacturing"
+        ]
+      },
+      "confidence": 0.8200000000000001,
+      "method": "hybrid",
+      "extractionTime": 13963,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "location": "Tamil Nadu",
+            "branch": [
+              "Textile",
+              "Textile Engineering"
+            ],
+            "skills": [
+              "Textile"
+            ]
+          },
+          "confidence": 0.85,
+          "matched_patterns": [
+            "location",
+            "branch",
+            "skills"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "confidence": 0.3,
+          "matchedPatterns": []
+        },
+        "llmUsed": true,
+        "llmFallbackReason": "Uncertain intent (0.30)",
+        "needsLLM": true
+      }
+    },
+    "searchTime": 727,
+    "searchResults": [],
+    "formattedResponse": "I couldn't find any members matching in **Textile** from **Tamil Nadu** offering **textile manufacturing** .\n\nTry different keywords, locations, or time periods.",
+    "formatTime": 0,
+    "totalTime": 14691,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 5,
+      "query": "Looking for packaging solutions in Chennai",
+      "category": "entrepreneurs",
+      "subcategory": "service_based",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_business",
+        "entities": {
+          "skills": [
+            "packaging"
+          ],
+          "location": "Chennai"
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "location": "Chennai",
+        "skills": [
+          "Packaging"
+        ]
+      },
+      "confidence": 0.75,
+      "method": "regex",
+      "extractionTime": 13,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "location": "Chennai",
+            "skills": [
+              "Packaging"
+            ]
+          },
+          "confidence": 0.75,
+          "matched_patterns": [
+            "location",
+            "skills"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "confidence": 0.74,
+          "matchedPatterns": [
+            "\\b(?:web\\s+development|IT\\s+consulting|digital\\s+marketing|HR\\s+services|manufacturing|packaging)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 821,
+    "searchResults": [],
+    "formattedResponse": "I couldn't find any members matching from **Chennai** .\n\nTry different keywords, locations, or time periods.",
+    "formatTime": 0,
+    "totalTime": 838,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 51,
+      "query": "Find my batchmates from 1995 passout",
+      "category": "alumni",
+      "subcategory": "batch_year",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_peers",
+        "entities": {
+          "graduationYear": [
+            1995
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_peers",
+      "entities": {
+        "graduationYear": [
+          1995
+        ]
+      },
+      "confidence": 0.65,
+      "method": "regex",
+      "extractionTime": 12,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "graduationYear": [
+              1995
+            ]
+          },
+          "confidence": 0.65,
+          "matched_patterns": [
+            "year"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_peers",
+          "confidence": 1,
+          "matchedPatterns": [
+            "\\b(?:batchmate|batchmates|classmate|classmates)\\b",
+            "\\b(?:find|show|list|who\\s+are)\\s+(?:my\\s+)?(?:batch|batchmates?|classmates?)\\b",
+            "\\b(?:passout|graduates?|graduated|alumnus|alumni)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1086,
+    "searchResults": [
+      {
+        "id": "b8c27f07-44f2-4749-bb64-237a30ae7750",
+        "name": "Mr., M Padmanaban",
+        "yearOfGraduation": 1995,
+        "degree": "B.Sc",
+        "branch": "Applied Sciences",
+        "designation": null,
+        "city": null,
+        "phone": "919962051150",
+        "email": "marimuthu.padmanaban@gmail.com",
+        "skills": "IT Services/Consulting",
+        "productsServices": "IT Services/Consulting",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.471Z",
+        "updatedAt": "2025-11-02T12:23:53.471Z",
+        "relevanceScore": 0.3282187619274487,
+        "semanticScore": 0.46888394561064106,
+        "matchedFields": [],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "**1995 batch** alumni (1 results):\n\n\n1. **Mr., M Padmanaban**\n   🎓 '95 • B.Sc • Applied Sciences\n   📞 919962051150 | ✉️ marimuthu.padmanaban@gmail.com\n\n\n_Found 1 alumni_",
+    "formatTime": 1,
+    "totalTime": 1102,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 52,
+      "query": "Who are the 1998 batch members?",
+      "category": "alumni",
+      "subcategory": "batch_year",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_peers",
+        "entities": {
+          "graduationYear": [
+            1998
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_peers",
+      "entities": {
+        "graduationYear": [
+          1998
+        ]
+      },
+      "confidence": 0.65,
+      "method": "regex",
+      "extractionTime": 12,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "graduationYear": [
+              1998
+            ]
+          },
+          "confidence": 0.65,
+          "matched_patterns": [
+            "year"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_peers",
+          "confidence": 0.89,
+          "matchedPatterns": [
+            "\\b\\d{2,4}\\s+(?:passout|batch|graduated|grad|year)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1154,
+    "searchResults": [
+      {
+        "id": "a2bf1757-4f2a-4923-b800-f17c8e5e3d70",
+        "name": "Mr., Shankar",
+        "yearOfGraduation": 1998,
+        "degree": "B.E",
+        "branch": "Mechanical",
+        "designation": null,
+        "city": null,
+        "phone": "919600065293",
+        "email": "pshanka1@gmail.com",
+        "skills": "Services",
+        "productsServices": "Services",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.474Z",
+        "updatedAt": "2025-11-02T12:23:53.474Z",
+        "relevanceScore": 0.36257980911972665,
+        "semanticScore": 0.5179711558853238,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "846bfba3-76f8-4170-94aa-74fe1ba7c3bc",
+        "name": "Mr., Gopalakrishnan, Natarajan",
+        "yearOfGraduation": 1998,
+        "degree": "B.E",
+        "branch": "Production",
+        "designation": "General Manager HSE",
+        "city": "Chennai",
+        "phone": "919176651007",
+        "email": "achchulu7@gmail.com",
+        "skills": "Automobile",
+        "productsServices": "Automobile",
+        "annualTurnover": "Above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.476Z",
+        "updatedAt": "2025-11-02T12:23:53.476Z",
+        "relevanceScore": 0.31767414106881287,
+        "semanticScore": 0.4538202015268755,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "16c01ed2-1d93-4fa8-b617-a3af6afcb6d7",
+        "name": "Mr., Prem Kumar, Gokuladasan",
+        "yearOfGraduation": 1998,
+        "degree": "B.E",
+        "branch": "Production",
+        "designation": "Founder & Managing Trustee",
+        "city": "CHENNAI",
+        "phone": "919791007318",
+        "email": "prem@bumbleb.org.in",
+        "skills": "Non Profit - Kalvi40 Rural school education",
+        "productsServices": "Non Profit - Kalvi40 Rural school education",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.475Z",
+        "updatedAt": "2025-11-02T12:23:53.475Z",
+        "relevanceScore": 0.3126215621684142,
+        "semanticScore": 0.44660223166916313,
+        "matchedFields": [],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "**1998 batch** alumni (3 results):\n\n\n1. **Mr., Shankar**\n   🎓 '98 • B.E • Mechanical\n   📞 919600065293 | ✉️ pshanka1@gmail.com\n\n2. **Mr., Gopalakrishnan, Natarajan**\n   🎓 '98 • B.E • Production\n   💼 General Manager HSE\n   📍 Chennai\n   📞 919176651007 | ✉️ achchulu7@gmail.com\n\n3. **Mr., Prem Kumar, Gokuladasan**\n   🎓 '98 • B.E • Production\n   💼 Founder & Managing Trustee\n   📍 CHENNAI\n   📞 919791007318 | ✉️ prem@bumbleb.org.in\n\n\n_Found 3 alumni_",
+    "formatTime": 1,
+    "totalTime": 1169,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 53,
+      "query": "Looking for 95 passout mechanical",
+      "category": "alumni",
+      "subcategory": "batch_year",
+      "complexity": "medium",
+      "expected": {
+        "intent": "find_peers",
+        "entities": {
+          "graduationYear": [
+            1995
+          ],
+          "branch": [
+            "Mechanical",
+            "Mechanical Engineering"
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_peers",
+      "entities": {
+        "graduationYear": [
+          1995
+        ],
+        "branch": [
+          "Mechanical",
+          "Mechanical Engineering"
+        ]
+      },
+      "confidence": 0.8,
+      "method": "regex",
+      "extractionTime": 9,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "graduationYear": [
+              1995
+            ],
+            "branch": [
+              "Mechanical",
+              "Mechanical Engineering"
+            ]
+          },
+          "confidence": 0.8,
+          "matched_patterns": [
+            "year",
+            "branch"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_peers",
+          "confidence": 1,
+          "matchedPatterns": [
+            "\\b(?:passout|graduates?|graduated|alumnus|alumni)\\b",
+            "\\b\\d{2,4}\\s+(?:passout|batch|graduated|grad|year)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 922,
+    "searchResults": [
+      {
+        "id": "b8c27f07-44f2-4749-bb64-237a30ae7750",
+        "name": "Mr., M Padmanaban",
+        "yearOfGraduation": 1995,
+        "degree": "B.Sc",
+        "branch": "Applied Sciences",
+        "designation": null,
+        "city": null,
+        "phone": "919962051150",
+        "email": "marimuthu.padmanaban@gmail.com",
+        "skills": "IT Services/Consulting",
+        "productsServices": "IT Services/Consulting",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.471Z",
+        "updatedAt": "2025-11-02T12:23:53.471Z",
+        "relevanceScore": 0.3061098424759566,
+        "semanticScore": 0.4372997749656523,
+        "matchedFields": [],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "**1995 batch** **Mechanical** alumni (1 results):\n\n\n1. **Mr., M Padmanaban**\n   🎓 '95 • B.Sc • Applied Sciences\n   📞 919962051150 | ✉️ marimuthu.padmanaban@gmail.com\n\n\n_Found 1 alumni_",
+    "formatTime": 1,
+    "totalTime": 933,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 54,
+      "query": "Find 2010 graduates",
+      "category": "alumni",
+      "subcategory": "batch_year",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_peers",
+        "entities": {
+          "graduationYear": [
+            2010
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_peers",
+      "entities": {
+        "graduationYear": [
+          2010
+        ]
+      },
+      "confidence": 0.65,
+      "method": "regex",
+      "extractionTime": 10,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "graduationYear": [
+              2010
+            ]
+          },
+          "confidence": 0.65,
+          "matched_patterns": [
+            "year"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_peers",
+          "confidence": 0.92,
+          "matchedPatterns": [
+            "\\b(?:passout|graduates?|graduated|alumnus|alumni)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1151,
+    "searchResults": [
+      {
+        "id": "18e4deea-a28c-4a46-aba5-8aad027ce347",
+        "name": "Mr., Saravan Prabu, Periasamy",
+        "yearOfGraduation": 2010,
+        "degree": "B.E",
+        "branch": "ECE",
+        "designation": "Co-founder",
+        "city": "Salem",
+        "phone": "918818918181",
+        "email": "saravan06psgtech@gmail.com",
+        "skills": "B2B Platform for Architecture, Interior and construction materials",
+        "productsServices": "B2B Platform for Architecture, Interior and construction materials",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.484Z",
+        "updatedAt": "2025-11-02T12:23:53.484Z",
+        "relevanceScore": 0.30088690223952846,
+        "semanticScore": 0.429838431770755,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "4b53676a-4a02-4536-b575-ad77db7f6be9",
+        "name": "Mr., Selvakumar, Paulraj",
+        "yearOfGraduation": 2010,
+        "degree": "B.E",
+        "branch": "ECE",
+        "designation": "co founder",
+        "city": "chennai",
+        "phone": "919962472162",
+        "email": "selvakumar7188@gmail.com",
+        "skills": "B2B Platform for architecture ,interior and construction materials",
+        "productsServices": "B2B Platform for architecture ,interior and construction materials",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.483Z",
+        "updatedAt": "2025-11-02T12:23:53.483Z",
+        "relevanceScore": 0.2993234067953649,
+        "semanticScore": 0.42760486685052135,
+        "matchedFields": [],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "**2010 batch** alumni (2 results):\n\n\n1. **Mr., Saravan Prabu, Periasamy**\n   🎓 '10 • B.E • ECE\n   💼 Co-founder\n   📍 Salem\n   📞 918818918181 | ✉️ saravan06psgtech@gmail.com\n\n2. **Mr., Selvakumar, Paulraj**\n   🎓 '10 • B.E • ECE\n   💼 co founder\n   📍 chennai\n   📞 919962472162 | ✉️ selvakumar7188@gmail.com\n\n\n_Found 2 alumni_",
+    "formatTime": 1,
+    "totalTime": 1164,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 55,
+      "query": "Who graduated in 1994?",
+      "category": "alumni",
+      "subcategory": "batch_year",
+      "complexity": "simple",
+      "expected": {
+        "intent": "find_peers",
+        "entities": {
+          "graduationYear": [
+            1994
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_peers",
+      "entities": {
+        "graduationYear": [
+          1994
+        ]
+      },
+      "confidence": 0.65,
+      "method": "regex",
+      "extractionTime": 10,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "graduationYear": [
+              1994
+            ]
+          },
+          "confidence": 0.65,
+          "matched_patterns": [
+            "year"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_peers",
+          "confidence": 0.92,
+          "matchedPatterns": [
+            "\\b(?:passout|graduates?|graduated|alumnus|alumni)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1009,
+    "searchResults": [
+      {
+        "id": "b0488ea6-864b-4bad-aab1-d8fe310e2466",
+        "name": "Mr., Karunanithi",
+        "yearOfGraduation": 1994,
+        "degree": "B.E",
+        "branch": "SW Mechanical",
+        "designation": null,
+        "city": null,
+        "phone": "917358655815",
+        "email": "dkaruna27@gmail.com",
+        "skills": "Merchandise export",
+        "productsServices": "Merchandise export",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.470Z",
+        "updatedAt": "2025-11-02T12:23:53.470Z",
+        "relevanceScore": 0.3633717287591616,
+        "semanticScore": 0.5191024696559452,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "e6991e6f-fd9a-4b65-90c1-0cee59a6544d",
+        "name": "Mr., Ganeshan Suppiah",
+        "yearOfGraduation": 1994,
+        "degree": "B.E",
+        "branch": "Mechanical (SW)",
+        "designation": null,
+        "city": null,
+        "phone": "919677007475",
+        "email": "ganeshans@gmail.com",
+        "skills": "Diamond Jewelry Manufacturing & Retailing",
+        "productsServices": "Diamond Jewelry Manufacturing & Retailing",
+        "annualTurnover": "Above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.469Z",
+        "updatedAt": "2025-11-02T12:23:53.469Z",
+        "relevanceScore": 0.3446120884783321,
+        "semanticScore": 0.4923029835404744,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "016fe48b-c270-4885-bced-c115ba6ea848",
+        "name": "Mr., Vijay Subbaiah",
+        "yearOfGraduation": 1994,
+        "degree": "B.E",
+        "branch": null,
+        "designation": null,
+        "city": null,
+        "phone": "919884043330",
+        "email": "pappushal@gmail.com",
+        "skills": "Manufacturing Retailing Diamond Jewelry",
+        "productsServices": "Manufacturing Retailing Diamond Jewelry",
+        "annualTurnover": "Above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.468Z",
+        "updatedAt": "2025-11-02T12:23:53.468Z",
+        "relevanceScore": 0.32479307427385684,
+        "semanticScore": 0.46399010610550984,
+        "matchedFields": [],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "**1994 batch** alumni (3 results):\n\n\n1. **Mr., Karunanithi**\n   🎓 '94 • B.E • SW Mechanical\n   📞 917358655815 | ✉️ dkaruna27@gmail.com\n\n2. **Mr., Ganeshan Suppiah**\n   🎓 '94 • B.E • Mechanical (SW)\n   📞 919677007475 | ✉️ ganeshans@gmail.com\n\n3. **Mr., Vijay Subbaiah**\n   🎓 '94 • B.E\n   📞 919884043330 | ✉️ pappushal@gmail.com\n\n\n_Found 3 alumni_",
+    "formatTime": 1,
+    "totalTime": 1022,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 101,
+      "query": "Who from 1995 batch runs a business in Chennai?",
+      "category": "alumni_business",
+      "subcategory": "mixed",
+      "complexity": "complex",
+      "expected": {
+        "intent": "find_alumni_business",
+        "entities": {
+          "graduationYear": [
+            1995
+          ],
+          "location": "Chennai"
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_alumni_business",
+      "entities": {
+        "graduationYear": [
+          1995
+        ],
+        "location": "Chennai"
+      },
+      "confidence": 0.8,
+      "method": "regex",
+      "extractionTime": 10,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "graduationYear": [
+              1995
+            ],
+            "location": "Chennai"
+          },
+          "confidence": 0.8,
+          "matched_patterns": [
+            "year",
+            "location"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_alumni_business",
+          "confidence": 1,
+          "matchedPatterns": [
+            "\\b(?:batch|alumni|passout|graduates?|batchmates?)\\s+(?:who\\s+)?(?:in|doing|running|providing|provides?|offers?|does|runs?)\\s+[a-z\\s]+\\b",
+            "\\b(?:find|who)\\s+(?:from\\s+)?(?:\\d{2,4}\\s+)?(?:batch|alumni|graduates?)\\s+(?:in|doing|provides?|runs?|running|offering)\\b",
+            "\\b(?:alumni|graduates?|batchmates?|batch|passout).*?(?:running|runs)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1105,
+    "searchResults": [],
+    "formattedResponse": "I couldn't find any members matching from **1995 batch** from **Chennai** .\n\nTry different keywords, locations, or time periods.",
+    "formatTime": 0,
+    "totalTime": 1116,
+    "status": "success",
+    "accuracy": "correct"
+  },
+  {
+    "testCase": {
+      "id": 102,
+      "query": "Find mechanical engineers who are entrepreneurs",
+      "category": "alumni_business",
+      "subcategory": "mixed",
+      "complexity": "medium",
+      "expected": {
+        "intent": "find_alumni_business",
+        "entities": {
+          "branch": [
+            "Mechanical",
+            "Mechanical Engineering"
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "branch": [
+          "Mechanical",
+          "Mechanical Engineering"
+        ]
+      },
+      "confidence": 0.6,
+      "method": "regex",
+      "extractionTime": 8,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "branch": [
+              "Mechanical",
+              "Mechanical Engineering"
+            ]
+          },
+          "confidence": 0.6,
+          "matched_patterns": [
+            "branch"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "confidence": 0.78,
+          "matchedPatterns": [
+            "\\b[A-Z][a-z]+(?:-based)?\\s+(?:companies|businesses|entrepreneurs?)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 984,
+    "searchResults": [
+      {
+        "id": "f04b0550-50a3-4e10-a016-0cc363722f70",
+        "name": "Mr., Ramakrishnan, M",
+        "yearOfGraduation": 2011,
+        "degree": "B.E",
+        "branch": "Mechanical",
+        "designation": "Founder",
+        "city": "Erode",
+        "phone": "919363569105",
+        "email": "mairamakrishnan@gmail.com",
+        "skills": "Investment Advisory",
+        "productsServices": "Investment Advisory",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.485Z",
+        "updatedAt": "2025-11-02T12:23:53.485Z",
+        "relevanceScore": 0.48466168298309115,
+        "semanticScore": 0.6923738328329874,
+        "matchedFields": [],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "Found companies (1 results):\n\n\n1. **Mr., Ramakrishnan, M**\n   📍 Erode\n   💼 Investment Advisory\n   📞 919363569105 | ✉️ mairamakrishnan@gmail.com\n\n\n_Found 1 result_",
+    "formatTime": 1,
+    "totalTime": 994,
+    "status": "success",
+    "accuracy": "incorrect"
+  },
+  {
+    "testCase": {
+      "id": 103,
+      "query": "Looking for batchmates running IT companies",
+      "category": "alumni_business",
+      "subcategory": "mixed",
+      "complexity": "medium",
+      "expected": {
+        "intent": "find_alumni_business",
+        "entities": {
+          "skills": [
+            "IT",
+            "software",
+            "technology"
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_alumni_business",
+      "entities": {
+        "branch": [
+          "IT",
+          "Information Technology"
+        ],
+        "skills": [
+          "IT"
+        ]
+      },
+      "confidence": 0.75,
+      "method": "regex",
+      "extractionTime": 8,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "branch": [
+              "IT",
+              "Information Technology"
+            ],
+            "skills": [
+              "IT"
+            ]
+          },
+          "confidence": 0.75,
+          "matched_patterns": [
+            "branch",
+            "skills"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_alumni_business",
+          "secondary": "find_business",
+          "confidence": 1,
+          "matchedPatterns": [
+            "\\b(?:batch|alumni|passout|graduates?|batchmates?)\\s+(?:who\\s+)?(?:in|doing|running|providing|provides?|offers?|does|runs?)\\s+[a-z\\s]+\\b",
+            "\\b(?:alumni|graduates?|batchmates?|batch|passout).*?(?:running|runs)\\b",
+            "\\brunning.*?(?:companies?|business)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1036,
+    "searchResults": [
+      {
+        "id": "99a882ac-ab8b-471c-9385-d694ce1adb16",
+        "name": "Mr., Aditya",
+        "yearOfGraduation": 2015,
+        "degree": "B.E",
+        "branch": "Mechanical",
+        "designation": null,
+        "city": null,
+        "phone": "917548888101",
+        "email": "aditkv@gmail.com",
+        "skills": "IT services",
+        "productsServices": "IT services",
+        "annualTurnover": "Above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.488Z",
+        "updatedAt": "2025-11-02T12:23:53.488Z",
+        "relevanceScore": 0.42575684939365754,
+        "semanticScore": 0.6082240705623679,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "fbaed525-6e4b-4152-a2d2-f3603f83d5d3",
+        "name": "Mr., Venkatagiri Nagarajan",
+        "yearOfGraduation": 2002,
+        "degree": "B.E",
+        "branch": "SW Mechanical",
+        "designation": null,
+        "city": null,
+        "phone": "919500012291",
+        "email": "nvenk.giri@gmail.com",
+        "skills": "IT Consulting",
+        "productsServices": "IT Consulting",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.477Z",
+        "updatedAt": "2025-11-02T12:23:53.477Z",
+        "relevanceScore": 0.4112761143230235,
+        "semanticScore": 0.587537306175748,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "69b40706-390a-423b-8ec4-803401c93818",
+        "name": "Mr., S Sivakumar",
+        "yearOfGraduation": 1988,
+        "degree": "B.E",
+        "branch": null,
+        "designation": null,
+        "city": null,
+        "phone": "919383999901",
+        "email": "sivakumar@usam.in",
+        "skills": "IT infrastructure solutions provider / CAD Engineering Services",
+        "productsServices": "IT infrastructure solutions provider / CAD Engineering Services",
+        "annualTurnover": "Above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.453Z",
+        "updatedAt": "2025-11-02T12:23:53.453Z",
+        "relevanceScore": 0.38902050256729126,
+        "semanticScore": 0.5557435750961304,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "b8c27f07-44f2-4749-bb64-237a30ae7750",
+        "name": "Mr., M Padmanaban",
+        "yearOfGraduation": 1995,
+        "degree": "B.Sc",
+        "branch": "Applied Sciences",
+        "designation": null,
+        "city": null,
+        "phone": "919962051150",
+        "email": "marimuthu.padmanaban@gmail.com",
+        "skills": "IT Services/Consulting",
+        "productsServices": "IT Services/Consulting",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.471Z",
+        "updatedAt": "2025-11-02T12:23:53.471Z",
+        "relevanceScore": 0.3858952641487121,
+        "semanticScore": 0.5512789487838745,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "2e4a4459-48f0-4492-b4cc-a5d1017db1b2",
+        "name": "Mr., Dhandapani Ammasai(Dan)",
+        "yearOfGraduation": 1993,
+        "degree": "MCA",
+        "branch": "MCA",
+        "designation": null,
+        "city": null,
+        "phone": "919566082226",
+        "email": "dammasai@gmail.com",
+        "skills": "IT Consulting, Advisory",
+        "productsServices": "IT Consulting, Advisory",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.467Z",
+        "updatedAt": "2025-11-02T12:23:53.467Z",
+        "relevanceScore": 0.381944125352625,
+        "semanticScore": 0.5456344647894643,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "18e4deea-a28c-4a46-aba5-8aad027ce347",
+        "name": "Mr., Saravan Prabu, Periasamy",
+        "yearOfGraduation": 2010,
+        "degree": "B.E",
+        "branch": "ECE",
+        "designation": "Co-founder",
+        "city": "Salem",
+        "phone": "918818918181",
+        "email": "saravan06psgtech@gmail.com",
+        "skills": "B2B Platform for Architecture, Interior and construction materials",
+        "productsServices": "B2B Platform for Architecture, Interior and construction materials",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.484Z",
+        "updatedAt": "2025-11-02T12:23:53.484Z",
+        "relevanceScore": 0.37185146808624264,
+        "semanticScore": 0.5312163829803467,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "4b53676a-4a02-4536-b575-ad77db7f6be9",
+        "name": "Mr., Selvakumar, Paulraj",
+        "yearOfGraduation": 2010,
+        "degree": "B.E",
+        "branch": "ECE",
+        "designation": "co founder",
+        "city": "chennai",
+        "phone": "919962472162",
+        "email": "selvakumar7188@gmail.com",
+        "skills": "B2B Platform for architecture ,interior and construction materials",
+        "productsServices": "B2B Platform for architecture ,interior and construction materials",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.483Z",
+        "updatedAt": "2025-11-02T12:23:53.483Z",
+        "relevanceScore": 0.37084226608276366,
+        "semanticScore": 0.5297746658325195,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "fe0ac4f7-fa22-4dd5-848c-df45df6630fe",
+        "name": "Mrs., Muthu",
+        "yearOfGraduation": 2013,
+        "degree": "B.E",
+        "branch": "EEE",
+        "designation": null,
+        "city": null,
+        "phone": "917871500053",
+        "email": "urfrd31@gmail.com",
+        "skills": "Anti corrosion, Industria Roofing & Retrofitting",
+        "productsServices": "Anti corrosion, Industria Roofing & Retrofitting",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.486Z",
+        "updatedAt": "2025-11-02T12:23:53.486Z",
+        "relevanceScore": 0.3662879645824432,
+        "semanticScore": 0.5232685208320618,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "ff6fb0ad-5336-470e-980f-ded2a425dc7e",
+        "name": "Mr., Sandeep balekai",
+        "yearOfGraduation": 1987,
+        "degree": "B.Tech",
+        "branch": "Textile",
+        "designation": null,
+        "city": null,
+        "phone": "919842270178",
+        "email": "sandeep@conquestasia.com",
+        "skills": "Management consultancy , Integrated Busines solution , Quality control and assurance of Textile and apparels",
+        "productsServices": "Management consultancy , Integrated Busines solution , Quality control and assurance of Textile and apparels",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.450Z",
+        "updatedAt": "2025-11-02T12:23:53.450Z",
+        "relevanceScore": 0.3636430241848847,
+        "semanticScore": 0.5194900345498353,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      },
+      {
+        "id": "16c01ed2-1d93-4fa8-b617-a3af6afcb6d7",
+        "name": "Mr., Prem Kumar, Gokuladasan",
+        "yearOfGraduation": 1998,
+        "degree": "B.E",
+        "branch": "Production",
+        "designation": "Founder & Managing Trustee",
+        "city": "CHENNAI",
+        "phone": "919791007318",
+        "email": "prem@bumbleb.org.in",
+        "skills": "Non Profit - Kalvi40 Rural school education",
+        "productsServices": "Non Profit - Kalvi40 Rural school education",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.475Z",
+        "updatedAt": "2025-11-02T12:23:53.475Z",
+        "relevanceScore": 0.33491109907627103,
+        "semanticScore": 0.4784444272518158,
+        "matchedFields": [
+          "skills"
+        ],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "entrepreneurs (10 results):\n\n\n1. **Mr., Aditya**\n   🎓 '15 • Mechanical\n   💼 IT services\n   📞 917548888101 | ✉️ aditkv@gmail.com\n\n2. **Mr., Venkatagiri Nagarajan**\n   🎓 '02 • SW Mechanical\n   💼 IT Consulting\n   📞 919500012291 | ✉️ nvenk.giri@gmail.com\n\n3. **Mr., S Sivakumar**\n   🎓 '88\n   💼 IT infrastructure solutions provider / CAD Engineering Services\n   📞 919383999901 | ✉️ sivakumar@usam.in\n\n4. **Mr., M Padmanaban**\n   🎓 '95 • Applied Sciences\n   💼 IT Services/Consulting\n   📞 919962051150 | ✉️ marimuthu.padmanaban@gmail.com\n\n5. **Mr., Dhandapani Ammasai(Dan)**\n   🎓 '93 • MCA\n   💼 IT Consulting, Advisory\n   📞 919566082226 | ✉️ dammasai@gmail.com\n\n6. **Mr., Saravan Prabu, Periasamy**\n   🎓 '10 • ECE\n   💼 B2B Platform for Architecture, Interior and construction materials\n   📍 Salem\n   📞 918818918181 | ✉️ saravan06psgtech@gmail.com\n\n7. **Mr., Selvakumar, Paulraj**\n   🎓 '10 • ECE\n   💼 B2B Platform for architecture ,interior and construction materials\n   📍 chennai\n   📞 919962472162 | ✉️ selvakumar7188@gmail.com\n\n8. **Mrs., Muthu**\n   🎓 '13 • EEE\n   💼 Anti corrosion, Industria Roofing & Retrofitting\n   📞 917871500053 | ✉️ urfrd31@gmail.com\n\n9. **Mr., Sandeep balekai**\n   🎓 '87 • Textile\n   💼 Management consultancy , Integrated Busines solution , Quality control and assurance of Textile and apparels\n   📞 919842270178 | ✉️ sandeep@conquestasia.com\n\n10. **Mr., Prem Kumar, Gokuladasan**\n   🎓 '98 • Production\n   💼 Non Profit - Kalvi40 Rural school education\n   📍 CHENNAI\n   📞 919791007318 | ✉️ prem@bumbleb.org.in\n\n\n_Found 10 alumni entrepreneurs_",
+    "formatTime": 0,
+    "totalTime": 1046,
+    "status": "success",
+    "accuracy": "incorrect"
+  },
+  {
+    "testCase": {
+      "id": 104,
+      "query": "Find 1992 passout with businesses in manufacturing",
+      "category": "alumni_business",
+      "subcategory": "mixed",
+      "complexity": "complex",
+      "expected": {
+        "intent": "find_alumni_business",
+        "entities": {
+          "graduationYear": [
+            1992
+          ],
+          "skills": [
+            "manufacturing"
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "graduationYear": [
+          1992
+        ],
+        "location": "Manufacturing",
+        "branch": [
+          "IT",
+          "Information Technology"
+        ],
+        "skills": [
+          "Manufacturing"
+        ]
+      },
+      "confidence": 1,
+      "method": "regex",
+      "extractionTime": 8,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "graduationYear": [
+              1992
+            ],
+            "location": "Manufacturing",
+            "branch": [
+              "IT",
+              "Information Technology"
+            ],
+            "skills": [
+              "Manufacturing"
+            ]
+          },
+          "confidence": 1,
+          "matched_patterns": [
+            "year",
+            "location",
+            "branch",
+            "skills"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "secondary": "find_peers",
+          "confidence": 1,
+          "matchedPatterns": [
+            "\\b(?:web\\s+development|IT\\s+consulting|digital\\s+marketing|HR\\s+services|manufacturing|packaging)\\b",
+            "\\b(?:entrepreneurs?|companies|businesses)\\s+(?:in|at|from|based\\s+in)\\s+[A-Z][a-z]+\\b",
+            "\\b[A-Z][a-z]+(?:-based)?\\s+(?:companies|businesses|entrepreneurs?)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 933,
+    "searchResults": [],
+    "formattedResponse": "I couldn't find any members matching from **1992 batch** in **IT** from **Manufacturing** .\n\nTry different keywords, locations, or time periods.",
+    "formatTime": 0,
+    "totalTime": 943,
+    "status": "success",
+    "accuracy": "incorrect"
+  },
+  {
+    "testCase": {
+      "id": 105,
+      "query": "Who from civil branch started construction companies?",
+      "category": "alumni_business",
+      "subcategory": "mixed",
+      "complexity": "medium",
+      "expected": {
+        "intent": "find_alumni_business",
+        "entities": {
+          "branch": [
+            "Civil",
+            "Civil Engineering"
+          ],
+          "skills": [
+            "construction"
+          ]
+        }
+      }
+    },
+    "extraction": {
+      "intent": "find_business",
+      "entities": {
+        "branch": [
+          "Civil",
+          "Civil Engineering"
+        ]
+      },
+      "confidence": 0.6,
+      "method": "regex",
+      "extractionTime": 8,
+      "metadata": {
+        "regexResult": {
+          "entities": {
+            "branch": [
+              "Civil",
+              "Civil Engineering"
+            ]
+          },
+          "confidence": 0.6,
+          "matched_patterns": [
+            "branch"
+          ]
+        },
+        "intentResult": {
+          "primary": "find_business",
+          "secondary": "find_specific_person",
+          "confidence": 1,
+          "matchedPatterns": [
+            "\\b(?:IT|manufacturing|consulting|construction|textile|automotive|fintech|educational)\\s+(?:company|companies|business|industry)\\b",
+            "\\b[A-Z][a-z]+(?:-based)?\\s+(?:companies|businesses|entrepreneurs?)\\b"
+          ]
+        },
+        "llmUsed": false,
+        "needsLLM": false
+      }
+    },
+    "searchTime": 1205,
+    "searchResults": [
+      {
+        "id": "abf146c3-589c-43ae-9fa8-c12235c84a30",
+        "name": "Ms., Jalashree Nallamuthu",
+        "yearOfGraduation": 1992,
+        "degree": "B.E",
+        "branch": "Civil",
+        "designation": null,
+        "city": null,
+        "phone": "919840678250",
+        "email": "njalasree@gmail.com",
+        "skills": "Public Service - Roads & Infrastructure",
+        "productsServices": "Public Service - Roads & Infrastructure",
+        "annualTurnover": "Above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.459Z",
+        "updatedAt": "2025-11-02T12:23:53.459Z",
+        "relevanceScore": 0.4533292051161283,
+        "semanticScore": 0.6476131501658976,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "f6c7900d-4504-4c4e-8e29-8b60a8ff5a8f",
+        "name": "Mr., SADHANANDH, K.M.",
+        "yearOfGraduation": 1987,
+        "degree": "B.E",
+        "branch": "Civil",
+        "designation": "Principal Consultant / Proprietor",
+        "city": "Chennai",
+        "phone": "919445191799",
+        "email": "kmsadhanandh@gmail.com",
+        "skills": "Town Planning Services",
+        "productsServices": "Town Planning Services",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.451Z",
+        "updatedAt": "2025-11-02T12:23:53.451Z",
+        "relevanceScore": 0.4458418965339692,
+        "semanticScore": 0.6369169950485275,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "3d7b9630-2ec5-4ef0-8db4-58acc43c9fee",
+        "name": "Mr., Natarajan, Subbramaniam",
+        "yearOfGraduation": 2024,
+        "degree": "B.E",
+        "branch": "Civil",
+        "designation": "Specification Engineer",
+        "city": "Chennai",
+        "phone": "917358458859",
+        "email": "manishsubbra@gmail.com",
+        "skills": "Construction Waterproofing",
+        "productsServices": "Construction Waterproofing",
+        "annualTurnover": "Above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.491Z",
+        "updatedAt": "2025-11-02T12:23:53.491Z",
+        "relevanceScore": 0.4198837256570189,
+        "semanticScore": 0.5998338937957414,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "c925180b-3eca-4783-bdf1-00932a99ad49",
+        "name": "Mrs. Fatima Mary",
+        "yearOfGraduation": 2015,
+        "degree": "M.E",
+        "branch": "Civil",
+        "designation": "specification Engineer",
+        "city": "Sivakasi",
+        "phone": "918110073877",
+        "email": "fatisittu@gmail.com",
+        "skills": "Construction Waterproofing",
+        "productsServices": "Construction Waterproofing",
+        "annualTurnover": "above 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.492Z",
+        "updatedAt": "2025-11-02T12:23:53.492Z",
+        "relevanceScore": 0.4138747437149592,
+        "semanticScore": 0.5912496338785131,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "b96fb616-e3e1-4ef4-9687-12549eed5c6c",
+        "name": "Mr., Prabhuram shanmugam",
+        "yearOfGraduation": 1988,
+        "degree": "B.E",
+        "branch": "SW Mechanical",
+        "designation": null,
+        "city": null,
+        "phone": "919841012699",
+        "email": "mefco@mefcoindia.com",
+        "skills": "Stainless steel and Mild steel fabricators of equipments and all other vessels",
+        "productsServices": "Stainless steel and Mild steel fabricators of equipments and all other vessels",
+        "annualTurnover": "5 to 10 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.455Z",
+        "updatedAt": "2025-11-02T12:23:53.455Z",
+        "relevanceScore": 0.38563442911896595,
+        "semanticScore": 0.5509063273128085,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "b0488ea6-864b-4bad-aab1-d8fe310e2466",
+        "name": "Mr., Karunanithi",
+        "yearOfGraduation": 1994,
+        "degree": "B.E",
+        "branch": "SW Mechanical",
+        "designation": null,
+        "city": null,
+        "phone": "917358655815",
+        "email": "dkaruna27@gmail.com",
+        "skills": "Merchandise export",
+        "productsServices": "Merchandise export",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.470Z",
+        "updatedAt": "2025-11-02T12:23:53.470Z",
+        "relevanceScore": 0.38236488156423476,
+        "semanticScore": 0.546235545091764,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "4b53676a-4a02-4536-b575-ad77db7f6be9",
+        "name": "Mr., Selvakumar, Paulraj",
+        "yearOfGraduation": 2010,
+        "degree": "B.E",
+        "branch": "ECE",
+        "designation": "co founder",
+        "city": "chennai",
+        "phone": "919962472162",
+        "email": "selvakumar7188@gmail.com",
+        "skills": "B2B Platform for architecture ,interior and construction materials",
+        "productsServices": "B2B Platform for architecture ,interior and construction materials",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.483Z",
+        "updatedAt": "2025-11-02T12:23:53.483Z",
+        "relevanceScore": 0.38218808876347077,
+        "semanticScore": 0.5459829839478154,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "18e4deea-a28c-4a46-aba5-8aad027ce347",
+        "name": "Mr., Saravan Prabu, Periasamy",
+        "yearOfGraduation": 2010,
+        "degree": "B.E",
+        "branch": "ECE",
+        "designation": "Co-founder",
+        "city": "Salem",
+        "phone": "918818918181",
+        "email": "saravan06psgtech@gmail.com",
+        "skills": "B2B Platform for Architecture, Interior and construction materials",
+        "productsServices": "B2B Platform for Architecture, Interior and construction materials",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.484Z",
+        "updatedAt": "2025-11-02T12:23:53.484Z",
+        "relevanceScore": 0.37816943060341957,
+        "semanticScore": 0.5402420437191708,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "d5433c88-fcff-4b14-b2dd-aa2f9d0b245f",
+        "name": "Mr.S Mohanraj",
+        "yearOfGraduation": 1992,
+        "degree": "B.E",
+        "branch": "Mechanical",
+        "designation": "CEO",
+        "city": "chennai",
+        "phone": "919445567220",
+        "email": "smohanj1971@gmail.com",
+        "skills": "service",
+        "productsServices": "service",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.464Z",
+        "updatedAt": "2025-11-02T12:23:53.464Z",
+        "relevanceScore": 0.3769101619720485,
+        "semanticScore": 0.5384430885314979,
+        "matchedFields": [],
+        "isExactMatch": false
+      },
+      {
+        "id": "a2bf1757-4f2a-4923-b800-f17c8e5e3d70",
+        "name": "Mr., Shankar",
+        "yearOfGraduation": 1998,
+        "degree": "B.E",
+        "branch": "Mechanical",
+        "designation": null,
+        "city": null,
+        "phone": "919600065293",
+        "email": "pshanka1@gmail.com",
+        "skills": "Services",
+        "productsServices": "Services",
+        "annualTurnover": "Less than 2 Crores",
+        "role": "member",
+        "isActive": true,
+        "createdAt": "2025-11-02T12:23:53.474Z",
+        "updatedAt": "2025-11-02T12:23:53.474Z",
+        "relevanceScore": 0.37580330516080296,
+        "semanticScore": 0.5368618645154328,
+        "matchedFields": [],
+        "isExactMatch": false
+      }
+    ],
+    "formattedResponse": "Found companies (10 results):\n\n\n1. **Ms., Jalashree Nallamuthu**\n   💼 Public Service - Roads & Infrastructure\n   📞 919840678250 | ✉️ njalasree@gmail.com\n\n2. **Mr., SADHANANDH, K.M.**\n   📍 Chennai\n   💼 Town Planning Services\n   📞 919445191799 | ✉️ kmsadhanandh@gmail.com\n\n3. **Mr., Natarajan, Subbramaniam**\n   📍 Chennai\n   💼 Construction Waterproofing\n   📞 917358458859 | ✉️ manishsubbra@gmail.com\n\n4. **Mrs. Fatima Mary**\n   📍 Sivakasi\n   💼 Construction Waterproofing\n   📞 918110073877 | ✉️ fatisittu@gmail.com\n\n5. **Mr., Prabhuram shanmugam**\n   💼 Stainless steel and Mild steel fabricators of equipments and all other vessels\n   📞 919841012699 | ✉️ mefco@mefcoindia.com\n\n6. **Mr., Karunanithi**\n   💼 Merchandise export\n   📞 917358655815 | ✉️ dkaruna27@gmail.com\n\n7. **Mr., Selvakumar, Paulraj**\n   📍 chennai\n   💼 B2B Platform for architecture ,interior and construction materials\n   📞 919962472162 | ✉️ selvakumar7188@gmail.com\n\n8. **Mr., Saravan Prabu, Periasamy**\n   📍 Salem\n   💼 B2B Platform for Architecture, Interior and construction materials\n   📞 918818918181 | ✉️ saravan06psgtech@gmail.com\n\n9. **Mr.S Mohanraj**\n   📍 chennai\n   💼 service\n   📞 919445567220 | ✉️ smohanj1971@gmail.com\n\n10. **Mr., Shankar**\n   💼 Services\n   📞 919600065293 | ✉️ pshanka1@gmail.com\n\n\n_Found 10 results_",
+    "formatTime": 1,
+    "totalTime": 1215,
+    "status": "success",
+    "accuracy": "partial"
+  }
+]
