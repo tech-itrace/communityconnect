@@ -111,6 +111,7 @@ export interface SearchParams {
     query?: string;
     filters?: SearchFilters;
     options?: SearchOptions;
+    communityId?: string; // Multi-community support: scope search to specific community
 }
 
 // ============================================================================

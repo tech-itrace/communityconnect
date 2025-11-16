@@ -20,7 +20,10 @@
         "db:add-roles": "ts-node -r dotenv/config src/scripts/addRoleColumn.ts",
         "db:create-audit": "ts-node -r dotenv/config src/scripts/createAuditTable.ts",
         "import:members": "ts-node -r dotenv/config src/scripts/importMembers.ts",
-        "generate:embeddings": "ts-node -r dotenv/config src/scripts/generateEmbeddings.ts"
+        "import:members:multi": "ts-node -r dotenv/config src/scripts/importMembersMultiCommunity.ts",
+        "generate:embeddings": "ts-node -r dotenv/config src/scripts/generateEmbeddings.ts",
+        "migrate:memberships": "ts-node -r dotenv/config src/scripts/migrateMembersToMultiCommunity.ts",
+        "generate:contextual-embeddings": "ts-node -r dotenv/config src/scripts/generateContextualEmbeddings.ts"
     },
     "author": "tech-itrace",
     "license": "MIT",

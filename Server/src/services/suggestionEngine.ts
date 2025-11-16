@@ -442,7 +442,7 @@ function extractTopServices(results: MemberSearchResult[], limit: number): strin
     const serviceCount = new Map<string, number>();
 
     results.forEach(r => {
-        if (r.productsServices && r.productsServices.trim()) {
+        if (r.productsServices && typeof r.productsServices === 'string' && r.productsServices.trim()) {
             // Split by common delimiters and take first item
             const services = r.productsServices.split(/[,;\/]/);
             const mainService = services[0]?.trim();

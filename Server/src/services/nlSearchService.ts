@@ -87,15 +87,23 @@ function entitiesToFilters(entities: ExtractedEntities, intent?: Intent): Search
 
 /**
  * Process natural language query end-to-end
+ * @param naturalQuery - The user's natural language query
+ * @param maxResults - Maximum number of results to return
+ * @param conversationContext - Previous conversation context
+ * @param communityId - Optional community ID to scope the search
  */
 export async function processNaturalLanguageQuery(
     naturalQuery: string,
     maxResults: number = 10,
-    conversationContext?: string
+    conversationContext?: string,
+    communityId?: string
 ): Promise<NLSearchResult> {
     const startTime = Date.now();
     console.log(`\n[NL Search] ========================================`);
     console.log(`[NL Search] Processing query: "${naturalQuery}"`);
+    if (communityId) {
+        console.log(`[NL Search] Community scope: ${communityId}`);
+    }
 
     try {
         // Step 1: Extract entities using hybrid approach (regex + LLM)
@@ -111,7 +119,7 @@ export async function processNaturalLanguageQuery(
         const filters = entitiesToFilters(extracted.entities, extracted.intent);
         console.log(`[NL Search] ✓ Filters:`, JSON.stringify(filters, null, 2));
 
-        // Step 3: Execute search with hybrid mode
+        // Step 3: Execute search with hybrid mode (pass communityId)
         console.log(`[NL Search] Step 2: Executing semantic search...`);
         const searchParams: SearchParams = {
             query: naturalQuery, // Use original query for semantic search
@@ -122,7 +130,8 @@ export async function processNaturalLanguageQuery(
                 limit: maxResults,
                 sortBy: 'relevance',
                 sortOrder: 'desc'
-            }
+            },
+            communityId // Pass community ID for scoping
         };
 
         const searchResponse = await searchMembers(searchParams);

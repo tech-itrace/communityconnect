@@ -242,7 +242,7 @@ Migration Log: migration_20240115_143022.log
 
 Next Steps:
   1. Review verification report: backups/.../verification_report.txt
-  2. Generate contextual embeddings: cd Server && npm run generate:contextual-embeddings
+  2. Generate contextual embeddings: cd Server && npm run generate:embeddings
   3. Update application code to use new schema
   4. Test thoroughly before deploying
 
@@ -301,7 +301,7 @@ pg_restore -d $DATABASE_URL --clean backups/migration_*/full_backup.dump
 1. **Generate Contextual Embeddings**:
    ```bash
    cd Server
-   npm run generate:contextual-embeddings
+   npm run generate:embeddings
    # Background job - takes 1-2 hours for 10K members
    ```
 
@@ -706,7 +706,7 @@ psql $DATABASE_URL -c "SELECT COUNT(*) FROM community_members WHERE phone IS NUL
 cd Server && sudo ./migrate.sh
 
 # Post-migration
-npm run generate:contextual-embeddings
+npm run generate:embeddings
 ```
 
 ### Rollback Commands

@@ -82,8 +82,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
             ? session.conversationHistory[session.conversationHistory.length - 1]?.query
             : undefined;
 
-        // 6. Process query with NL search
-        const result = await processNaturalLanguageQuery(Body, 5, conversationContext);
+        // 6. Process query with NL search (pass communityId for scoping)
+        const result = await processNaturalLanguageQuery(
+            Body,
+            5,
+            conversationContext,
+            memberValidation.communityId
+        );
 
         // 7. Increment rate limit counters
         await incrementMessageCounter(phoneNumber);

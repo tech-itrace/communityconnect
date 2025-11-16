@@ -439,7 +439,7 @@ EOF
     
     # 3. Generate missing contextual embeddings
     log "Scheduling contextual embeddings generation..."
-    info "Run: cd Server && npm run generate:contextual-embeddings"
+    info "Run: npm run generate:embeddings"
     
     # Create job tracker
     psql "$DATABASE_URL" << EOF
@@ -664,7 +664,7 @@ main() {
     echo "     cat $BACKUP_DIR/verification_report.txt"
     echo ""
     echo "  2. Generate contextual embeddings:"
-    echo "     cd Server && npm run generate:contextual-embeddings"
+    echo "     npm run generate:embeddings"
     echo ""
     echo "  3. Update application code to use new schema"
     echo "     (See MIGRATION_PLAN.md Phase 5)"
