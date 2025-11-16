@@ -1,5 +1,7 @@
 import { query } from "../config/db";
 import { randomUUID } from "crypto";
+import { withTransaction, executeQuery } from "../utils/dbHelpers";
+import { MEMBER_TYPES } from "../config/constants";
 
 export interface Community {
   id: string;
@@ -86,37 +88,40 @@ async function createMember(member: { id: string; name: string; phone: string; e
 }
 
 /** Insert into community type-specific table */
-async function createTypeMember(type: string, memberId: string, data: any) {
-  if (type === "alumini") {
+async function createTypeMember(type: string, memberId: string, data: any, client?: any) {
+  const queryExecutor = client || query;
+
+  if (type === MEMBER_TYPES.ALUMNI || type === "alumini") { // Support both for backwards compatibility
     const sql = `
-      INSERT INTO alumini_members
-      (id, college, graduation_year, degree, department, current_organization, designation, member_id, is_active, created_at, updated_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE, NOW(), NOW())
+      INSERT INTO alumni_profiles
+      (id, membership_id, college, graduation_year, degree, department, current_organization, designation, created_at, updated_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, NOW(), NOW())
       RETURNING *
     `;
     const newId = randomUUID();
     const params = [
       newId,
+      memberId, // This should be membership_id, not member_id
       data.college,
       data.graduation_year,
       data.degree,
       data.department,
-      //   data.roll_no,
       data.current_organization,
-      data.designation,
-      memberId
+      data.designation
     ];
 
-    const res = await query(sql, params);
+    const res = await (client ? executeQuery(client, sql, params) : query(sql, params));
     return res.rows[0];
   }
 
-  if (type === "entrepreneur") {
-    // fill later
+  if (type === MEMBER_TYPES.ENTREPRENEUR) {
+    // TODO: Implement entrepreneur profile creation
+    console.warn('[Community Service] Entrepreneur profile creation not yet implemented');
   }
 
   if (type === "religious") {
-    // fill later
+    // TODO: Implement religious/resident profile creation
+    console.warn('[Community Service] Religious profile creation not yet implemented');
   }
 
   return null;
@@ -161,63 +166,78 @@ export async function createCommunity(communityData: {
   // Ensure admins is parsed JSON
   const adminList = typeof admins === "string" ? JSON.parse(admins) : admins;
 
-  // Step 1: Create Community
-  const insertCommunitySQL = `
-    INSERT INTO communities
-    (name, description, type, rules, is_bot_enabled, is_active, created_by, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-    RETURNING id
-  `;
+  // ✅ WRAP ENTIRE OPERATION IN TRANSACTION
+  return withTransaction(async (client) => {
+    // Step 1: Create Community
+    const insertCommunitySQL = `
+      INSERT INTO communities
+      (name, description, type, rules, is_bot_enabled, is_active, created_by, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      RETURNING id
+    `;
 
-  const values = [
-    name,
-    description,
-    type,
-    rules,
-    is_bot_enable,
-    is_active,
-    created_by
-  ];
+    const values = [
+      name,
+      description,
+      type,
+      rules,
+      is_bot_enable,
+      is_active,
+      created_by
+    ];
 
-  const result = await query(insertCommunitySQL, values);
-  const communityId = result.rows[0].id;
+    const result = await executeQuery(client, insertCommunitySQL, values);
+    const communityId = result.rows[0].id;
 
-  console.log("✔ Community created with ID:", communityId);
+    console.log("✔ Community created with ID:", communityId);
 
+    // Step 2: PROCESS EACH ADMIN AS MEMBER
+    for (const admin of adminList) {
+      console.log("Processing admin:", admin);
 
-  // Step 2: PROCESS EACH ADMIN AS MEMBER
-  for (const admin of adminList) {
-    console.log("Processing admin:", admin);
+      // Check if member exists (using transaction client)
+      const findMemberSQL = `SELECT * FROM members WHERE phone = $1 OR email = $2`;
+      const memberResult = await executeQuery(client, findMemberSQL, [admin.phone, admin.email]);
+      const existingMember = memberResult.rows[0] || null;
 
-    const existingMember = await findMember(admin.phone, admin.email);
+      let memberId;
+      if (existingMember) {
+        console.log("✔ Member already exists:", existingMember.id);
+        memberId = existingMember.id;
+      } else {
+        console.log("➕ Creating new member");
+        const createMemberSQL = `
+          INSERT INTO members (id, name, phone, email, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, NOW(), NOW())
+          RETURNING *
+        `;
+        const newMemberResult = await executeQuery(client, createMemberSQL, [
+          randomUUID(),
+          admin.name,
+          admin.phone,
+          admin.email
+        ]);
+        memberId = newMemberResult.rows[0].id;
+      }
 
-    let memberId;
-    if (existingMember) {
-      console.log("✔ Member already exists:", existingMember.id);
-      memberId = existingMember.id;
-    } else {
-      console.log("➕ Creating new member");
-      const newMember = await createMember(admin);
-      memberId = newMember.id;
+      console.log("memberId:" + memberId);
+
+      // Step 3: Insert into type-specific table (using transaction client)
+      const typeMember = await createTypeMember(type!, memberId, communityData.member_type_data, client);
+      console.log("typeMember: " + JSON.stringify(typeMember));
+
+      // Step 4: Insert into community_members_types (using transaction client)
+      const mappingSQL = `
+        INSERT INTO community_members_types (community_id, member_id, member_type_id)
+        VALUES ($1, $2, $3)
+      `;
+      await executeQuery(client, mappingSQL, [communityId, memberId, typeMember?.id || null]);
     }
-    console.log("memberId:" + memberId)
-    console.log("communityData: " + JSON.stringify(communityData))
-    // Step 3: Insert into type-specific table
-    const typeMember = await createTypeMember(type!, memberId, communityData.member_type_data);
-    console.log("typeMember: " + JSON.stringify(typeMember))
 
-    // Step 4: Insert into community_members_types
-    await addCommunityMemberMapping(
-      communityId,
-      memberId,
-      typeMember?.id || null
-    );
-  }
-
-  // Step 5: Return full community
-  const createdCommunity = await getCommunityById(communityId);
-
-  return createdCommunity!;
+    // Step 5: Fetch and return full community
+    const createdCommunity = await getCommunityById(communityId);
+    return createdCommunity!;
+  });
 }
 
 
