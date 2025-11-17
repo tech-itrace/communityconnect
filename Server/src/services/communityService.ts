@@ -6,246 +6,284 @@ import { MEMBER_TYPES } from "../config/constants";
 export interface Community {
   id: string;
   name: string;
+  slug: string;
+  type: "alumni" | "entrepreneur" | "apartment" | "mixed";
   description?: string;
-  type?: string;
-  admins?: any; // JSON field
-  rules?: string;
-  is_bot_enable?: boolean;
+  whatsapp_number?: string;
+  whatsapp_webhook_url?: string;
+  subscription_plan?: string;
+  member_limit?: number;
+  search_limit_monthly?: number;
+  is_bot_enabled?: boolean;
+  is_search_enabled?: boolean;
+  is_embedding_enabled?: boolean;
   created_at?: Date;
   updated_at?: Date;
   is_active?: boolean;
   created_by?: string;
 }
 
+
 /** Get community by ID */
-export async function getCommunityById(id: string): Promise<Community | null> {
-  console.log(`[Community Service] Fetching Community with ID: ${id}`);
+export async function getCommunityById(
+  id: string,
+  client?: any
+): Promise<Community | null> {
+  const executor = client
+    ? (sql: string, params?: any[]) => executeQuery(client, sql, params)
+    : query;
 
-  const queryText = `
-        SELECT 
-            c.*,
-            COALESCE(
-                json_agg(
-                    json_build_object(
-                        'id', m.id,
-                        'name', m.name,
-                        'phone', m.phone,
-                        'email', m.email
-                    )
-                ) FILTER (WHERE ca.member_id IS NOT NULL),
-                '[]'::json
-            ) as admins
-        FROM communities c
-        LEFT JOIN community_admins ca ON c.id = ca.community_id AND ca.revoked_at IS NULL
-        LEFT JOIN members m ON ca.member_id = m.id
-        WHERE c.id = $1 AND c.is_active = TRUE
-        GROUP BY c.id
-    `;
-
-  const result = await query(queryText, [id]);
-
-  if (result.rows.length === 0) {
-    console.log(`[Community Service] Community not found: ${id}`);
-    return null;
-  }
-
-  const row = result.rows[0];
-
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    type: row.type,
-    rules: row.rules,
-    admins: row.admins,
-    is_bot_enable: row.is_bot_enabled,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    is_active: row.is_active,
-    created_by: row.created_by,
-  };
-}
-
-/** Check if member exists */
-async function findMember(phone: string, email: string) {
   const sql = `
-      SELECT * FROM members
-      WHERE phone = $1 OR email = $2
-  `;
-  const res = await query(sql, [phone, email]);
-  return res.rows[0] || null;
-}
+    SELECT 
+      c.id,
+      c.name,
+      c.slug,
+      c.type,
+      c.description,
+      c.whatsapp_number,
+      c.whatsapp_webhook_url,
+      c.subscription_plan,
+      c.member_limit,
+      c.search_limit_monthly,
+      c.is_bot_enabled,
+      c.is_search_enabled,
+      c.is_embedding_enabled,
+      c.created_by,
+      c.is_active,
+      c.created_at,
+      c.updated_at,
 
-/** Create new member */
-async function createMember(member: { id: string; name: string; phone: string; email: string }) {
-  const sql = `
-      INSERT INTO members (id, name, phone, email, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, NOW(), NOW())
-      RETURNING *
+      /* ADMIN LIST */
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', m.id,
+            'name', m.name,
+            'phone', m.phone,
+            'email', m.email,
+            'role', ca.role,
+            'granted_at', ca.granted_at
+          )
+        ) FILTER (WHERE ca.member_id IS NOT NULL),
+        '[]'::json
+      ) AS admins
+
+    FROM communities c
+    LEFT JOIN community_admins ca 
+      ON ca.community_id = c.id AND ca.revoked_at IS NULL
+    LEFT JOIN members m 
+      ON m.id = ca.member_id
+
+    WHERE c.id = $1
+    GROUP BY c.id
   `;
-  const res = await query(sql, [member.id, member.name, member.phone, member.email]);
+
+  const res = await executor(sql, [id]);
+  if (!res.rows.length) return null;
+
   return res.rows[0];
 }
 
-/** Insert into community type-specific table */
-async function createTypeMember(type: string, memberId: string, data: any, client?: any) {
-  const queryExecutor = client || query;
 
-  if (type === MEMBER_TYPES.ALUMNI || type === "alumini") { // Support both for backwards compatibility
-    const sql = `
-      INSERT INTO alumni_profiles
-      (id, membership_id, college, graduation_year, degree, department, current_organization, designation, created_at, updated_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, NOW(), NOW())
-      RETURNING *
-    `;
-    const newId = randomUUID();
-    const params = [
-      newId,
-      memberId, // This should be membership_id, not member_id
-      data.college,
-      data.graduation_year,
-      data.degree,
-      data.department,
-      data.current_organization,
-      data.designation
-    ];
+async function ensureMember(data: any ) {
+    console.log("data-check with members table: " + JSON.stringify(data))
+  const findSql = `SELECT * FROM members WHERE phone = $1 OR email = $2`;
+  const existing = await query(findSql, [data.phone, data.email]);
+  if (existing.rows.length) {return existing.rows[0];
+  }else {
+  const newId = randomUUID();
+  const insertSql = `
+    INSERT INTO members (id, name, phone, email, created_at, updated_at, last_login, is_active)
+    VALUES ($1,$2,$3,$4,NOW(),NOW(), NOW(), TRUE)
+    RETURNING *
+  `;
+  const res = await query(insertSql, [
+    newId,
+    data.name,
+    data.phone,
+    data.email || null
+  ]);
 
-    const res = await (client ? executeQuery(client, sql, params) : query(sql, params));
-    return res.rows[0];
-  }
-
-  if (type === MEMBER_TYPES.ENTREPRENEUR) {
-    // TODO: Implement entrepreneur profile creation
-    console.warn('[Community Service] Entrepreneur profile creation not yet implemented');
-  }
-
-  if (type === "religious") {
-    // TODO: Implement religious/resident profile creation
-    console.warn('[Community Service] Religious profile creation not yet implemented');
-  }
-
-  return null;
+  return res.rows[0];}
 }
 
-
-/** Mapping table */
-async function addCommunityMemberMapping(communityId: string, memberId: string, memberTypeId: string | null) {
+/** Insert into community type-specific table */
+async function createTypeMember(client:any, type: string, membershipId: string, data: any) {
+  if (type !== "alumni") return null;
+console.log("data in createTypeMember: " + JSON.stringify(data))
+const newMemberId = randomUUID();
   const sql = `
-    INSERT INTO community_members_types (community_id, member_id, member_type_id)
-    VALUES ($1, $2, $3)
+    INSERT INTO alumni_profiles
+      (id, membership_id, graduation_year, degree, department, college, 
+       created_at, updated_at)
+    VALUES ( $1, $2, $3, $4, $5, $6, NOW(), NOW())
+    RETURNING *
   `;
-  await query(sql, [communityId, memberId, memberTypeId]);
+
+  const params = [
+    newMemberId,
+    membershipId,
+    data?.graduation_year || null,
+    data?.degree || null,
+    data?.department || null,
+    data?.college || null,
+  ];
+
+  const res = await executeQuery(client, sql, params);
+  return res.rows[0];
+}
+
+async function addCommunityAdmin(client: any, communityId: string, memberId: string, data: any) {
+    const commAdminId = randomUUID();
+  const sql = `
+    INSERT INTO community_admins (id, community_id, member_id, role, granted_by, granted_at, revoked_at)
+    VALUES ($1,$2,$3, $4, $5, NOW(), NOW())
+  `;
+ const res = await executeQuery(client, sql, [
+commAdminId,
+    communityId,
+    memberId,
+    data.role,
+      memberId
+  ]);
+
+  return res.rows[0];
 }
 
 /** Create a new community */
-export async function createCommunity(communityData: {
-  name: string;
-  description?: string;
-  type?: string;
-  admins?: any;
-  rules?: string;
-  is_bot_enable?: boolean;
-  is_active?: boolean;
-  created_by?: string;
-  member_type_data?: any;
-}): Promise<Community> {
+async function addMembership(client: any,communityId: string, memberId: string, data: any) {
+    console.log("communityId:" + communityId)
+    console.log("memberId:" + memberId)
 
-  console.log(`[Community Service] Creating community: ${communityData.name}`);
+//     let creator;
 
-  const {
-    name,
-    description,
-    type,
-    admins,
-    rules,
-    is_bot_enable = false,
-    is_active = true,
-    created_by,
-  } = communityData;
+// if (typeof data.created_by === "object") {
+//   creator = await ensureMember(data.created_by);   // create/find
+// } else {
+//   const res = await executeQuery(client, `SELECT * FROM members WHERE id=$1`, [data.created_by]);
+//   if (!res.rows.length) throw new Error("created_by must be valid member ID");
+//   creator = res.rows[0];
+// }
 
-  // Ensure admins is parsed JSON
-  const adminList = typeof admins === "string" ? JSON.parse(admins) : admins;
+  const membershipId = randomUUID();
 
-  // ✅ WRAP ENTIRE OPERATION IN TRANSACTION
+  const sql = `
+    INSERT INTO community_memberships
+      (id, community_id, member_id, member_type, invited_by, role, is_active, joined_at, updated_at)
+    VALUES ($1,$2,$3,$4,$5,$6,TRUE,NOW(),NOW())
+    RETURNING *
+  `;
+
+  const res = await executeQuery(client, sql, [
+    membershipId,
+    communityId,
+    memberId,
+    data.type === "alumni" ? "alumni"
+      : data.type === "entrepreneur" ? "entrepreneur"
+      : data.type === "apartment" ? "resident"
+      : "generic",
+      memberId,
+      "admin"
+  ]);
+
+  return res.rows[0];
+}
+
+export async function createCommunity(data: any): Promise<Community> {
   return withTransaction(async (client) => {
-    // Step 1: Create Community
-    const insertCommunitySQL = `
-      INSERT INTO communities
-      (name, description, type, rules, is_bot_enabled, is_active, created_by, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-      RETURNING id
-    `;
+    const communityId = randomUUID();
 
-    const values = [
-      name,
-      description,
-      type,
-      rules,
-      is_bot_enable,
-      is_active,
-      created_by
-    ];
+    /* 1. CREATE COMMUNITY */
+    await executeQuery(
+      client,
+      `
+        INSERT INTO communities
+        (id, name, slug, type, description, whatsapp_number, whatsapp_webhook_url,
+         subscription_plan, member_limit, search_limit_monthly, is_bot_enabled,
+         is_search_enabled, is_embedding_enabled, created_by, is_active,
+         created_at, updated_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,TRUE,NOW(),NOW())
+      `,
+      [
+        communityId,
+        data.name,
+        data.slug,
+        data.type,
+        data.description || null,
+        data.whatsapp_number || null,
+        data.whatsapp_webhook_url || null,
+        data.subscription_plan || 'free',
+        data.member_limit || 100,
+        data.search_limit_monthly || 1000,
+        data.is_bot_enabled || false,
+        data.is_search_enabled ?? true,
+        data.is_embedding_enabled ?? true,
+        data.created_by
+      ]
+    );
 
-    const result = await executeQuery(client, insertCommunitySQL, values);
-    const communityId = result.rows[0].id;
+    /* 2. FIND CREATOR MEMBER (admin) */
+    // const creatorRes = await executeQuery(
+    //   client,
+    //   `SELECT * FROM members WHERE id = $1`,
+    //   [data.created_by]
+    // );
 
-    console.log("✔ Community created with ID:", communityId);
+    // if (creatorRes.rows.length === 0) {
+    //   throw new Error("created_by must be an existing member ID");
+    // }
 
-    // Step 2: PROCESS EACH ADMIN AS MEMBER
-    for (const admin of adminList) {
-      console.log("Processing admin:", admin);
+    // const member = creatorRes.rows[0];
+const member = await ensureMember(data.member_type_data)
+    /* 3. Add membership for creator */
+   const membership = await addMembership(client, communityId, member.id, data);
 
-      // Check if member exists (using transaction client)
-      const findMemberSQL = `SELECT * FROM members WHERE phone = $1 OR email = $2`;
-      const memberResult = await executeQuery(client, findMemberSQL, [admin.phone, admin.email]);
-      const existingMember = memberResult.rows[0] || null;
 
-      let memberId;
-      if (existingMember) {
-        console.log("✔ Member already exists:", existingMember.id);
-        memberId = existingMember.id;
-      } else {
-        console.log("➕ Creating new member");
-        const createMemberSQL = `
-          INSERT INTO members (id, name, phone, email, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, NOW(), NOW())
-          RETURNING *
-        `;
-        const newMemberResult = await executeQuery(client, createMemberSQL, [
-          randomUUID(),
-          admin.name,
-          admin.phone,
-          admin.email
-        ]);
-        memberId = newMemberResult.rows[0].id;
-      }
-
-      console.log("memberId:" + memberId);
-
-      // Step 3: Insert into type-specific table (using transaction client)
-      const typeMember = await createTypeMember(type!, memberId, communityData.member_type_data, client);
-      console.log("typeMember: " + JSON.stringify(typeMember));
-
-      // Step 4: Insert into community_members_types (using transaction client)
-      const mappingSQL = `
-        INSERT INTO community_members_types (community_id, member_id, member_type_id)
-        VALUES ($1, $2, $3)
-      `;
-      await executeQuery(client, mappingSQL, [communityId, memberId, typeMember?.id || null]);
+    /* 4. Insert alumni profile (only if type == alumni) */
+    if (data.type === "alumni") {
+      await createTypeMember(client, "alumni", membership.id, data.member_type_data);
     }
 
-    // Step 5: Fetch and return full community
-    const createdCommunity = await getCommunityById(communityId);
-    return createdCommunity!;
+    /* 5. Add admin mapping */
+    await addCommunityAdmin(client, communityId, member.id, data);
+
+    /* 6. Return community */
+    // return await getCommunityById(communityId);
+   
+    const created = await getCommunityById(communityId, client);
+
+if (!created) {
+  throw new Error("Community creation failed: unable to load created community");
+}
+
+return created;
   });
 }
 
 
 /** Get all communities */
-export async function getAllCommunity(): Promise<Community[]> {
+export async function getAllCommunities(): Promise<Community[]> {
   const queryText = `
     SELECT 
-      c.*,
+      c.id,
+      c.name,
+      c.slug,
+      c.type,
+      c.description,
+      c.whatsapp_number,
+      c.whatsapp_webhook_url,
+      c.subscription_plan,
+      c.member_limit,
+      c.search_limit_monthly,
+      c.is_bot_enabled,
+      c.is_search_enabled,
+      c.is_embedding_enabled,
+      c.created_at,
+      c.updated_at,
+      c.is_active,
+      c.created_by,
+
+      -- Build admins list
       COALESCE(
         json_agg(
           json_build_object(
@@ -256,14 +294,21 @@ export async function getAllCommunity(): Promise<Community[]> {
           )
         ) FILTER (WHERE ca.member_id IS NOT NULL),
         '[]'::json
-      ) as admins
+      ) AS admins
+
     FROM communities c
-    LEFT JOIN community_admins ca ON c.id = ca.community_id AND ca.revoked_at IS NULL
-    LEFT JOIN members m ON ca.member_id = m.id
-    WHERE c.is_active = true
+    LEFT JOIN community_admins ca 
+      ON ca.community_id = c.id 
+     AND ca.revoked_at IS NULL
+    LEFT JOIN members m 
+      ON m.id = ca.member_id
+
+    WHERE c.is_active = TRUE
+
     GROUP BY c.id
     ORDER BY c.created_at DESC;
   `;
+
   const result = await query(queryText);
   return result.rows;
 }
@@ -278,7 +323,6 @@ export async function updateCommunity(
     "name",
     "description",
     "type",
-    "rules",
     "is_bot_enabled",
     "is_active",
     "created_by",

@@ -130,7 +130,7 @@ member_type_data: formData.type === "alumini" ? memberDetails : null
     }
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["community"] });
+    queryClient.invalidateQueries({ queryKey: ["communities"] });
     navigate("/community");
   }
 });
