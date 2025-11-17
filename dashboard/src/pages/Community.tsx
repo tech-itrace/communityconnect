@@ -13,19 +13,19 @@ export function Community() {
   const navigate = useNavigate();
 
   const { data: communityData, isLoading } = useQuery({
-    queryKey: ["community"],
+    queryKey: ["communities"],
     queryFn: async () => {
       const response = await communityAPI.getAll();
       return Array.isArray(response.data)
         ? response.data
-        : response.data?.data || [];
+        : response.data?.communities || [];
     },
   });
-
+console.log("communitiesData:" + JSON.stringify(communityData))
   const deleteMutation = useMutation({
     mutationFn: (id: string) => communityAPI.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["community"] });
+      queryClient.invalidateQueries({ queryKey: ["communities"] });
     },
   });
 

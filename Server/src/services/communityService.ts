@@ -242,10 +242,28 @@ export async function createCommunity(communityData: {
 
 
 /** Get all communities */
-export async function getAllCommunity(): Promise<Community[]> {
+export async function getAllCommunities(): Promise<Community[]> {
   const queryText = `
     SELECT 
-      c.*,
+      c.id,
+      c.name,
+      c.slug,
+      c.type,
+      c.description,
+      c.whatsapp_number,
+      c.whatsapp_webhook_url,
+      c.subscription_plan,
+      c.member_limit,
+      c.search_limit_monthly,
+      c.is_bot_enabled,
+      c.is_search_enabled,
+      c.is_embedding_enabled,
+      c.created_at,
+      c.updated_at,
+      c.is_active,
+      c.created_by,
+
+      -- Build admins list
       COALESCE(
         json_agg(
           json_build_object(
@@ -256,14 +274,21 @@ export async function getAllCommunity(): Promise<Community[]> {
           )
         ) FILTER (WHERE ca.member_id IS NOT NULL),
         '[]'::json
-      ) as admins
+      ) AS admins
+
     FROM communities c
-    LEFT JOIN community_admins ca ON c.id = ca.community_id AND ca.revoked_at IS NULL
-    LEFT JOIN members m ON ca.member_id = m.id
-    WHERE c.is_active = true
+    LEFT JOIN community_admins ca 
+      ON ca.community_id = c.id 
+     AND ca.revoked_at IS NULL
+    LEFT JOIN members m 
+      ON m.id = ca.member_id
+
+    WHERE c.is_active = TRUE
+
     GROUP BY c.id
     ORDER BY c.created_at DESC;
   `;
+
   const result = await query(queryText);
   return result.rows;
 }

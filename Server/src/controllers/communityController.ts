@@ -13,7 +13,7 @@
 import { Request, Response } from "express";
 import {
   getCommunityById,
-  getAllCommunity,
+  getAllCommunities,
   createCommunity,
   updateCommunity,
   deleteCommunity,
@@ -30,7 +30,7 @@ import {
  * Get all communities
  */
 export const getAllCommunitiesHandler = asyncHandler(async (req: Request, res: Response) => {
-  const communities = await getAllCommunity();
+  const communities = await getAllCommunities();
   successResponse(res, { communities });
 });
 
