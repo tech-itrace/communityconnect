@@ -6,23 +6,27 @@ import {
   getCommunityByIdHandler,
   updateCommunityHandler,
   deleteCommunityHandler,
+  addMemberToCommunityHandler,
+  getCommunityMembersHandler,
+  updateCommunityMemberProfileHandler,
+  removeMemberFromCommunityHandler,
+  updateMemberRoleHandler,
 } from "../controllers/communityController";
 
 const router = Router();
 
-// Get all communities
+// Community CRUD
 router.get("/", requireAnyRole(["admin", "super_admin"]), getAllCommunitiesHandler);
-
-// Create community
 router.post("/", requireAnyRole(["admin", "super_admin"]), createCommunityHandler);
-
-// Get a single community by ID
 router.get("/:id", requireAnyRole(["admin", "super_admin"]), getCommunityByIdHandler);
-
-// Update a single community by ID
 router.put("/:id", requireAnyRole(["admin", "super_admin"]), updateCommunityHandler);
-
-// Delete community (soft delete)
 router.delete("/:id", requireAnyRole(["super_admin"]), deleteCommunityHandler);
+
+// Community Members Management
+router.post("/:id/members", requireAnyRole(["admin", "super_admin"]), addMemberToCommunityHandler);
+router.get("/:id/members", requireAnyRole(["admin", "super_admin", "member"]), getCommunityMembersHandler);
+router.put("/:id/members/:member_id/profile", requireAnyRole(["admin", "super_admin"]), updateCommunityMemberProfileHandler);
+router.put("/:id/members/:member_id/role", requireAnyRole(["super_admin"]), updateMemberRoleHandler);
+router.delete("/:id/members/:member_id", requireAnyRole(["admin", "super_admin"]), removeMemberFromCommunityHandler);
 
 export default router;

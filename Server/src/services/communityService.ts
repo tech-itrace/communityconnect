@@ -354,3 +354,244 @@ export async function deleteCommunity(id: string): Promise<boolean> {
   await query(queryText, [id]);
   return true;
 }
+
+/**
+ * Add a member to a community
+ * Creates member if doesn't exist, then adds membership with profile data
+ */
+export async function addMemberToCommunity(data: {
+  community_id: string;
+  member_data: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  member_type: string; // alumni, entrepreneur, resident, generic
+  profile_data?: any; // Type-specific profile data
+  role?: string; // member, admin, super_admin
+  invited_by?: string; // member_id of inviter
+}): Promise<any> {
+  return withTransaction(async (client) => {
+    /* 1. CHECK IF COMMUNITY EXISTS */
+    const communityCheck = await executeQuery(
+      client,
+      `SELECT id, type FROM communities WHERE id = $1 AND is_active = TRUE`,
+      [data.community_id]
+    );
+
+    if (communityCheck.rows.length === 0) {
+      throw new Error(`Community not found: ${data.community_id}`);
+    }
+
+    const community = communityCheck.rows[0];
+
+    /* 2. ENSURE MEMBER EXISTS (or create) */
+    const findMemberSql = `SELECT * FROM members WHERE phone = $1`;
+    const existingMember = await executeQuery(client, findMemberSql, [data.member_data.phone]);
+
+    let member;
+    if (existingMember.rows.length > 0) {
+      member = existingMember.rows[0];
+      console.log(`Member already exists: ${member.id}`);
+    } else {
+      // Create new member
+      const membershipId = randomUUID();
+      const insertMemberSql = `
+        INSERT INTO members (id, name, phone, email, created_at, updated_at, last_login, is_active)
+        VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW(), TRUE)
+        RETURNING *
+      `;
+      const newMember = await executeQuery(client, insertMemberSql, [
+        membershipId,
+        data.member_data.name,
+        data.member_data.phone,
+        data.member_data.email || null
+      ]);
+      member = newMember.rows[0];
+      console.log(`Created new member: ${member.id}`);
+    }
+
+    /* 3. CHECK IF MEMBERSHIP ALREADY EXISTS */
+    const membershipCheck = await executeQuery(
+      client,
+      `SELECT id FROM community_memberships WHERE community_id = $1 AND member_id = $2`,
+      [data.community_id, member.id]
+    );
+
+    if (membershipCheck.rows.length > 0) {
+      throw new Error(`Member ${member.phone} is already part of this community`);
+    }
+
+    /* 4. DETERMINE MEMBER_TYPE */
+    // Use provided member_type or infer from community type
+    let memberType = data.member_type;
+    if (!memberType) {
+      const typeMapping: { [key: string]: string } = {
+        alumni: "alumni",
+        entrepreneur: "entrepreneur",
+        apartment: "resident",
+        mixed: "generic",
+      };
+      memberType = typeMapping[community.type] || "generic";
+    }
+
+    /* 5. BUILD PROFILE DATA */
+    const profileData = data.profile_data || buildProfileData(community.type, data.profile_data || {});
+
+    /* 6. CREATE MEMBERSHIP */
+    const membershipId = randomUUID();
+    const insertMembershipSql = `
+      INSERT INTO community_memberships
+        (id, community_id, member_id, member_type, profile_data, role, is_active, joined_at, updated_at, invited_by)
+      VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), NOW(), $7)
+      RETURNING *
+    `;
+
+    const membership = await executeQuery(client, insertMembershipSql, [
+      membershipId,
+      data.community_id,
+      member.id,
+      memberType,
+      JSON.stringify(profileData),
+      data.role || 'member',
+      data.invited_by || null
+    ]);
+
+    /* 7. RETURN CREATED MEMBERSHIP WITH MEMBER DETAILS */
+    return {
+      membership: membership.rows[0],
+      member: {
+        id: member.id,
+        name: member.name,
+        phone: member.phone,
+        email: member.email
+      }
+    };
+  });
+}
+
+/**
+ * Get all members of a community with their profile data
+ */
+export async function getCommunityMembers(
+  community_id: string,
+  filters?: {
+    member_type?: string;
+    role?: string;
+    is_active?: boolean;
+  }
+): Promise<any[]> {
+  const conditions = ['cm.community_id = $1'];
+  const params: any[] = [community_id];
+  let paramIndex = 2;
+
+  if (filters?.member_type) {
+    conditions.push(`cm.member_type = $${paramIndex}`);
+    params.push(filters.member_type);
+    paramIndex++;
+  }
+
+  if (filters?.role) {
+    conditions.push(`cm.role = $${paramIndex}`);
+    params.push(filters.role);
+    paramIndex++;
+  }
+
+  if (filters?.is_active !== undefined) {
+    conditions.push(`cm.is_active = $${paramIndex}`);
+    params.push(filters.is_active);
+    paramIndex++;
+  }
+
+  const sql = `
+    SELECT
+      m.id,
+      m.name,
+      m.phone,
+      m.email,
+      cm.member_type,
+      cm.role,
+      cm.profile_data,
+      cm.joined_at,
+      cm.is_active,
+      invited_by_member.name AS invited_by_name
+    FROM community_memberships cm
+    JOIN members m ON m.id = cm.member_id
+    LEFT JOIN members invited_by_member ON invited_by_member.id = cm.invited_by
+    WHERE ${conditions.join(' AND ')}
+    ORDER BY cm.joined_at DESC
+  `;
+
+  const result = await query(sql, params);
+  return result.rows;
+}
+
+/**
+ * Update member's profile data in a community
+ */
+export async function updateCommunityMemberProfile(
+  community_id: string,
+  member_id: string,
+  profile_data: any
+): Promise<any> {
+  const sql = `
+    UPDATE community_memberships
+    SET profile_data = $1, updated_at = NOW()
+    WHERE community_id = $2 AND member_id = $3
+    RETURNING *
+  `;
+
+  const result = await query(sql, [
+    JSON.stringify(profile_data),
+    community_id,
+    member_id
+  ]);
+
+  if (result.rows.length === 0) {
+    throw new Error('Membership not found');
+  }
+
+  return result.rows[0];
+}
+
+/**
+ * Remove member from community (soft delete)
+ */
+export async function removeMemberFromCommunity(
+  community_id: string,
+  member_id: string
+): Promise<boolean> {
+  const sql = `
+    UPDATE community_memberships
+    SET is_active = FALSE, updated_at = NOW()
+    WHERE community_id = $1 AND member_id = $2
+    RETURNING id
+  `;
+
+  const result = await query(sql, [community_id, member_id]);
+  return result.rows.length > 0;
+}
+
+/**
+ * Update member's role in a community
+ */
+export async function updateMemberRole(
+  community_id: string,
+  member_id: string,
+  new_role: 'member' | 'admin' | 'super_admin'
+): Promise<any> {
+  const sql = `
+    UPDATE community_memberships
+    SET role = $1, updated_at = NOW()
+    WHERE community_id = $2 AND member_id = $3
+    RETURNING *
+  `;
+
+  const result = await query(sql, [new_role, community_id, member_id]);
+
+  if (result.rows.length === 0) {
+    throw new Error('Membership not found');
+  }
+
+  return result.rows[0];
+}

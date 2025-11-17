@@ -31,7 +31,8 @@
         "migrate:validate": "ts-node -r dotenv/config src/scripts/runLeanMigration.ts validate",
         "migrate:drop-old-tables": "ts-node -r dotenv/config src/scripts/runLeanMigration.ts drop",
         "migrate:rollback": "ts-node -r dotenv/config src/scripts/runLeanMigration.ts rollback",
-        "test:community": "ts-node -r dotenv/config src/scripts/testCommunityCreation.ts"
+        "test:community": "ts-node -r dotenv/config src/scripts/testCommunityCreation.ts",
+        "test:members": "ts-node -r dotenv/config src/scripts/testMemberAddition.ts"
     },
     "author": "tech-itrace",
     "license": "MIT",
