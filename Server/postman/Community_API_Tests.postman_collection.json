@@ -1,0 +1,393 @@
+{
+  "info": {
+    "name": "Community Connect - Community API Tests",
+    "description": "Postman collection for testing Community Creation API with Lean Schema",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "community-connect"
+  },
+  "item": [
+    {
+      "name": "Communities",
+      "item": [
+        {
+          "name": "Create Alumni Community",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IIT Alumni Network\",\n  \"slug\": \"iit-alumni-network\",\n  \"type\": \"alumni\",\n  \"description\": \"Network of IIT alumni across the globe\",\n  \"subscription_plan\": \"basic\",\n  \"member_limit\": 500,\n  \"search_limit_monthly\": 5000,\n  \"is_bot_enabled\": true,\n  \"is_search_enabled\": true,\n  \"is_embedding_enabled\": true,\n  \"member_type_data\": {\n    \"name\": \"John Doe\",\n    \"phone\": \"+919876543210\",\n    \"email\": \"john.doe@example.com\",\n    \"graduation_year\": 2015,\n    \"degree\": \"B.Tech\",\n    \"department\": \"Computer Science\",\n    \"college\": \"IIT Madras\",\n    \"skills\": [\"Python\", \"Machine Learning\", \"Data Science\"],\n    \"bio\": \"Software Engineer at Google\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Creates an alumni community with profile data stored in JSONB"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Entrepreneur Community",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Startup Founders Hub\",\n  \"slug\": \"startup-founders-hub\",\n  \"type\": \"entrepreneur\",\n  \"description\": \"Community for startup founders and entrepreneurs\",\n  \"subscription_plan\": \"pro\",\n  \"member_limit\": 1000,\n  \"search_limit_monthly\": 10000,\n  \"is_bot_enabled\": true,\n  \"is_search_enabled\": true,\n  \"is_embedding_enabled\": true,\n  \"member_type_data\": {\n    \"name\": \"Jane Smith\",\n    \"phone\": \"+919876543211\",\n    \"email\": \"jane.smith@example.com\",\n    \"company\": \"TechStartup Inc\",\n    \"industry\": \"Technology\",\n    \"position\": \"CEO & Founder\",\n    \"skills\": [\"Leadership\", \"Product Management\", \"Fundraising\"],\n    \"bio\": \"Serial entrepreneur with 3 successful exits\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Creates an entrepreneur community with company profile in JSONB"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Apartment Community",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Green Valley Apartments\",\n  \"slug\": \"green-valley-apartments\",\n  \"type\": \"apartment\",\n  \"description\": \"Resident community for Green Valley Apartments\",\n  \"subscription_plan\": \"basic\",\n  \"member_limit\": 300,\n  \"search_limit_monthly\": 2000,\n  \"is_bot_enabled\": false,\n  \"is_search_enabled\": true,\n  \"is_embedding_enabled\": true,\n  \"member_type_data\": {\n    \"name\": \"Bob Johnson\",\n    \"phone\": \"+919876543212\",\n    \"email\": \"bob.johnson@example.com\",\n    \"apartment_number\": \"A-101\",\n    \"floor\": \"1\",\n    \"block\": \"A\",\n    \"interests\": [\"Gardening\", \"Community Events\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Creates an apartment community with resident profile in JSONB"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Mixed Community",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tech Enthusiasts Network\",\n  \"slug\": \"tech-enthusiasts-network\",\n  \"type\": \"mixed\",\n  \"description\": \"A diverse community for tech enthusiasts from all backgrounds\",\n  \"subscription_plan\": \"free\",\n  \"member_limit\": 100,\n  \"search_limit_monthly\": 1000,\n  \"is_bot_enabled\": false,\n  \"is_search_enabled\": true,\n  \"is_embedding_enabled\": true,\n  \"member_type_data\": {\n    \"name\": \"Alex Chen\",\n    \"phone\": \"+919876543213\",\n    \"email\": \"alex.chen@example.com\",\n    \"skills\": [\"JavaScript\", \"React\", \"Node.js\"],\n    \"interests\": [\"Open Source\", \"AI/ML\", \"Web3\"],\n    \"bio\": \"Full-stack developer and tech community organizer\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Creates a mixed community with generic member type"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Communities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Retrieves all active communities with their admins list"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Community by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}"]
+            },
+            "description": "Retrieves a specific community by ID with admin details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Community",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IIT Alumni Network - Updated\",\n  \"description\": \"Updated description for IIT alumni community\",\n  \"is_bot_enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}"]
+            },
+            "description": "Updates a community's basic information"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Community (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}"]
+            },
+            "description": "Soft deletes a community (sets is_active = false)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Create Community - Missing Required Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Community\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Tests error handling when required fields are missing"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Community - Invalid Type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid Type Community\",\n  \"slug\": \"invalid-type-community\",\n  \"type\": \"invalid_type\",\n  \"member_type_data\": {\n    \"name\": \"Test User\",\n    \"phone\": \"+919876543214\",\n    \"email\": \"test@example.com\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Tests error handling for invalid community type"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Community - Duplicate Slug",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate Slug Test\",\n  \"slug\": \"iit-alumni-network\",\n  \"type\": \"alumni\",\n  \"member_type_data\": {\n    \"name\": \"Test User\",\n    \"phone\": \"+919876543215\",\n    \"email\": \"test2@example.com\",\n    \"graduation_year\": 2020,\n    \"degree\": \"M.Tech\",\n    \"department\": \"ECE\",\n    \"college\": \"IIT Delhi\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Tests error handling for duplicate community slug"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Non-Existent Community",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/community/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "00000000-0000-0000-0000-000000000000"]
+            },
+            "description": "Tests error handling for non-existent community ID"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile Data Tests",
+      "item": [
+        {
+          "name": "Alumni with Full Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"BITS Pilani Alumni\",\n  \"slug\": \"bits-pilani-alumni\",\n  \"type\": \"alumni\",\n  \"description\": \"BITS Pilani alumni network\",\n  \"member_type_data\": {\n    \"name\": \"Priya Sharma\",\n    \"phone\": \"+919876543220\",\n    \"email\": \"priya.sharma@example.com\",\n    \"graduation_year\": 2018,\n    \"degree\": \"B.E.\",\n    \"department\": \"Electronics and Communication\",\n    \"college\": \"BITS Pilani\",\n    \"skills\": [\"VLSI\", \"Embedded Systems\", \"IoT\", \"Python\"],\n    \"interests\": [\"Hardware Design\", \"Robotics\", \"Teaching\"],\n    \"bio\": \"Hardware engineer passionate about IoT and embedded systems. Currently working on smart city projects.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Tests alumni profile with all possible fields in JSONB"
+          },
+          "response": []
+        },
+        {
+          "name": "Entrepreneur with Full Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"FinTech Founders Network\",\n  \"slug\": \"fintech-founders-network\",\n  \"type\": \"entrepreneur\",\n  \"description\": \"Network of FinTech startup founders\",\n  \"member_type_data\": {\n    \"name\": \"Rahul Verma\",\n    \"phone\": \"+919876543221\",\n    \"email\": \"rahul.verma@example.com\",\n    \"company\": \"PayFast Solutions\",\n    \"industry\": \"FinTech\",\n    \"position\": \"Co-Founder & CTO\",\n    \"skills\": [\"Blockchain\", \"Payment Systems\", \"Cloud Architecture\", \"Team Building\"],\n    \"interests\": [\"DeFi\", \"Digital Payments\", \"Mentoring\"],\n    \"bio\": \"Building next-gen payment solutions. Previously led engineering at major payment gateway.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Tests entrepreneur profile with all possible fields in JSONB"
+          },
+          "response": []
+        },
+        {
+          "name": "Apartment with Full Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Skyline Residency\",\n  \"slug\": \"skyline-residency\",\n  \"type\": \"apartment\",\n  \"description\": \"Luxury apartment complex in downtown\",\n  \"member_type_data\": {\n    \"name\": \"Sarah Williams\",\n    \"phone\": \"+919876543222\",\n    \"email\": \"sarah.williams@example.com\",\n    \"apartment_number\": \"B-503\",\n    \"floor\": \"5\",\n    \"block\": \"B\",\n    \"interests\": [\"Yoga\", \"Book Club\", \"Organic Gardening\", \"Pet Care\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Tests apartment resident profile with all possible fields in JSONB"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-generate test data if needed",
+          "if (!pm.collectionVariables.get('random_phone')) {",
+          "    const randomPhone = '+919' + Math.floor(100000000 + Math.random() * 900000000);",
+          "    pm.collectionVariables.set('random_phone', randomPhone);",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common test scripts",
+          "if (pm.response.code === 201 || pm.response.code === 200) {",
+          "    const responseData = pm.response.json();",
+          "    ",
+          "    // Save community ID for subsequent requests",
+          "    if (responseData.data && responseData.data.community && responseData.data.community.id) {",
+          "        pm.collectionVariables.set('community_id', responseData.data.community.id);",
+          "        console.log('Community ID saved:', responseData.data.community.id);",
+          "    }",
+          "    ",
+          "    // Validate response structure",
+          "    pm.test('Response has success status', function () {",
+          "        pm.expect(responseData.success).to.be.true;",
+          "    });",
+          "    ",
+          "    pm.test('Response has data object', function () {",
+          "        pm.expect(responseData.data).to.be.an('object');",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "community_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "random_phone",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
