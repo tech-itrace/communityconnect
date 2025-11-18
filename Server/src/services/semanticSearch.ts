@@ -166,25 +166,17 @@ async function semanticSearchOnly(
         paramIndex++;
     }
 
-    // City filter - check in type-specific profiles
+    // City filter - check in JSONB profile_data
     if (filters.city) {
-        conditions.push(`(
-            (cm.member_type = 'alumni' AND ap.city ILIKE $${paramIndex}) OR
-            (cm.member_type = 'entrepreneur' AND ep.city ILIKE $${paramIndex}) OR
-            (cm.member_type = 'resident' AND true)
-        )`);
+        conditions.push(`(cm.profile_data->>'city' ILIKE $${paramIndex})`);
         params.push(`%${filters.city}%`);
         paramIndex++;
     }
 
-    // Skills filter - check in type-specific profiles
+    // Skills filter - check in JSONB profile_data
     if (filters.skills && filters.skills.length > 0) {
         const skillConditions = filters.skills.map(() => {
-            const cond = `(
-                (cm.member_type = 'alumni' AND $${paramIndex} = ANY(ap.skills)) OR
-                (cm.member_type = 'entrepreneur' AND $${paramIndex} = ANY(ep.expertise)) OR
-                (cm.member_type = 'resident' AND $${paramIndex} = ANY(rp.skills))
-            )`;
+            const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
             paramIndex++;
             return cond;
         });
@@ -192,13 +184,10 @@ async function semanticSearchOnly(
         params.push(...filters.skills);
     }
 
-    // Services filter - for entrepreneurs and residents
+    // Services filter - check in JSONB profile_data
     if (filters.services && filters.services.length > 0) {
         const serviceConditions = filters.services.map(() => {
-            const cond = `(
-                (cm.member_type = 'entrepreneur' AND $${paramIndex} = ANY(ep.services_offered)) OR
-                (cm.member_type = 'resident' AND $${paramIndex} = ANY(rp.services_offered))
-            )`;
+            const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
             paramIndex++;
             return cond;
         });
@@ -208,7 +197,10 @@ async function semanticSearchOnly(
 
     // Year of graduation filter - for alumni only
     if (filters.yearOfGraduation && filters.yearOfGraduation.length > 0) {
-        conditions.push(`(cm.member_type = 'alumni' AND ap.graduation_year = ANY($${paramIndex}::int[]))`);
+        conditions.push(`(
+            cm.member_type = 'alumni'
+            AND (cm.profile_data->>'graduation_year')::int = ANY($${paramIndex}::int[])
+        )`);
         params.push(filters.yearOfGraduation);
         paramIndex++;
     }
@@ -216,7 +208,7 @@ async function semanticSearchOnly(
     // Degree filter - for alumni only
     if (filters.degree && filters.degree.length > 0) {
         const degreeConditions = filters.degree.map(() => {
-            const cond = `ap.degree ILIKE $${paramIndex}`;
+            const cond = `(cm.profile_data->>'degree' ILIKE $${paramIndex})`;
             paramIndex++;
             return cond;
         });
@@ -230,7 +222,7 @@ async function semanticSearchOnly(
     params.push(limit, offset);
 
     const queryText = `
-        SELECT 
+        SELECT
             m.id,
             m.name,
             m.phone,
@@ -238,6 +230,7 @@ async function semanticSearchOnly(
             cm.member_type,
             cm.role,
             cm.joined_at,
+            cm.profile_data,
             me.profile_embedding <=> $1::vector AS profile_distance,
             me.skills_embedding <=> $1::vector AS skills_distance,
             me.contextual_embedding <=> $1::vector AS contextual_distance,
@@ -250,43 +243,11 @@ async function semanticSearchOnly(
                 me.profile_embedding <=> $1::vector,
                 me.skills_embedding <=> $1::vector,
                 me.contextual_embedding <=> $1::vector
-            ) AS similarity_score,
-            -- Type-specific fields
-            CASE cm.member_type
-                WHEN 'alumni' THEN jsonb_build_object(
-                    'college', ap.college,
-                    'graduation_year', ap.graduation_year,
-                    'degree', ap.degree,
-                    'department', ap.department,
-                    'current_organization', ap.current_organization,
-                    'designation', ap.designation,
-                    'city', ap.city,
-                    'skills', ap.skills
-                )
-                WHEN 'entrepreneur' THEN jsonb_build_object(
-                    'company', ep.company,
-                    'industry', ep.industry,
-                    'company_stage', ep.company_stage,
-                    'city', ep.city,
-                    'services_offered', ep.services_offered,
-                    'expertise', ep.expertise
-                )
-                WHEN 'resident' THEN jsonb_build_object(
-                    'apartment_number', rp.apartment_number,
-                    'building', rp.building,
-                    'profession', rp.profession,
-                    'organization', rp.organization,
-                    'skills', rp.skills
-                )
-                ELSE NULL
-            END as profile_data
+            ) AS similarity_score
         FROM community_memberships cm
         JOIN members m ON cm.member_id = m.id
         JOIN member_embeddings me ON cm.id = me.membership_id
         LEFT JOIN communities c ON cm.community_id = c.id
-        LEFT JOIN alumni_profiles ap ON cm.id = ap.membership_id AND cm.member_type = 'alumni'
-        LEFT JOIN entrepreneur_profiles ep ON cm.id = ep.membership_id AND cm.member_type = 'entrepreneur'
-        LEFT JOIN resident_profiles rp ON cm.id = rp.membership_id AND cm.member_type = 'resident'
         WHERE ${conditions.join(' AND ')}
         ORDER BY min_distance ASC
         LIMIT ${limitParam} OFFSET ${offsetParam}
@@ -360,24 +321,16 @@ async function keywordSearchOnly(
         paramIndex++;
     }
 
-    // Apply same filters as semantic search
+    // Apply same filters as semantic search - using JSONB profile_data
     if (filters.city) {
-        conditions.push(`(
-            (cm.member_type = 'alumni' AND ap.city ILIKE $${paramIndex}) OR
-            (cm.member_type = 'entrepreneur' AND ep.city ILIKE $${paramIndex}) OR
-            (cm.member_type = 'resident' AND true)
-        )`);
+        conditions.push(`(cm.profile_data->>'city' ILIKE $${paramIndex})`);
         params.push(`%${filters.city}%`);
         paramIndex++;
     }
 
     if (filters.skills && filters.skills.length > 0) {
         const skillConditions = filters.skills.map(() => {
-            const cond = `(
-                (cm.member_type = 'alumni' AND $${paramIndex} = ANY(ap.skills)) OR
-                (cm.member_type = 'entrepreneur' AND $${paramIndex} = ANY(ep.expertise)) OR
-                (cm.member_type = 'resident' AND $${paramIndex} = ANY(rp.skills))
-            )`;
+            const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
             paramIndex++;
             return cond;
         });
@@ -387,10 +340,7 @@ async function keywordSearchOnly(
 
     if (filters.services && filters.services.length > 0) {
         const serviceConditions = filters.services.map(() => {
-            const cond = `(
-                (cm.member_type = 'entrepreneur' AND $${paramIndex} = ANY(ep.services_offered)) OR
-                (cm.member_type = 'resident' AND $${paramIndex} = ANY(rp.services_offered))
-            )`;
+            const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
             paramIndex++;
             return cond;
         });
@@ -399,14 +349,17 @@ async function keywordSearchOnly(
     }
 
     if (filters.yearOfGraduation && filters.yearOfGraduation.length > 0) {
-        conditions.push(`(cm.member_type = 'alumni' AND ap.graduation_year = ANY($${paramIndex}::int[]))`);
+        conditions.push(`(
+            cm.member_type = 'alumni'
+            AND (cm.profile_data->>'graduation_year')::int = ANY($${paramIndex}::int[])
+        )`);
         params.push(filters.yearOfGraduation);
         paramIndex++;
     }
 
     if (filters.degree && filters.degree.length > 0) {
         const degreeConditions = filters.degree.map(() => {
-            const cond = `ap.degree ILIKE $${paramIndex}`;
+            const cond = `(cm.profile_data->>'degree' ILIKE $${paramIndex})`;
             paramIndex++;
             return cond;
         });
@@ -419,7 +372,7 @@ async function keywordSearchOnly(
     params.push(limit, offset);
 
     const queryText = `
-        SELECT 
+        SELECT
             m.id,
             m.name,
             m.phone,
@@ -427,41 +380,12 @@ async function keywordSearchOnly(
             cm.member_type,
             cm.role,
             cm.joined_at,
-            ts_rank(msi.search_vector, plainto_tsquery($1)) AS rank,
-            CASE cm.member_type
-                WHEN 'alumni' THEN jsonb_build_object(
-                    'college', ap.college,
-                    'graduation_year', ap.graduation_year,
-                    'degree', ap.degree,
-                    'department', ap.department,
-                    'current_organization', ap.current_organization,
-                    'designation', ap.designation,
-                    'city', ap.city,
-                    'skills', ap.skills
-                )
-                WHEN 'entrepreneur' THEN jsonb_build_object(
-                    'company', ep.company,
-                    'industry', ep.industry,
-                    'city', ep.city,
-                    'services_offered', ep.services_offered,
-                    'expertise', ep.expertise
-                )
-                WHEN 'resident' THEN jsonb_build_object(
-                    'apartment_number', rp.apartment_number,
-                    'building', rp.building,
-                    'profession', rp.profession,
-                    'organization', rp.organization,
-                    'skills', rp.skills
-                )
-                ELSE NULL
-            END as profile_data
+            cm.profile_data,
+            ts_rank(msi.search_vector, plainto_tsquery($1)) AS rank
         FROM community_memberships cm
         JOIN members m ON cm.member_id = m.id
         JOIN member_search_index msi ON cm.id = msi.membership_id
         LEFT JOIN communities c ON cm.community_id = c.id
-        LEFT JOIN alumni_profiles ap ON cm.id = ap.membership_id AND cm.member_type = 'alumni'
-        LEFT JOIN entrepreneur_profiles ep ON cm.id = ep.membership_id AND cm.member_type = 'entrepreneur'
-        LEFT JOIN resident_profiles rp ON cm.id = rp.membership_id AND cm.member_type = 'resident'
         WHERE ${conditions.join(' AND ')}
         ORDER BY rank DESC
         LIMIT ${limitParam} OFFSET ${offsetParam}

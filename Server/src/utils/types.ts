@@ -186,6 +186,7 @@ export interface ScoredMember extends Member {
     keywordScore?: number;
     matchedFields: string[];
     isExactMatch?: boolean;
+    profileData?: any;  // JSONB profile data from community_memberships
 }
 
 export interface EmbeddingResult {
