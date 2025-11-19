@@ -52,6 +52,13 @@ console.log("communitiesData:" + JSON.stringify(communityData))
   const navigateToSelectedGroupMembers = (groupId) => {
 navigate(`/members?groupdId=${groupId}`)
   } 
+
+  const toTitleCase = (str: string) => {
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
    return (
     <div className="space-y-8">
       {/* Header */}
@@ -137,11 +144,11 @@ navigate(`/members?groupdId=${groupId}`)
             
 
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700 font-medium">
-                {community.type || "-"}
-              </span>
-              </div>
+  <MapPin className="h-4 w-4" />
+  <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700 font-medium">
+    {community.type ? toTitleCase(community.type) : "-"}
+  </span>
+</div>
 
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />

@@ -30,7 +30,6 @@ export interface Community {
   }>;
 }
 
-
 /** Get community by ID */
 export async function getCommunityById(
   id: string,
@@ -92,7 +91,6 @@ export async function getCommunityById(
 
   return res.rows[0];
 }
-
 
 async function ensureMember(data: any ) {
     console.log("data-check with members table: " + JSON.stringify(data))
@@ -245,7 +243,6 @@ export async function createCommunity(data: any): Promise<Community> {
     return created;
   });
 }
-
 
 /** Get all communities */
 export async function getAllCommunities(): Promise<Community[]> {

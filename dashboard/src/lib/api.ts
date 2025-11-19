@@ -229,7 +229,7 @@ export const groupAPI = {
 
 export const memberAPI = {
     getAll: () => api.get<MembersResponse>('/api/members'),
-    getById: (id: string) => api.get<MemberResponse>(`/api/members/${id}`),
+    getById: (id: string) => api.get<MemberResponse>(`/api/community/${id}/members/`),
     create: (member: Partial<Member>) => api.post<MemberResponse>('/api/members', member),
     update: (id: string, member: Partial<Member>) =>
         api.put<MemberResponse>(`/api/members/${id}`, member),
