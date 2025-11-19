@@ -7,6 +7,7 @@ import adminRouter from './admin';
 import groupsRouter from './groups';
 import analyticsRouter from './analytics';
 import performanceRouter from './performance';
+import embeddingsRouter from './embeddings';
 import { getRedisHealth } from '../config/redis';
 import communityRouter from './community'
 
@@ -31,6 +32,7 @@ router.use('/search', searchRouter);
 router.use('/groups', groupsRouter)
 router.use('/community', communityRouter)
 router.use('/members', membersRouter);
+router.use('/embeddings', embeddingsRouter);
 
 // Admin routes (Phase 2: Day 5)
 router.use('/admin', adminRouter);

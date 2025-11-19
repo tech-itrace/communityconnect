@@ -454,7 +454,11 @@ export async function addMemberToCommunity(data: {
       data.invited_by || null
     ]);
 
-    /* 7. RETURN CREATED MEMBERSHIP WITH MEMBER DETAILS */
+    /* 7. GENERATE EMBEDDINGS IN BACKGROUND */
+    const { generateMemberEmbeddingsAsync } = await import('./memberEmbeddingService');
+    generateMemberEmbeddingsAsync(membershipId);
+
+    /* 8. RETURN CREATED MEMBERSHIP WITH MEMBER DETAILS */
     return {
       membership: membership.rows[0],
       member: {
@@ -548,7 +552,13 @@ export async function updateCommunityMemberProfile(
     throw new Error('Membership not found');
   }
 
-  return result.rows[0];
+  const updatedMembership = result.rows[0];
+
+  // Regenerate embeddings in background after profile update
+  const { generateMemberEmbeddingsAsync } = await import('./memberEmbeddingService');
+  generateMemberEmbeddingsAsync(updatedMembership.id);
+
+  return updatedMembership;
 }
 
 /**
