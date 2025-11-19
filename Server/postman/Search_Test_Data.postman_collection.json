@@ -1,0 +1,1149 @@
+{
+  "info": {
+    "name": "Community Connect - Search Test Data & Queries",
+    "description": "Creates diverse member samples and tests various search scenarios including semantic, keyword, hybrid, and natural language searches",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "community-connect-search"
+  },
+  "item": [
+    {
+      "name": "1. Setup - Create Community",
+      "item": [
+        {
+          "name": "Create IIT Tech Alumni Community",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.data && responseData.data.community) {",
+                  "        pm.collectionVariables.set('community_id', responseData.data.community.id);",
+                  "        console.log('✅ Community ID saved:', responseData.data.community.id);",
+                  "    }",
+                  "    pm.test('Community created successfully', () => {",
+                  "        pm.expect(responseData.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IIT Tech Alumni Network\",\n  \"slug\": \"iit-tech-alumni-test\",\n  \"type\": \"alumni\",\n  \"description\": \"Network for IIT alumni working in technology\",\n  \"subscription_plan\": \"pro\",\n  \"member_limit\": 1000,\n  \"search_limit_monthly\": 10000,\n  \"is_bot_enabled\": true,\n  \"is_search_enabled\": true,\n  \"is_embedding_enabled\": true,\n  \"member_type_data\": {\n    \"name\": \"Admin User\",\n    \"phone\": \"+919900000000\",\n    \"email\": \"admin@iittech.com\",\n    \"graduation_year\": 2010,\n    \"degree\": \"B.Tech\",\n    \"department\": \"Computer Science\",\n    \"college\": \"IIT Madras\",\n    \"skills\": [\"Administration\", \"Community Management\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community"]
+            },
+            "description": "Creates test community for search experiments"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Add Test Members",
+      "item": [
+        {
+          "name": "Member 1 - AI/ML Expert in Bangalore",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.data && responseData.data.member) {",
+                  "        pm.collectionVariables.set('member_1_id', responseData.data.member.id);",
+                  "        console.log('✅ Member 1 added:', responseData.data.member.name);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"member_data\": {\n    \"name\": \"Priya Sharma\",\n    \"phone\": \"+919900001001\",\n    \"email\": \"priya.sharma@techcorp.com\"\n  },\n  \"member_type\": \"alumni\",\n  \"role\": \"member\",\n  \"profile_data\": {\n    \"college\": \"IIT Madras\",\n    \"graduation_year\": 2018,\n    \"degree\": \"B.Tech\",\n    \"department\": \"Computer Science and Engineering\",\n    \"city\": \"Bangalore\",\n    \"current_organization\": \"Google India\",\n    \"designation\": \"Senior Machine Learning Engineer\",\n    \"skills\": [\"Python\", \"TensorFlow\", \"PyTorch\", \"Deep Learning\", \"Computer Vision\", \"NLP\"],\n    \"interests\": [\"Artificial Intelligence\", \"Neural Networks\", \"Research\"],\n    \"services_offered\": [\"AI Consulting\", \"ML Model Development\", \"Technical Mentorship\"],\n    \"bio\": \"Passionate about building intelligent systems. Specializes in computer vision and natural language processing. Published researcher with 5+ papers in top AI conferences. Available for consulting on AI/ML projects and mentoring aspiring data scientists.\",\n    \"years_of_experience\": 6,\n    \"availability\": \"weekends\",\n    \"linkedin\": \"linkedin.com/in/priyasharma\",\n    \"github\": \"github.com/priyasharma\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}", "members"]
+            },
+            "description": "AI/ML expert - tests: AI/ML searches, skill-based queries, location filters, mentorship searches"
+          },
+          "response": []
+        },
+        {
+          "name": "Member 2 - Full Stack Developer in Mumbai",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.data && responseData.data.member) {",
+                  "        pm.collectionVariables.set('member_2_id', responseData.data.member.id);",
+                  "        console.log('✅ Member 2 added:', responseData.data.member.name);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"member_data\": {\n    \"name\": \"Rahul Verma\",\n    \"phone\": \"+919900001002\",\n    \"email\": \"rahul.v@startup.io\"\n  },\n  \"member_type\": \"alumni\",\n  \"role\": \"member\",\n  \"profile_data\": {\n    \"college\": \"IIT Bombay\",\n    \"graduation_year\": 2016,\n    \"degree\": \"B.Tech\",\n    \"department\": \"Computer Science and Engineering\",\n    \"city\": \"Mumbai\",\n    \"current_organization\": \"TechStartup Inc\",\n    \"designation\": \"Co-Founder & CTO\",\n    \"skills\": [\"JavaScript\", \"TypeScript\", \"React\", \"Node.js\", \"PostgreSQL\", \"AWS\", \"Docker\", \"Kubernetes\"],\n    \"interests\": [\"Web Development\", \"Startups\", \"System Design\", \"Cloud Architecture\"],\n    \"services_offered\": [\"Web Application Development\", \"Startup Tech Consulting\", \"Architecture Review\", \"Team Building\"],\n    \"bio\": \"Full-stack developer turned entrepreneur. Co-founded 2 startups with successful exits. Expert in building scalable web applications and leading engineering teams. Open to advising early-stage startups on technology stack and architecture decisions.\",\n    \"years_of_experience\": 8,\n    \"availability\": \"evenings\",\n    \"linkedin\": \"linkedin.com/in/rahulverma\",\n    \"github\": \"github.com/rahulverma\",\n    \"company_stage\": \"Series A\",\n    \"team_size\": 25\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}", "members"]
+            },
+            "description": "Startup CTO - tests: web development searches, startup/entrepreneurship queries, full-stack searches, architecture consulting"
+          },
+          "response": []
+        },
+        {
+          "name": "Member 3 - Cybersecurity Expert in Delhi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.data && responseData.data.member) {",
+                  "        pm.collectionVariables.set('member_3_id', responseData.data.member.id);",
+                  "        console.log('✅ Member 3 added:', responseData.data.member.name);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"member_data\": {\n    \"name\": \"Aisha Khan\",\n    \"phone\": \"+919900001003\",\n    \"email\": \"aisha.khan@securetech.com\"\n  },\n  \"member_type\": \"alumni\",\n  \"role\": \"member\",\n  \"profile_data\": {\n    \"college\": \"IIT Delhi\",\n    \"graduation_year\": 2015,\n    \"degree\": \"M.Tech\",\n    \"department\": \"Computer Science and Engineering\",\n    \"city\": \"Delhi\",\n    \"current_organization\": \"SecureTech Solutions\",\n    \"designation\": \"Chief Security Officer\",\n    \"skills\": [\"Cybersecurity\", \"Penetration Testing\", \"Ethical Hacking\", \"Network Security\", \"Cryptography\", \"SIEM\", \"Python\", \"C++\"],\n    \"interests\": [\"Information Security\", \"Threat Intelligence\", \"Blockchain Security\", \"Privacy\"],\n    \"services_offered\": [\"Security Audits\", \"Penetration Testing\", \"Security Training\", \"Incident Response\"],\n    \"bio\": \"Cybersecurity veteran with 9 years of experience protecting enterprise systems. Certified Ethical Hacker (CEH) and CISSP holder. Led security operations for Fortune 500 companies. Available for security audits, penetration testing, and conducting security awareness training sessions.\",\n    \"years_of_experience\": 9,\n    \"availability\": \"flexible\",\n    \"linkedin\": \"linkedin.com/in/aishakhan\",\n    \"certifications\": [\"CEH\", \"CISSP\", \"OSCP\", \"AWS Security Specialty\"],\n    \"specialization\": \"Enterprise Security\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}", "members"]
+            },
+            "description": "Security expert - tests: cybersecurity searches, security audit queries, ethical hacking, certification-based searches"
+          },
+          "response": []
+        },
+        {
+          "name": "Member 4 - Data Scientist in Bangalore",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.data && responseData.data.member) {",
+                  "        pm.collectionVariables.set('member_4_id', responseData.data.member.id);",
+                  "        console.log('✅ Member 4 added:', responseData.data.member.name);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"member_data\": {\n    \"name\": \"Vikram Patel\",\n    \"phone\": \"+919900001004\",\n    \"email\": \"vikram.patel@datainsights.com\"\n  },\n  \"member_type\": \"alumni\",\n  \"role\": \"member\",\n  \"profile_data\": {\n    \"college\": \"IIT Madras\",\n    \"graduation_year\": 2017,\n    \"degree\": \"B.Tech\",\n    \"department\": \"Mathematics and Computing\",\n    \"city\": \"Bangalore\",\n    \"current_organization\": \"Amazon\",\n    \"designation\": \"Principal Data Scientist\",\n    \"skills\": [\"Python\", \"R\", \"SQL\", \"Machine Learning\", \"Statistical Analysis\", \"Data Visualization\", \"Tableau\", \"Power BI\", \"Spark\", \"Hadoop\"],\n    \"interests\": [\"Data Analytics\", \"Business Intelligence\", \"Predictive Modeling\", \"A/B Testing\"],\n    \"services_offered\": [\"Data Analytics Consulting\", \"Business Intelligence Setup\", \"Predictive Modeling\", \"Data Strategy\"],\n    \"bio\": \"Data scientist specializing in turning data into actionable business insights. Expert in building data pipelines, creating predictive models, and setting up BI dashboards. Helped 20+ companies optimize their data strategy. Open to freelance analytics projects and data science workshops.\",\n    \"years_of_experience\": 7,\n    \"availability\": \"weekends\",\n    \"linkedin\": \"linkedin.com/in/vikrampatel\",\n    \"github\": \"github.com/vikrampatel\",\n    \"specialization\": \"Business Analytics\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}", "members"]
+            },
+            "description": "Data scientist - tests: data analytics searches, BI queries, statistics/analytics, visualization tools"
+          },
+          "response": []
+        },
+        {
+          "name": "Member 5 - Mobile App Developer in Pune",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const responseData = pm.response.json();",
+                  "    if (responseData.data && responseData.data.member) {",
+                  "        pm.collectionVariables.set('member_5_id', responseData.data.member.id);",
+                  "        console.log('✅ Member 5 added:', responseData.data.member.name);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"member_data\": {\n    \"name\": \"Sneha Reddy\",\n    \"phone\": \"+919900001005\",\n    \"email\": \"sneha.reddy@mobileapps.com\"\n  },\n  \"member_type\": \"alumni\",\n  \"role\": \"member\",\n  \"profile_data\": {\n    \"college\": \"IIT Kanpur\",\n    \"graduation_year\": 2019,\n    \"degree\": \"B.Tech\",\n    \"department\": \"Computer Science and Engineering\",\n    \"city\": \"Pune\",\n    \"current_organization\": \"MobileFirst Apps\",\n    \"designation\": \"Lead Mobile Developer\",\n    \"skills\": [\"Swift\", \"Kotlin\", \"React Native\", \"Flutter\", \"iOS Development\", \"Android Development\", \"Firebase\", \"GraphQL\", \"UI/UX Design\"],\n    \"interests\": [\"Mobile Development\", \"Cross-platform Apps\", \"User Experience\", \"Mobile Gaming\"],\n    \"services_offered\": [\"Mobile App Development\", \"App Store Optimization\", \"Mobile UI/UX Consulting\", \"App Maintenance\"],\n    \"bio\": \"Mobile development specialist with expertise in both native and cross-platform development. Built 30+ mobile apps with millions of downloads. Passionate about creating delightful user experiences. Available for mobile app development projects, code reviews, and conducting workshops on mobile development best practices.\",\n    \"years_of_experience\": 5,\n    \"availability\": \"evenings and weekends\",\n    \"linkedin\": \"linkedin.com/in/snehareddy\",\n    \"github\": \"github.com/snehareddy\",\n    \"portfolio\": \"snehareddy.dev\",\n    \"app_downloads\": \"5M+\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}", "members"]
+            },
+            "description": "Mobile developer - tests: mobile development searches, iOS/Android queries, cross-platform searches, UI/UX queries"
+          },
+          "response": []
+        }
+      ],
+      "description": "Add 5 diverse members with rich profiles for comprehensive search testing"
+    },
+    {
+      "name": "3. Generate Embeddings",
+      "item": [
+        {
+          "name": "Trigger Embedding Generation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/embeddings/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "embeddings", "generate"]
+            },
+            "description": "NOTE: If no API endpoint exists, run: npm run generate:embeddings:lean\n\nThis generates vector embeddings for semantic search"
+          },
+          "response": []
+        }
+      ],
+      "description": "Generate embeddings for semantic search (run via npm script if endpoint doesn't exist)"
+    },
+    {
+      "name": "4. Skill-Based Searches",
+      "item": [
+        {
+          "name": "Find Python Developers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=Python developer&communityId={{community_id}}&searchType=hybrid&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Python developer"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "hybrid"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Priya (ML), Aisha (Security), Vikram (Data Science)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find JavaScript/React Developers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=React JavaScript&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "React JavaScript"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Rahul (Full Stack), Sneha (Mobile - React Native)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Machine Learning Experts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=machine learning&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "machine learning"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Priya (ML Engineer), Vikram (ML in analytics)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test searches based on technical skills"
+    },
+    {
+      "name": "5. Location-Based Searches",
+      "item": [
+        {
+          "name": "Find Developers in Bangalore",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=developer&communityId={{community_id}}&city=Bangalore&searchType=hybrid&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "developer"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "city",
+                  "value": "Bangalore"
+                },
+                {
+                  "key": "searchType",
+                  "value": "hybrid"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Priya (ML in Bangalore), Vikram (Data Scientist in Bangalore)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Members in Mumbai",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=startup&communityId={{community_id}}&city=Mumbai&searchType=hybrid&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "startup"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "city",
+                  "value": "Mumbai"
+                },
+                {
+                  "key": "searchType",
+                  "value": "hybrid"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Rahul (CTO in Mumbai)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test location-based filtering"
+    },
+    {
+      "name": "6. Service-Based Searches",
+      "item": [
+        {
+          "name": "Find Security Audit Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=security audit&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "security audit"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Aisha (Security Audits service)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Consulting Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=consulting mentor&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "consulting mentor"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Priya (AI Consulting), Rahul (Startup Consulting), Vikram (Analytics Consulting)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Mobile App Development",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=mobile app development&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "mobile app development"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Sneha (Mobile App Development service)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test searches for services offered by members"
+    },
+    {
+      "name": "7. Domain/Specialization Searches",
+      "item": [
+        {
+          "name": "Find AI/Artificial Intelligence Experts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=artificial intelligence AI expert&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "artificial intelligence AI expert"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Priya (AI/ML specialist)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Cybersecurity Professionals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=cybersecurity ethical hacking&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "cybersecurity ethical hacking"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Aisha (Cybersecurity expert)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Startup Founders/Entrepreneurs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=startup founder entrepreneur CTO&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "startup founder entrepreneur CTO"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Rahul (Co-Founder & CTO)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Data Analytics Experts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=data analytics business intelligence&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "data analytics business intelligence"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Vikram (Data Scientist with BI expertise)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test domain-specific and specialization searches"
+    },
+    {
+      "name": "8. Natural Language Queries",
+      "item": [
+        {
+          "name": "NL - Who can help with AI project?",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Who can help me with my AI project?\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/nl",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "nl"]
+            },
+            "description": "Should match: Priya (AI/ML expert)"
+          },
+          "response": []
+        },
+        {
+          "name": "NL - Need mobile app developer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"I need someone to build a mobile app for my business\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/nl",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "nl"]
+            },
+            "description": "Should match: Sneha (Mobile App Developer)"
+          },
+          "response": []
+        },
+        {
+          "name": "NL - Security audit needed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Our company needs a security audit, who can help?\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/nl",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "nl"]
+            },
+            "description": "Should match: Aisha (Security Audits)"
+          },
+          "response": []
+        },
+        {
+          "name": "NL - Looking for mentor in Bangalore",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Looking for a technical mentor in Bangalore\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/nl",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "nl"]
+            },
+            "description": "Should match: Priya and Vikram (both offer mentorship in Bangalore)"
+          },
+          "response": []
+        },
+        {
+          "name": "NL - Data visualization dashboard",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Need help creating data visualization dashboards for business insights\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/nl",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "nl"]
+            },
+            "description": "Should match: Vikram (Tableau, Power BI, BI expertise)"
+          },
+          "response": []
+        },
+        {
+          "name": "NL - Startup tech advice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Starting a tech company, need advice on technology stack and architecture\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/search/nl",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "nl"]
+            },
+            "description": "Should match: Rahul (Startup Tech Consulting, Architecture)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test conversational natural language queries"
+    },
+    {
+      "name": "9. Complex Multi-Filter Searches",
+      "item": [
+        {
+          "name": "Python + Bangalore + Consulting",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=Python consulting&communityId={{community_id}}&city=Bangalore&searchType=hybrid&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Python consulting"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "city",
+                  "value": "Bangalore"
+                },
+                {
+                  "key": "searchType",
+                  "value": "hybrid"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Priya (Python, Bangalore, AI Consulting), Vikram (Python, Bangalore, Analytics Consulting)"
+          },
+          "response": []
+        },
+        {
+          "name": "IIT Madras Alumni in Bangalore",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=IIT Madras&communityId={{community_id}}&city=Bangalore&searchType=keyword&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "IIT Madras"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "city",
+                  "value": "Bangalore"
+                },
+                {
+                  "key": "searchType",
+                  "value": "keyword"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Priya and Vikram (both IIT Madras + Bangalore)"
+          },
+          "response": []
+        },
+        {
+          "name": "Recent Graduates (2017+) with Cloud Skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=AWS cloud&communityId={{community_id}}&yearOfGraduation=2017,2018,2019&searchType=hybrid&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "AWS cloud"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "yearOfGraduation",
+                  "value": "2017,2018,2019"
+                },
+                {
+                  "key": "searchType",
+                  "value": "hybrid"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Should match: Rahul (2016 - close), Sneha (2019 - Firebase/cloud)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test complex queries with multiple filters"
+    },
+    {
+      "name": "10. Edge Cases & Fuzzy Searches",
+      "item": [
+        {
+          "name": "Typo - Macine Learning",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=macine learning&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "macine learning"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Test semantic search's ability to handle typos - should still match Priya"
+          },
+          "response": []
+        },
+        {
+          "name": "Abbreviation - ML DL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=ML DL&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "ML DL"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Test abbreviations - should match Priya (Machine Learning, Deep Learning)"
+          },
+          "response": []
+        },
+        {
+          "name": "Synonym - Hacking Security",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=hacking security threats&communityId={{community_id}}&searchType=semantic&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "hacking security threats"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "semantic"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Test semantic understanding of related terms - should match Aisha"
+          },
+          "response": []
+        },
+        {
+          "name": "Broad Query - Expert",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/members?query=expert&communityId={{community_id}}&searchType=hybrid&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "members"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "expert"
+                },
+                {
+                  "key": "communityId",
+                  "value": "{{community_id}}"
+                },
+                {
+                  "key": "searchType",
+                  "value": "hybrid"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Test broad query - should return multiple members with expertise"
+          },
+          "response": []
+        }
+      ],
+      "description": "Test edge cases, typos, abbreviations, and fuzzy matching"
+    },
+    {
+      "name": "11. Get All Members (Verify Data)",
+      "item": [
+        {
+          "name": "Get All Community Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/community/{{community_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["api", "community", "{{community_id}}", "members"]
+            },
+            "description": "Verify all 5 members were added successfully"
+          },
+          "response": []
+        }
+      ],
+      "description": "Verify test data setup"
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "community_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "member_1_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "member_2_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "member_3_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "member_4_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "member_5_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
