@@ -9,6 +9,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { Role, ROLE_PERMISSIONS } from '../utils/types';
+import { SKIP_AUTHENTICATION, DEFAULT_TEST_ROLE } from '../config';
 
 // Extend Express Request to include user info
 declare global {
@@ -38,6 +39,18 @@ export function hasPermission(role: Role, permission: keyof typeof ROLE_PERMISSI
 export function requireRole(requiredRole: Role) {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
+            // Feature Flag: Skip authentication for testing
+            if (SKIP_AUTHENTICATION) {
+                console.log(`[Authorize] ⚠️  SKIP_AUTHENTICATION enabled - bypassing auth with role: ${DEFAULT_TEST_ROLE}`);
+                req.user = {
+                    userId: 'test-user-id',
+                    phoneNumber: '0000000000',
+                    memberName: 'Test User',
+                    role: DEFAULT_TEST_ROLE
+                };
+                return next();
+            }
+
             let user = req.user;
 
             // If no user object exists, try to get phone number from request
@@ -147,6 +160,18 @@ export function requireRole(requiredRole: Role) {
 export function requireAnyRole(allowedRoles: Role[]) {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
+            // Feature Flag: Skip authentication for testing
+            if (SKIP_AUTHENTICATION) {
+                console.log(`[Authorize] ⚠️  SKIP_AUTHENTICATION enabled - bypassing auth with role: ${DEFAULT_TEST_ROLE}`);
+                req.user = {
+                    userId: 'test-user-id',
+                    phoneNumber: '0000000000',
+                    memberName: 'Test User',
+                    role: DEFAULT_TEST_ROLE
+                };
+                return next();
+            }
+
             let user = req.user;
 
             // If no user object exists, try to get phone number from request
@@ -256,6 +281,18 @@ export function requireAnyRole(allowedRoles: Role[]) {
 export function requirePermission(permission: keyof typeof ROLE_PERMISSIONS['member']) {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
+            // Feature Flag: Skip authentication for testing
+            if (SKIP_AUTHENTICATION) {
+                console.log(`[Authorize] ⚠️  SKIP_AUTHENTICATION enabled - bypassing auth with role: ${DEFAULT_TEST_ROLE}`);
+                req.user = {
+                    userId: 'test-user-id',
+                    phoneNumber: '0000000000',
+                    memberName: 'Test User',
+                    role: DEFAULT_TEST_ROLE
+                };
+                return next();
+            }
+
             let user = req.user;
 
             // If no user object exists, try to get phone number from request
@@ -363,6 +400,18 @@ export function requirePermission(permission: keyof typeof ROLE_PERMISSIONS['mem
  */
 export function requireOwnership(getResourceOwnerId: (req: Request) => string) {
     return (req: Request, res: Response, next: NextFunction) => {
+        // Feature Flag: Skip authentication for testing
+        if (SKIP_AUTHENTICATION) {
+            console.log(`[Authorize] ⚠️  SKIP_AUTHENTICATION enabled - bypassing ownership check`);
+            req.user = {
+                userId: 'test-user-id',
+                phoneNumber: '0000000000',
+                memberName: 'Test User',
+                role: DEFAULT_TEST_ROLE
+            };
+            return next();
+        }
+
         const user = req.user;
 
         if (!user) {

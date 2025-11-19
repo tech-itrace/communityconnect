@@ -12,3 +12,7 @@ export const REDIS_TLS = process.env.REDIS_TLS === 'true';
 // Rate Limiting Configuration
 export const RATE_LIMIT_MESSAGES_PER_HOUR = parseInt(process.env.RATE_LIMIT_MESSAGES_PER_HOUR || '50', 10);
 export const RATE_LIMIT_SEARCHES_PER_HOUR = parseInt(process.env.RATE_LIMIT_SEARCHES_PER_HOUR || '30', 10);
+
+// Feature Flags
+export const SKIP_AUTHENTICATION = process.env.SKIP_AUTHENTICATION === 'true';
+export const DEFAULT_TEST_ROLE = (process.env.DEFAULT_TEST_ROLE || 'super_admin') as 'member' | 'admin' | 'super_admin';
