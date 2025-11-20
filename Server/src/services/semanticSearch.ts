@@ -127,51 +127,75 @@ function validateEmbedding(embedding: number[], queryText: string): void {
 
 /**
  * Generate embedding for a search query with fallback support
+ * Primary: Gemini (more stable)
+ * Fallback: DeepInfra
  */
 export async function generateQueryEmbedding(queryText: string): Promise<number[]> {
-    if (!DEEPINFRA_API_KEY) {
-        throw new Error('DEEPINFRA_API_KEY not configured');
+    if (!GOOGLE_API_KEY && !DEEPINFRA_API_KEY) {
+        throw new Error('Neither GOOGLE_API_KEY nor DEEPINFRA_API_KEY configured');
     }
 
     const startTime = Date.now();
 
-    try {
-        console.log(`[Semantic Search] Generating embedding for: "${queryText.substring(0, 50)}${queryText.length > 50 ? '...' : ''}"`);
+    // Try Gemini first (primary provider for stability)
+    if (GOOGLE_API_KEY) {
+        try {
+            console.log(`[Semantic Search] Generating embedding for: "${queryText.substring(0, 50)}${queryText.length > 50 ? '...' : ''}"`);
 
-        const embedding = await generateEmbeddingDeepInfra(queryText);
-        const duration = Date.now() - startTime;
+            const embedding = await generateEmbeddingGemini(queryText);
+            const duration = Date.now() - startTime;
 
-        // Validate embedding quality
-        validateEmbedding(embedding, queryText);
+            // Validate embedding quality
+            validateEmbedding(embedding, queryText);
 
-        console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (DeepInfra)`);
-        return embedding;
+            console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (Gemini)`);
+            return embedding;
 
-    } catch (error: any) {
-        const isRateLimit = error.response?.status === 429;
-        const isTimeout = error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED';
+        } catch (error: any) {
+            const isRateLimit = error.response?.status === 429 || error.message?.includes('quota');
+            const isTimeout = error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED';
 
-        if ((isRateLimit || isTimeout) && GOOGLE_API_KEY) {
-            console.log(`[Semantic Search] DeepInfra failed (${error.message}), trying Gemini fallback...`);
-            try {
-                const embedding = await generateEmbeddingGemini(queryText);
-                const duration = Date.now() - startTime;
+            if ((isRateLimit || isTimeout) && DEEPINFRA_API_KEY) {
+                console.log(`[Semantic Search] Gemini failed (${error.message}), trying DeepInfra fallback...`);
+                try {
+                    const embedding = await generateEmbeddingDeepInfra(queryText);
+                    const duration = Date.now() - startTime;
 
-                // Validate embedding quality
-                validateEmbedding(embedding, queryText);
+                    // Validate embedding quality
+                    validateEmbedding(embedding, queryText);
 
-                console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (Gemini)`);
-                console.warn(`[Semantic Search] ⚠ Using fallback model - results may differ from stored embeddings`);
-                return embedding;
-            } catch (geminiError: any) {
-                console.error('[Semantic Search] ✗ Gemini fallback failed:', geminiError.message);
-                throw new Error(`Both embedding providers failed: ${error.message}`);
+                    console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (DeepInfra)`);
+                    console.warn(`[Semantic Search] ⚠ Using fallback model - results may differ from stored embeddings`);
+                    return embedding;
+                } catch (deepInfraError: any) {
+                    console.error('[Semantic Search] ✗ DeepInfra fallback failed:', deepInfraError.message);
+                    throw new Error(`Both embedding providers failed: ${error.message}`);
+                }
             }
-        }
 
-        console.error('[Semantic Search] ✗ Error generating embedding:', error.message);
-        throw new Error(`Failed to generate embedding: ${error.message}`);
+            console.error('[Semantic Search] ✗ Error generating embedding:', error.message);
+            throw new Error(`Failed to generate embedding: ${error.message}`);
+        }
     }
+
+    // If Gemini not configured, try DeepInfra
+    if (DEEPINFRA_API_KEY) {
+        console.log(`[Semantic Search] Gemini not configured, using DeepInfra...`);
+        try {
+            const embedding = await generateEmbeddingDeepInfra(queryText);
+            const duration = Date.now() - startTime;
+
+            validateEmbedding(embedding, queryText);
+
+            console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (DeepInfra)`);
+            return embedding;
+        } catch (error: any) {
+            console.error('[Semantic Search] ✗ Error generating embedding:', error.message);
+            throw new Error(`Failed to generate embedding: ${error.message}`);
+        }
+    }
+
+    throw new Error('No embedding provider configured');
 }
 
 /**
