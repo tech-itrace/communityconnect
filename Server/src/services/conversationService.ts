@@ -38,21 +38,21 @@ export async function validateMember(phoneNumber: string): Promise<{
         // Query database for member with this phone number
         // For now, we'll get their first active membership (main-community)
         const result = await query(
-            `SELECT 
-                m.id, 
-                m.name, 
-                m.phone, 
-                cm.role, 
+            `SELECT
+                m.id,
+                m.name,
+                m.phone,
+                cm.role,
                 cm.community_id,
                 c.slug as community_slug,
-                cm.is_active 
+                cm.is_active
              FROM members m
              JOIN community_memberships cm ON m.id = cm.member_id
              JOIN communities c ON cm.community_id = c.id
-             WHERE m.phone ILIKE $1 
-               AND cm.is_active = TRUE 
+             WHERE m.phone ILIKE $1
+               AND cm.is_active = TRUE
                AND m.is_active = TRUE
-             ORDER BY c.slug = 'main-community' DESC
+             ORDER BY c.slug = 'main-community' DESC, cm.joined_at DESC
              LIMIT 1`,
             [normalizedPhone]
         );

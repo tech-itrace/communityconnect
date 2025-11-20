@@ -65,6 +65,19 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
         }
 
         console.log(`[NL Controller] ✓ Authenticated: ${memberValidation.memberName}`);
+        console.log(`[NL Controller] ✓ Primary community: ${memberValidation.communityId || 'N/A'}`);
+
+        // Determine community scope: use specified community or user's primary community
+        // Note: If we want to search across ALL user's communities, pass undefined
+        const communityId = body.communityId || memberValidation.communityId;
+
+        if (body.communityId) {
+            console.log(`[NL Controller] ✓ Using specified community: ${body.communityId}`);
+        } else if (memberValidation.communityId) {
+            console.log(`[NL Controller] ✓ Using user's primary community: ${memberValidation.communityId}`);
+        } else {
+            console.log(`[NL Controller] ✓ Searching across all communities`);
+        }
 
         // Validate query length
         if (body.query.length > VALIDATION.QUERY_MAX_LENGTH) {
@@ -105,16 +118,18 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
 
         console.log(`[NL Controller] Received natural language query`);
         console.log(`[NL Controller] Query: "${body.query}"`);
+        console.log(`[NL Controller] Community scope: ${communityId || 'ALL'}`);
         console.log(`[NL Controller] Options:`, { includeResponse, includeSuggestions, maxResults });
         if (conversationContext) {
             console.log(`[NL Controller] Conversation history: ${session.history.length} previous queries`);
         }
 
-        // Process the natural language query with conversation context
+        // Process the natural language query with conversation context and community scope
         const result = await processNaturalLanguageQuery(
             body.query,
             maxResults,
-            conversationContext
+            conversationContext,
+            communityId // Use determined community ID (specified, primary, or undefined for all)
         );
 
         // Add to conversation history

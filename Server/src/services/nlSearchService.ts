@@ -13,74 +13,54 @@ import {
 
 /**
  * Convert extracted entities to search filters
- * 
+ * SIMPLIFIED: Only apply filters that are truly filtering (location, year, degree)
+ * Skills/services are encoded in embeddings - don't double filter
+ *
  * @param entities - Extracted entities from query
- * @param intent - Query intent for filter optimization (optional)
  */
-function entitiesToFilters(entities: ExtractedEntities, intent?: Intent): SearchFilters {
+function entitiesToFilters(entities: ExtractedEntities): SearchFilters {
     const filters: SearchFilters = {};
 
-    // Map location to city filter
+    // Only apply structural filters, not semantic ones
+
+    // Location filter - useful for geographic filtering
     if (entities.location) {
         filters.city = entities.location;
+        console.log(`[NL Search] Applied city filter: ${entities.location}`);
     }
 
-    // Map skills
-    if (entities.skills && entities.skills.length > 0) {
-        filters.skills = entities.skills;
+    // Graduation year - structural filter for alumni
+    if (entities.graduationYear && entities.graduationYear.length > 0) {
+        filters.yearOfGraduation = entities.graduationYear;
+        console.log(`[NL Search] Applied year filter: ${entities.graduationYear.join(', ')}`);
     }
 
-    // Map services
-    if (entities.services && entities.services.length > 0) {
-        filters.services = entities.services;
+    // Degree - structural filter for alumni
+    if (entities.degree) {
+        filters.degree = [entities.degree];
+        console.log(`[NL Search] Applied degree filter: ${entities.degree}`);
     }
 
-    // Map turnover requirement to numeric range
+    // Turnover - business metric filter
     if (entities.turnoverRequirement) {
         switch (entities.turnoverRequirement) {
             case 'high':
                 filters.minTurnover = 100000000; // > 10 Crores
                 break;
             case 'medium':
-                filters.minTurnover = 20000000;  // 2 Crores
-                filters.maxTurnover = 100000000; // 10 Crores
+                filters.minTurnover = 20000000;  // 2-10 Crores
+                filters.maxTurnover = 100000000;
                 break;
             case 'low':
                 filters.maxTurnover = 20000000;  // < 2 Crores
                 break;
         }
+        console.log(`[NL Search] Applied turnover filter: ${entities.turnoverRequirement}`);
     }
 
-    // Map graduation year
-    if (entities.graduationYear && entities.graduationYear.length > 0) {
-        filters.yearOfGraduation = entities.graduationYear;
-    }
-
-    // Map degree
-    if (entities.degree) {
-        filters.degree = [entities.degree];
-    }
-
-    // Intent-specific filter optimization
-    if (intent) {
-        switch (intent) {
-            case 'find_business':
-                // For business queries, prioritize services/skills
-                if (!filters.services && !filters.skills) {
-                    // If no services specified, might want to filter for members with products/services
-                }
-                break;
-            case 'find_peers':
-                // For alumni queries, prioritize year/branch
-                break;
-            case 'find_specific_person':
-                // For specific person, reduce limit to exact matches
-                break;
-            case 'find_alumni_business':
-                // Hybrid - need both alumni info and business info
-                break;
-        }
-    }
+    // NOTE: We deliberately DO NOT filter by skills/services here
+    // Those are semantic concepts that embeddings handle better than exact filters
+    // The removed filters were causing false negatives due to case sensitivity
 
     return filters;
 }
@@ -115,9 +95,8 @@ export async function processNaturalLanguageQuery(
         console.log(`[NL Search] ✓ Entities:`, JSON.stringify(extracted.entities, null, 2));
         console.log(`[NL Search] ✓ Used LLM: ${extracted.metadata.llmUsed ? 'YES' : 'NO'}`);
 
-        // Step 2: Convert entities to search filters
-        const filters = entitiesToFilters(extracted.entities, extracted.intent);
-        console.log(`[NL Search] ✓ Filters:`, JSON.stringify(filters, null, 2));
+        // Step 2: Convert entities to search filters (only structural filters, not semantic)
+        const filters = entitiesToFilters(extracted.entities);
 
         // Step 3: Execute search with hybrid mode (pass communityId)
         console.log(`[NL Search] Step 2: Executing semantic search...`);

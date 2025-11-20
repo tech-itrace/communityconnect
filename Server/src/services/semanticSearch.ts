@@ -101,6 +101,31 @@ async function generateEmbeddingGemini(query: string): Promise<number[]> {
 }
 
 /**
+ * Validate embedding quality and dimensions
+ */
+function validateEmbedding(embedding: number[], queryText: string): void {
+    // Check dimensions
+    if (embedding.length !== EMBEDDING_DIMENSIONS) {
+        throw new Error(`Invalid embedding dimensions: expected ${EMBEDDING_DIMENSIONS}, got ${embedding.length}`);
+    }
+
+    // Check for NaN or Infinity values
+    const hasInvalidValues = embedding.some(val => !isFinite(val));
+    if (hasInvalidValues) {
+        throw new Error('Embedding contains NaN or Infinity values');
+    }
+
+    // Check L2 norm (should be close to 1 if normalized)
+    const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+    console.log(`[Semantic Search] Embedding norm: ${norm.toFixed(3)}`);
+
+    // Warn if norm is far from 1 (indicates non-normalized embedding)
+    if (Math.abs(norm - 1.0) > 0.1) {
+        console.warn(`[Semantic Search] ⚠ Warning: Embedding norm is ${norm.toFixed(3)}, expected ~1.0 (normalized)`);
+    }
+}
+
+/**
  * Generate embedding for a search query with fallback support
  */
 export async function generateQueryEmbedding(queryText: string): Promise<number[]> {
@@ -108,11 +133,18 @@ export async function generateQueryEmbedding(queryText: string): Promise<number[
         throw new Error('DEEPINFRA_API_KEY not configured');
     }
 
+    const startTime = Date.now();
+
     try {
-        console.log(`[Semantic Search] Generating embedding for query: "${queryText.substring(0, 50)}..."`);
+        console.log(`[Semantic Search] Generating embedding for: "${queryText.substring(0, 50)}${queryText.length > 50 ? '...' : ''}"`);
 
         const embedding = await generateEmbeddingDeepInfra(queryText);
-        console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}-dimensional embedding (DeepInfra)`);
+        const duration = Date.now() - startTime;
+
+        // Validate embedding quality
+        validateEmbedding(embedding, queryText);
+
+        console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (DeepInfra)`);
         return embedding;
 
     } catch (error: any) {
@@ -120,18 +152,24 @@ export async function generateQueryEmbedding(queryText: string): Promise<number[
         const isTimeout = error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED';
 
         if ((isRateLimit || isTimeout) && GOOGLE_API_KEY) {
-            console.log(`[Semantic Search] DeepInfra failed, trying Gemini fallback...`);
+            console.log(`[Semantic Search] DeepInfra failed (${error.message}), trying Gemini fallback...`);
             try {
                 const embedding = await generateEmbeddingGemini(queryText);
-                console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}-dimensional embedding (Gemini)`);
+                const duration = Date.now() - startTime;
+
+                // Validate embedding quality
+                validateEmbedding(embedding, queryText);
+
+                console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (Gemini)`);
+                console.warn(`[Semantic Search] ⚠ Using fallback model - results may differ from stored embeddings`);
                 return embedding;
             } catch (geminiError: any) {
-                console.error('[Semantic Search] Gemini fallback also failed:', geminiError.message);
+                console.error('[Semantic Search] ✗ Gemini fallback failed:', geminiError.message);
                 throw new Error(`Both embedding providers failed: ${error.message}`);
             }
         }
 
-        console.error('[Semantic Search] Error generating embedding:', error.message);
+        console.error('[Semantic Search] ✗ Error generating embedding:', error.message);
         throw new Error(`Failed to generate embedding: ${error.message}`);
     }
 }
@@ -173,27 +211,30 @@ async function semanticSearchOnly(
         paramIndex++;
     }
 
-    // Skills filter - check in JSONB profile_data
-    if (filters.skills && filters.skills.length > 0) {
-        const skillConditions = filters.skills.map(() => {
-            const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
-            paramIndex++;
-            return cond;
-        });
-        conditions.push(`(${skillConditions.join(' OR ')})`);
-        params.push(...filters.skills);
-    }
+    // Skills filter - use case-insensitive JSONB text search instead of exact match
+    // Note: Don't apply skill filters to semantic search - embeddings already encode this
+    // The filters are too restrictive and cause false negatives due to case sensitivity
+    // if (filters.skills && filters.skills.length > 0) {
+    //     const skillConditions = filters.skills.map(() => {
+    //         const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
+    //         paramIndex++;
+    //         return cond;
+    //     });
+    //     conditions.push(`(${skillConditions.join(' OR ')})`);
+    //     params.push(...filters.skills);
+    // }
 
-    // Services filter - check in JSONB profile_data
-    if (filters.services && filters.services.length > 0) {
-        const serviceConditions = filters.services.map(() => {
-            const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
-            paramIndex++;
-            return cond;
-        });
-        conditions.push(`(${serviceConditions.join(' OR ')})`);
-        params.push(...filters.services);
-    }
+    // Services filter - use case-insensitive JSONB text search instead of exact match
+    // Note: Don't apply service filters to semantic search - embeddings already encode this
+    // if (filters.services && filters.services.length > 0) {
+    //     const serviceConditions = filters.services.map(() => {
+    //         const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
+    //         paramIndex++;
+    //         return cond;
+    //     });
+    //     conditions.push(`(${serviceConditions.join(' OR ')})`);
+    //     params.push(...filters.services);
+    // }
 
     // Year of graduation filter - for alumni only
     if (filters.yearOfGraduation && filters.yearOfGraduation.length > 0) {
@@ -328,25 +369,27 @@ async function keywordSearchOnly(
         paramIndex++;
     }
 
-    if (filters.skills && filters.skills.length > 0) {
-        const skillConditions = filters.skills.map(() => {
-            const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
-            paramIndex++;
-            return cond;
-        });
-        conditions.push(`(${skillConditions.join(' OR ')})`);
-        params.push(...filters.skills);
-    }
+    // DISABLED: Case-sensitive JSONB filters cause false negatives
+    // The keyword search already searches profile text, so these filters are redundant
+    // if (filters.skills && filters.skills.length > 0) {
+    //     const skillConditions = filters.skills.map(() => {
+    //         const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
+    //         paramIndex++;
+    //         return cond;
+    //     });
+    //     conditions.push(`(${skillConditions.join(' OR ')})`);
+    //     params.push(...filters.skills);
+    // }
 
-    if (filters.services && filters.services.length > 0) {
-        const serviceConditions = filters.services.map(() => {
-            const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
-            paramIndex++;
-            return cond;
-        });
-        conditions.push(`(${serviceConditions.join(' OR ')})`);
-        params.push(...filters.services);
-    }
+    // if (filters.services && filters.services.length > 0) {
+    //     const serviceConditions = filters.services.map(() => {
+    //         const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
+    //         paramIndex++;
+    //         return cond;
+    //     });
+    //     conditions.push(`(${serviceConditions.join(' OR ')})`);
+    //     params.push(...filters.services);
+    // }
 
     if (filters.yearOfGraduation && filters.yearOfGraduation.length > 0) {
         conditions.push(`(
@@ -491,68 +534,49 @@ export async function hybridSearch(
     const limit = Math.min(options.limit || DEFAULT_LIMIT, MAX_LIMIT);
     const offset = (page - 1) * limit;
 
-    // Log community context
-    if (communityId) {
-        console.log(`[Semantic Search] Community context: ${communityId}`);
-    } else {
-        console.log(`[Semantic Search] Using default community: ${DEFAULT_COMMUNITY_SLUG}`);
-    }
+    console.log(`[Semantic Search] ========== SEARCH START ==========`);
+    console.log(`[Semantic Search] Query: "${searchQuery}"`);
+    console.log(`[Semantic Search] Community: ${communityId || DEFAULT_COMMUNITY_SLUG}`);
+    console.log(`[Semantic Search] Filters:`, JSON.stringify(filters, null, 2));
 
-    // AGGRESSIVE query cleaning
+    // Light query cleaning - remove only punctuation, keep semantic meaning
     const cleanedQuery = searchQuery
-        .toLowerCase()
-        .replace(/\b(who|what|where|when|why|how|whose)\b/gi, '')
-        .replace(/\b(is|are|was|were|am|be|been|being|do|does|did|have|has|had)\b/gi, '')
-        .replace(/\b(i|me|my|you|your|we|our|they|their)\b/gi, '')
-        .replace(/\b(need|want|looking|search|find|show|give|get|tell|know)\b/gi, '')
-        .replace(/\b(details?|info|information|about|of|the|and|profile|contact|data|record)\b/gi, '')
-        .replace(/\b(a|an|the|in|on|at|to|for|with|from|by)\b/gi, '')
-        .replace(/[?!.,;:]/g, '') // Remove punctuation
+        .replace(/[?!.,;:]/g, '') // Remove punctuation only
         .trim()
         .replace(/\s+/g, ' ');
 
-    const finalQuery = cleanedQuery.length >= 2 ? cleanedQuery : searchQuery.trim();
+    console.log(`[Semantic Search] Cleaned query: "${cleanedQuery}"`);
 
-    console.log(`[Semantic Search] ========== SEARCH START ==========`);
-    console.log(`[Semantic Search] Original: "${searchQuery}"`);
-    console.log(`[Semantic Search] Cleaned: "${cleanedQuery}"`);
-    console.log(`[Semantic Search] Final: "${finalQuery}"`);
-    console.log(`[Semantic Search] ==================================`);
+    // Generate embedding for the cleaned query
+    const embedding = await generateQueryEmbedding(cleanedQuery);
 
-    const embedding = await generateQueryEmbedding(finalQuery);
-
+    // Execute searches in parallel
     const [semanticResults, keywordResults] = await Promise.all([
         semanticSearchOnly(embedding, filters, limit * 2, 0, communityId),
-        keywordSearchOnly(finalQuery, filters, limit * 2, 0, communityId)
+        keywordSearchOnly(cleanedQuery, filters, limit * 2, 0, communityId)
     ]);
 
-    console.log(`[Semantic Search] Semantic: ${semanticResults.length}, Keyword: ${keywordResults.length}`);
+    console.log(`[Semantic Search] Results: Semantic=${semanticResults.length}, Keyword=${keywordResults.length}`);
 
-    const mergedResults = mergeResults(semanticResults, keywordResults, finalQuery);
+    // Merge results with simple scoring
+    const mergedResults = mergeResults(semanticResults, keywordResults);
 
-    console.log(`[Semantic Search] ========== MERGED (top 5) ==========`);
-    mergedResults.slice(0, 5).forEach((m, i) => {
-        console.log(`${i + 1}. ${m.name} | Exact: ${m.isExactMatch} | Score: ${m.relevanceScore.toFixed(3)}`);
-    });
+    console.log(`[Semantic Search] Merged: ${mergedResults.length} total results`);
+    if (mergedResults.length > 0) {
+        console.log(`[Semantic Search] Top 3 results:`);
+        mergedResults.slice(0, 3).forEach((m, i) => {
+            console.log(`  ${i + 1}. ${m.name} (score: ${m.relevanceScore.toFixed(3)})`);
+        });
+    }
 
-    // STRICT FILTERING: For person name searches, ONLY return exact matches
-    let filteredResults = filterForPersonSearch(mergedResults, finalQuery);
-
-    console.log(`[Semantic Search] ========== AFTER FILTER ==========`);
-    console.log(`[Semantic Search] Filtered to ${filteredResults.length} results`);
-    filteredResults.slice(0, 5).forEach((m, i) => {
-        console.log(`${i + 1}. ${m.name} | Exact: ${m.isExactMatch}`);
-    });
-
-    const sortedResults = sortResults(filteredResults, options.sortBy, options.sortOrder);
+    // Sort by relevance
+    const sortedResults = sortResults(mergedResults, options.sortBy, options.sortOrder);
     const paginatedResults = sortedResults.slice(0, limit);
-    const totalCount = filteredResults.length;
+    const totalCount = mergedResults.length;
 
     const duration = Date.now() - startTime;
-    console.log(`[Semantic Search] ========== FINAL ==========`);
-    console.log(`[Semantic Search] Completed in ${duration}ms`);
-    console.log(`[Semantic Search] Returning ${paginatedResults.length} of ${totalCount}`);
-    console.log(`[Semantic Search] ============================`);
+    console.log(`[Semantic Search] ✓ Completed in ${duration}ms - returning ${paginatedResults.length} of ${totalCount}`);
+    console.log(`[Semantic Search] ========================================\n`);
 
     return {
         members: paginatedResults,
@@ -560,188 +584,42 @@ export async function hybridSearch(
     };
 }
 /**
- * Check if a member is an exact match for the search query
+ * Simplified merge results with weighted scoring
+ * No complex exact matching - let the embeddings and ranking do their job
  */
-function isExactMatch(member: any, searchQuery: string): boolean {
-    const query = searchQuery.toLowerCase().trim();
-    const searchTerms = query.split(/\s+/).filter((t: string) => t.length > 0);
-    const memberName = member.name?.toLowerCase().trim() || '';
-
-    // Split name into words and remove titles
-    const nameWords = memberName
-        .split(/\s+/)
-        .map((w: string) => w.replace(/[.,]/g, ''))
-        .filter((w: string) => w.length > 0);
-
-    // Remove common titles
-    const cleanNameWords = nameWords.filter((word: string) =>
-        !['mr', 'mrs', 'ms', 'dr', 'prof'].includes(word)
-    );
-
-    const cleanFullName = cleanNameWords.join(' ');
-
-    console.log(`[isExactMatch] Comparing "${query}" with "${memberName}" (cleaned: "${cleanFullName}")`);
-
-    // 1. Exact full name match (with or without titles)
-    if (cleanFullName === query || memberName === query) {
-        console.log(`[isExactMatch] ✓ Full name match`);
-        return true;
-    }
-
-    // 2. For single word searches
-    if (searchTerms.length === 1) {
-        const searchTerm = searchTerms[0];
-        const firstWord = cleanNameWords[0];
-        const lastWord = cleanNameWords[cleanNameWords.length - 1];
-
-        const isMatch = firstWord === searchTerm || lastWord === searchTerm;
-        console.log(`[isExactMatch] Single word "${searchTerm}" - first:"${firstWord}" last:"${lastWord}" - Match: ${isMatch}`);
-        return isMatch;
-    }
-
-    // 3. For multi-word searches (e.g., "fatima mary")
-    if (searchTerms.length >= 2) {
-        // Check if search terms form a consecutive sequence in the name
-        const cleanNameString = cleanNameWords.join(' ');
-        const searchString = searchTerms.join(' ');
-
-        if (cleanNameString === searchString) {
-            console.log(`[isExactMatch] ✓ Exact consecutive match`);
-            return true;
-        }
-
-        // Check if name contains the search terms consecutively
-        if (cleanNameString.includes(searchString)) {
-            console.log(`[isExactMatch] ✓ Contains consecutive match`);
-            return true;
-        }
-
-        // Check if all search terms exist in name (for "fatima mary" matching "Fatima Mary Smith")
-        const allTermsExist = searchTerms.every((term: string) =>
-            cleanNameWords.includes(term)
-        );
-
-        if (allTermsExist && searchTerms.length >= 2) {
-            // Additional validation: first 2 search terms should match first 2 name words
-            const firstTwoMatch = searchTerms.slice(0, 2).every((term: string, idx: number) =>
-                cleanNameWords[idx] === term
-            );
-
-            console.log(`[isExactMatch] All terms exist: ${allTermsExist}, First two match: ${firstTwoMatch}`);
-
-            if (firstTwoMatch) {
-                console.log(`[isExactMatch] ✓ Multi-word match (first names match)`);
-                return true;
-            }
-        }
-    }
-
-    // 4. Email exact match
-    if (member.email?.toLowerCase().trim() === query) {
-        console.log(`[isExactMatch] ✓ Email match`);
-        return true;
-    }
-
-    // 5. Phone exact match
-    const cleanPhone = member.phone?.replace(/[\s\-\(\)+]/g, '');
-    const cleanQuery = query.replace(/[\s\-\(\)+]/g, '');
-    if (cleanPhone && cleanPhone === cleanQuery) {
-        console.log(`[isExactMatch] ✓ Phone match`);
-        return true;
-    }
-
-    console.log(`[isExactMatch] ✗ No match`);
-    return false;
-}
-
-/**
- * Merge results from semantic and keyword searches with weighted scoring
- */
-// function mergeResults(semanticResults: ScoredMember[], keywordResults: ScoredMember[]): ScoredMember[] {
-//     const memberMap = new Map<string, ScoredMember>();
-
-//     // Add semantic results
-//     for (const member of semanticResults) {
-//         memberMap.set(member.id, {
-//             ...member,
-//             relevanceScore: (member.semanticScore || 0) * SEMANTIC_WEIGHT
-//         });
-//     }
-
-//     // Merge keyword results
-//     for (const member of keywordResults) {
-//         const existing = memberMap.get(member.id);
-//         if (existing) {
-//             // Combine scores
-//             existing.relevanceScore =
-//                 (existing.semanticScore || 0) * SEMANTIC_WEIGHT +
-//                 (member.keywordScore || 0) * KEYWORD_WEIGHT;
-//             existing.keywordScore = member.keywordScore;
-//             // Merge matched fields
-//             existing.matchedFields = Array.from(new Set([
-//                 ...existing.matchedFields,
-//                 ...member.matchedFields
-//             ]));
-//         } else {
-//             // Add new member with keyword score only
-//             memberMap.set(member.id, {
-//                 ...member,
-//                 relevanceScore: (member.keywordScore || 0) * KEYWORD_WEIGHT
-//             });
-//         }
-//     }
-
-//     return Array.from(memberMap.values());
-// }
-
 function mergeResults(
     semanticResults: ScoredMember[],
-    keywordResults: ScoredMember[],
-    searchQuery: string
+    keywordResults: ScoredMember[]
 ): ScoredMember[] {
     const memberMap = new Map<string, ScoredMember>();
 
-    // Add semantic results
+    // Add semantic results with weighted score
     for (const member of semanticResults) {
-        const isExact = isExactMatch(member, searchQuery);
-        if (isExact) {
-            console.log(`[Semantic Search] Exact match found: ${member.name}`);
-        }
         memberMap.set(member.id, {
             ...member,
-            relevanceScore: isExact ? 1.0 : (member.semanticScore || 0) * SEMANTIC_WEIGHT,
-            isExactMatch: isExact
+            relevanceScore: (member.semanticScore || 0) * SEMANTIC_WEIGHT
         });
     }
 
-    // Merge keyword results
+    // Merge keyword results with weighted score
     for (const member of keywordResults) {
         const existing = memberMap.get(member.id);
-        const isExact = isExactMatch(member, searchQuery);
-
-        if (isExact) {
-            console.log(`[Semantic Search] Exact match found in keyword results: ${member.name}`);
-        }
-
         if (existing) {
-            if (isExact || existing.isExactMatch) {
-                existing.relevanceScore = 1.0;
-                existing.isExactMatch = true;
-            } else {
-                existing.relevanceScore =
-                    (existing.semanticScore || 0) * SEMANTIC_WEIGHT +
-                    (member.keywordScore || 0) * KEYWORD_WEIGHT;
-            }
+            // Combine scores from both searches
+            existing.relevanceScore =
+                (existing.semanticScore || 0) * SEMANTIC_WEIGHT +
+                (member.keywordScore || 0) * KEYWORD_WEIGHT;
             existing.keywordScore = member.keywordScore;
+            // Merge matched fields
             existing.matchedFields = Array.from(new Set([
                 ...existing.matchedFields,
                 ...member.matchedFields
             ]));
         } else {
+            // Add new member from keyword search only
             memberMap.set(member.id, {
                 ...member,
-                relevanceScore: isExact ? 1.0 : (member.keywordScore || 0) * KEYWORD_WEIGHT,
-                isExactMatch: isExact
+                relevanceScore: (member.keywordScore || 0) * KEYWORD_WEIGHT
             });
         }
     }
@@ -749,90 +627,6 @@ function mergeResults(
     return Array.from(memberMap.values());
 }
 
-function filterForPersonSearch(
-    members: ScoredMember[],
-    searchQuery: string
-): ScoredMember[] {
-    const trimmedQuery = searchQuery.trim().toLowerCase();
-    const words = trimmedQuery.split(/\s+/).filter(w => w.length > 0);
-
-    console.log(`[Filter] Query: "${trimmedQuery}" (${words.length} words)`);
-    console.log(`[Filter] Total members before filter: ${members.length}`);
-
-    // Check if this looks like a person name search
-    const hasEmailChars = /@/.test(trimmedQuery);
-    const isPhoneNumber = /^\+?[\d\s\-\(\)]+$/.test(trimmedQuery);
-    const hasNumbers = /\d/.test(trimmedQuery);
-    const hasSpecialChars = /[!@#$%^&*()_+=\[\]{};:'",.<>?\/\\|`~]/.test(trimmedQuery);
-
-    // If it has technical/search indicators, don't treat as person search
-    const technicalKeywords = ['skill', 'skills', 'work', 'experience', 'organization', 'company', 'location', 'city'];
-    const hasTechnicalWords = technicalKeywords.some(kw => trimmedQuery.includes(kw));
-
-    const looksLikePersonName = !hasEmailChars &&
-        !isPhoneNumber &&
-        !hasNumbers &&
-        !hasSpecialChars &&
-        !hasTechnicalWords &&
-        words.length >= 1 &&
-        words.length <= 3;
-
-    console.log(`[Filter] Looks like person name: ${looksLikePersonName}`);
-
-    if (!looksLikePersonName) {
-        console.log(`[Filter] Not a person search → returning all ${members.length}`);
-        return members;
-    }
-
-    // Count exact matches
-    const exactMatches = members.filter(m => m.isExactMatch === true);
-
-    console.log(`[Filter] Found ${exactMatches.length} exact matches`);
-
-    if (exactMatches.length > 0) {
-        console.log(`[Filter] ✓ Returning ONLY ${exactMatches.length} exact match(es):`);
-        exactMatches.forEach((m, i) => {
-            console.log(`  ${i + 1}. ${m.name}`);
-        });
-        return exactMatches;
-    }
-
-    // NO EXACT MATCHES - Be very strict for single-word name searches
-    if (words.length === 1) {
-        const searchWord = words[0];
-        console.log(`[Filter] Single word "${searchWord}" - applying strict matching`);
-
-        // Only keep if the word appears as FIRST or LAST name (not middle/title)
-        const veryStrictMatches = members.filter(m => {
-            const nameLower = (m.name || '').toLowerCase();
-            const nameWords = nameLower
-                .split(/\s+/)
-                .map(w => w.replace(/[.,]/g, ''))
-                .filter(w => w.length > 0 && !['mr', 'mrs', 'ms', 'dr', 'prof'].includes(w));
-
-            if (nameWords.length === 0) return false;
-
-            const firstName = nameWords[0];
-            const lastName = nameWords[nameWords.length - 1];
-
-            return firstName === searchWord || lastName === searchWord;
-        });
-
-        if (veryStrictMatches.length > 0) {
-            console.log(`[Filter] ${veryStrictMatches.length} very strict matches (first/last name only)`);
-
-            // Limit to top 1 by relevance score
-            const topMatch = veryStrictMatches.sort((a, b) => b.relevanceScore - a.relevanceScore)[0];
-            console.log(`[Filter] Returning top 1: ${topMatch.name}`);
-            return [topMatch];
-        }
-    }
-
-    // Multi-word: keep top 1 by relevance
-    console.log(`[Filter] No exact matches, returning top 1 by relevance`);
-    const topOne = members.sort((a, b) => b.relevanceScore - a.relevanceScore)[0];
-    return topOne ? [topOne] : [];
-}
 
 /**
  * Sort results based on specified criteria
@@ -845,10 +639,6 @@ function sortResults(
     const sorted = [...members];
 
     sorted.sort((a, b) => {
-        // CRITICAL: Always put exact matches first, regardless of sort criteria
-        if (a.isExactMatch && !b.isExactMatch) return -1;
-        if (!a.isExactMatch && b.isExactMatch) return 1;
-
         let comparison = 0;
 
         switch (sortBy) {

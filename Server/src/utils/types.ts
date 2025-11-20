@@ -251,6 +251,7 @@ export interface ExtractedEntities {
 export interface NLSearchRequest {
     query: string;
     phoneNumber: string;  // Required: user's mobile number for validation
+    communityId?: string;  // Optional: specific community to search (defaults to user's primary community)
     context?: {
         previousQuery?: string;
         previousResults?: string[];

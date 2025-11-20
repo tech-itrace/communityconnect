@@ -286,30 +286,21 @@
         {
           "name": "Find Python Developers",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"Python developer\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=Python developer&communityId={{community_id}}&searchType=hybrid&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "Python developer"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "hybrid"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya (ML), Aisha (Security), Vikram (Data Science)"
           },
@@ -318,30 +309,21 @@
         {
           "name": "Find JavaScript/React Developers",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"React JavaScript developer\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=React JavaScript&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "React JavaScript"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Rahul (Full Stack), Sneha (Mobile - React Native)"
           },
@@ -350,30 +332,21 @@
         {
           "name": "Find Machine Learning Experts",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"machine learning expert\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=machine learning&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "machine learning"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya (ML Engineer), Vikram (ML in analytics)"
           },
@@ -388,34 +361,21 @@
         {
           "name": "Find Developers in Bangalore",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"developer in Bangalore\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=developer&communityId={{community_id}}&city=Bangalore&searchType=hybrid&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "developer"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "city",
-                  "value": "Bangalore"
-                },
-                {
-                  "key": "searchType",
-                  "value": "hybrid"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya (ML in Bangalore), Vikram (Data Scientist in Bangalore)"
           },
@@ -424,34 +384,21 @@
         {
           "name": "Find Members in Mumbai",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"startup founder in Mumbai\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=startup&communityId={{community_id}}&city=Mumbai&searchType=hybrid&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "startup"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "city",
-                  "value": "Mumbai"
-                },
-                {
-                  "key": "searchType",
-                  "value": "hybrid"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Rahul (CTO in Mumbai)"
           },
@@ -466,30 +413,21 @@
         {
           "name": "Find Security Audit Services",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"security audit services\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=security audit&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "security audit"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Aisha (Security Audits service)"
           },
@@ -498,30 +436,21 @@
         {
           "name": "Find Consulting Services",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"consulting and mentorship services\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=consulting mentor&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "consulting mentor"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya (AI Consulting), Rahul (Startup Consulting), Vikram (Analytics Consulting)"
           },
@@ -530,30 +459,21 @@
         {
           "name": "Find Mobile App Development",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"mobile app development\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=mobile app development&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "mobile app development"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Sneha (Mobile App Development service)"
           },
@@ -568,30 +488,21 @@
         {
           "name": "Find AI/Artificial Intelligence Experts",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"artificial intelligence AI expert\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=artificial intelligence AI expert&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "artificial intelligence AI expert"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya (AI/ML specialist)"
           },
@@ -600,30 +511,21 @@
         {
           "name": "Find Cybersecurity Professionals",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"cybersecurity ethical hacking professional\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=cybersecurity ethical hacking&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "cybersecurity ethical hacking"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Aisha (Cybersecurity expert)"
           },
@@ -632,30 +534,21 @@
         {
           "name": "Find Startup Founders/Entrepreneurs",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"startup founder entrepreneur CTO\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=startup founder entrepreneur CTO&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "startup founder entrepreneur CTO"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Rahul (Co-Founder & CTO)"
           },
@@ -664,30 +557,21 @@
         {
           "name": "Find Data Analytics Experts",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"data analytics business intelligence expert\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=data analytics business intelligence&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "data analytics business intelligence"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Vikram (Data Scientist with BI expertise)"
           },
@@ -711,12 +595,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"Who can help me with my AI project?\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"Who can help me with my AI project?\",\n  \"options\": {\n    \"maxResults\": 5,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/nl",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "nl"]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya (AI/ML expert)"
           },
@@ -734,12 +618,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"I need someone to build a mobile app for my business\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"I need someone to build a mobile app for my business\",\n  \"options\": {\n    \"maxResults\": 5,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/nl",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "nl"]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Sneha (Mobile App Developer)"
           },
@@ -757,12 +641,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"Our company needs a security audit, who can help?\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"Our company needs a security audit, who can help?\",\n  \"options\": {\n    \"maxResults\": 5,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/nl",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "nl"]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Aisha (Security Audits)"
           },
@@ -780,12 +664,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"Looking for a technical mentor in Bangalore\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"Looking for a technical mentor in Bangalore\",\n  \"options\": {\n    \"maxResults\": 5,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/nl",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "nl"]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya and Vikram (both offer mentorship in Bangalore)"
           },
@@ -803,12 +687,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"Need help creating data visualization dashboards for business insights\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"Need help creating data visualization dashboards for business insights\",\n  \"options\": {\n    \"maxResults\": 5,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/nl",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "nl"]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Vikram (Tableau, Power BI, BI expertise)"
           },
@@ -826,12 +710,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"Starting a tech company, need advice on technology stack and architecture\",\n  \"communityId\": \"{{community_id}}\",\n  \"maxResults\": 5\n}"
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"Starting a tech company, need advice on technology stack and architecture\",\n  \"options\": {\n    \"maxResults\": 5,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/search/nl",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "nl"]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Rahul (Startup Tech Consulting, Architecture)"
           },
@@ -846,34 +730,21 @@
         {
           "name": "Python + Bangalore + Consulting",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"Python consulting in Bangalore\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=Python consulting&communityId={{community_id}}&city=Bangalore&searchType=hybrid&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "Python consulting"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "city",
-                  "value": "Bangalore"
-                },
-                {
-                  "key": "searchType",
-                  "value": "hybrid"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya (Python, Bangalore, AI Consulting), Vikram (Python, Bangalore, Analytics Consulting)"
           },
@@ -882,34 +753,21 @@
         {
           "name": "IIT Madras Alumni in Bangalore",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"IIT Madras alumni in Bangalore\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=IIT Madras&communityId={{community_id}}&city=Bangalore&searchType=keyword&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "IIT Madras"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "city",
-                  "value": "Bangalore"
-                },
-                {
-                  "key": "searchType",
-                  "value": "keyword"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Priya and Vikram (both IIT Madras + Bangalore)"
           },
@@ -918,34 +776,21 @@
         {
           "name": "Recent Graduates (2017+) with Cloud Skills",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"AWS cloud developer graduated after 2017\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=AWS cloud&communityId={{community_id}}&yearOfGraduation=2017,2018,2019&searchType=hybrid&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "AWS cloud"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "yearOfGraduation",
-                  "value": "2017,2018,2019"
-                },
-                {
-                  "key": "searchType",
-                  "value": "hybrid"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Should match: Rahul (2016 - close), Sneha (2019 - Firebase/cloud)"
           },
@@ -960,30 +805,21 @@
         {
           "name": "Typo - Macine Learning",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"macine learning\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=macine learning&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "macine learning"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Test semantic search's ability to handle typos - should still match Priya"
           },
@@ -992,30 +828,21 @@
         {
           "name": "Abbreviation - ML DL",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"ML DL expert\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=ML DL&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "ML DL"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Test abbreviations - should match Priya (Machine Learning, Deep Learning)"
           },
@@ -1024,30 +851,21 @@
         {
           "name": "Synonym - Hacking Security",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"hacking security threats\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=hacking security threats&communityId={{community_id}}&searchType=semantic&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "hacking security threats"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "semantic"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Test semantic understanding of related terms - should match Aisha"
           },
@@ -1056,30 +874,21 @@
         {
           "name": "Broad Query - Expert",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919900000000\",\n  \"query\": \"expert in technology\",\n  \"options\": {\n    \"maxResults\": 10,\n    \"includeResponse\": true,\n    \"includeSuggestions\": true\n  }\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/api/search/members?query=expert&communityId={{community_id}}&searchType=hybrid&limit=10",
+              "raw": "{{base_url}}/api/search/query",
               "host": ["{{base_url}}"],
-              "path": ["api", "search", "members"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "expert"
-                },
-                {
-                  "key": "communityId",
-                  "value": "{{community_id}}"
-                },
-                {
-                  "key": "searchType",
-                  "value": "hybrid"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
+              "path": ["api", "search", "query"]
             },
             "description": "Test broad query - should return multiple members with expertise"
           },
