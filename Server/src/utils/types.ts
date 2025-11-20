@@ -89,6 +89,15 @@ export interface MemberEmbedding {
 // Search Request Types
 // ============================================================================
 
+// ============================================================================
+// Strict Type Definitions for Search
+// ============================================================================
+
+export type SearchType = 'hybrid' | 'semantic' | 'keyword';
+export type SortBy = 'relevance' | 'name' | 'turnover' | 'year';
+export type SortOrder = 'asc' | 'desc';
+export type TurnoverLevel = 'high' | 'medium' | 'low';
+
 export interface SearchFilters {
     skills?: string[];
     services?: string[];
@@ -100,11 +109,12 @@ export interface SearchFilters {
 }
 
 export interface SearchOptions {
-    searchType?: 'hybrid' | 'semantic' | 'keyword';
+    searchType?: SearchType;
     page?: number;
     limit?: number;
-    sortBy?: 'relevance' | 'name' | 'turnover' | 'year';
-    sortOrder?: 'asc' | 'desc';
+    sortBy?: SortBy;
+    sortOrder?: SortOrder;
+    debug?: boolean;  // Enable debug mode
 }
 
 export interface SearchParams {
@@ -185,7 +195,6 @@ export interface ScoredMember extends Member {
     semanticScore?: number;
     keywordScore?: number;
     matchedFields: string[];
-    isExactMatch?: boolean;
     profileData?: any;  // JSONB profile data from community_memberships
 }
 
@@ -202,11 +211,11 @@ export interface EmbeddingResult {
 export interface SearchMembersRequest {
     query?: string;
     filters?: SearchFilters;
-    searchType?: 'hybrid' | 'semantic' | 'keyword';
+    searchType?: SearchType;
     page?: number;
     limit?: number;
-    sortBy?: 'relevance' | 'name' | 'turnover' | 'year';
-    sortOrder?: 'asc' | 'desc';
+    sortBy?: SortBy;
+    sortOrder?: SortOrder;
 }
 
 export interface GetMembersRequest {
@@ -240,7 +249,7 @@ export interface ExtractedEntities {
     skills?: string[];
     location?: string;
     services?: string[];
-    turnoverRequirement?: 'high' | 'medium' | 'low';
+    turnoverRequirement?: TurnoverLevel;
     graduationYear?: number[];
     degree?: string;
     branch?: string[];

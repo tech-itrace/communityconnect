@@ -1,30 +1,50 @@
 /**
  * Semantic Search Service
- * 
- * Implements hybrid search combining:
- * - Vector similarity search (pgvector with embeddings)
- * - Full-text search (PostgreSQL tsvector)
- * - Filtering and ranking
- * 
+ *
+ * Core search engine for Community Connect platform implementing hybrid search
+ * that combines semantic understanding with keyword matching for optimal results.
+ *
+ * Architecture:
+ * 1. Embedding Generation:
+ *    - Primary: Google Gemini (text-embedding-004) - stable, consistent
+ *    - Fallback: DeepInfra (BAAI/bge-base-en-v1.5) - fast alternative
+ *    - LRU cache (1000 queries, 5min TTL) to reduce API calls
+ *    - All embeddings: 768 dimensions, L2 normalized
+ *
+ * 2. Search Strategies:
+ *    - Semantic Search: Vector similarity using pgvector (<=> operator)
+ *    - Keyword Search: PostgreSQL full-text search (tsvector)
+ *    - Hybrid Search: Merges both with weighted scoring (70% semantic + 30% keyword)
+ *
+ * 3. Filtering:
+ *    - Structural filters: City, graduation year, degree (applied in SQL)
+ *    - Semantic filters: Skills, services (handled by embeddings, not SQL)
+ *    - Community scoping: Multi-community support via community_id
+ *
+ * 4. Performance Optimizations:
+ *    - Parallel execution of semantic + keyword searches
+ *    - HNSW indexes on embedding vectors for fast similarity search
+ *    - Query embedding caching (prevents redundant API calls)
+ *    - Smart result merging with deduplication
+ *
  * Multi-Community Support:
- * - Searches within a specific community context
- * - Uses community_memberships for member association
- * - Supports type-specific profiles (alumni, entrepreneur, resident)
+ * - Searches within specific community context
+ * - Uses community_memberships table for member association
+ * - Supports different member types: alumni, entrepreneur, resident
+ *
+ * @see Phase 8: Code Cleanup (QUERY_ENDPOINT_REFACTORING_PLAN.md)
  */
 
 import dotenv from 'dotenv';
 import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import pool, { query } from '../config/db';
+import { query } from '../config/db';
 import { embeddingCache } from '../utils/embeddingCache';
 import {
     SearchParams,
     SearchFilters,
     SearchOptions,
-    MemberSearchResult,
-    ScoredMember,
-    Member,
-    EmbeddingResult
+    ScoredMember
 } from '../utils/types';
 
 dotenv.config();
@@ -50,7 +70,72 @@ const KEYWORD_WEIGHT = 0.3;
 const DEFAULT_COMMUNITY_SLUG = 'main-community';
 
 /**
- * Generate embedding using DeepInfra
+ * Helper function to build common filter conditions for search queries
+ * Consolidates filter logic used across semantic and keyword searches
+ *
+ * @param filters - Search filters to apply
+ * @param communityId - Optional community ID for scoping
+ * @param baseParamIndex - Starting parameter index for SQL placeholders
+ * @returns Object containing SQL conditions array and parameters array
+ */
+function buildFilterConditions(
+    filters: SearchFilters,
+    communityId: string | undefined,
+    baseParamIndex: number
+): { conditions: string[]; params: any[]; nextParamIndex: number } {
+    const conditions: string[] = ['cm.is_active = TRUE', 'm.is_active = TRUE'];
+    const params: any[] = [];
+    let paramIndex = baseParamIndex;
+
+    // Community filter
+    if (communityId) {
+        conditions.push(`cm.community_id = $${paramIndex}::uuid`);
+        params.push(communityId);
+        paramIndex++;
+    } else {
+        conditions.push(`c.slug = $${paramIndex}`);
+        params.push(DEFAULT_COMMUNITY_SLUG);
+        paramIndex++;
+    }
+
+    // City filter
+    if (filters.city) {
+        conditions.push(`(cm.profile_data->>'city' ILIKE $${paramIndex})`);
+        params.push(`%${filters.city}%`);
+        paramIndex++;
+    }
+
+    // Year of graduation filter (alumni only)
+    if (filters.yearOfGraduation && filters.yearOfGraduation.length > 0) {
+        conditions.push(`(
+            cm.member_type = 'alumni'
+            AND (cm.profile_data->>'graduation_year')::int = ANY($${paramIndex}::int[])
+        )`);
+        params.push(filters.yearOfGraduation);
+        paramIndex++;
+    }
+
+    // Degree filter (alumni only)
+    if (filters.degree && filters.degree.length > 0) {
+        const degreeConditions = filters.degree.map(() => {
+            const cond = `(cm.profile_data->>'degree' ILIKE $${paramIndex})`;
+            paramIndex++;
+            return cond;
+        });
+        conditions.push(`(cm.member_type = 'alumni' AND (${degreeConditions.join(' OR ')}))`);
+        params.push(...filters.degree.map(d => `%${d}%`));
+    }
+
+    return { conditions, params, nextParamIndex: paramIndex };
+}
+
+/**
+ * Generate embedding using DeepInfra API
+ * Uses BAAI/bge-base-en-v1.5 model for consistent 768-dimensional embeddings
+ *
+ * @param query - Text to generate embedding for
+ * @returns 768-dimensional normalized embedding vector
+ * @throws Error if API call fails or response is invalid
  */
 async function generateEmbeddingDeepInfra(query: string): Promise<number[]> {
     const response = await axios.post(
@@ -78,7 +163,12 @@ async function generateEmbeddingDeepInfra(query: string): Promise<number[]> {
 }
 
 /**
- * Generate embedding using Gemini (fallback)
+ * Generate embedding using Google Gemini API (fallback provider)
+ * Uses text-embedding-004 model for 768-dimensional embeddings
+ *
+ * @param query - Text to generate embedding for
+ * @returns 768-dimensional embedding vector
+ * @throws Error if API call fails, API key not configured, or response is invalid
  */
 async function generateEmbeddingGemini(query: string): Promise<number[]> {
     if (!genAI) {
@@ -103,6 +193,11 @@ async function generateEmbeddingGemini(query: string): Promise<number[]> {
 
 /**
  * Validate embedding quality and dimensions
+ * Checks for correct dimensions, valid values, and normalization
+ *
+ * @param embedding - Embedding vector to validate
+ * @param queryText - Original query text (for logging purposes)
+ * @throws Error if embedding is invalid
  */
 function validateEmbedding(embedding: number[], queryText: string): void {
     // Check dimensions
@@ -218,7 +313,13 @@ export async function generateQueryEmbedding(queryText: string): Promise<number[
 
 /**
  * Execute semantic (vector similarity) search
- * Updated for multi-community schema
+ * Uses vector embeddings to find semantically similar members
+ *
+ * @param embedding - Query embedding vector (768 dimensions)
+ * @param filters - Search filters to apply
+ * @param limit - Maximum number of results
+ * @param offset - Pagination offset
+ * @param communityId - Optional community ID for scoping
  */
 async function semanticSearchOnly(
     embedding: number[],
@@ -229,79 +330,17 @@ async function semanticSearchOnly(
 ): Promise<ScoredMember[]> {
     console.log('[Semantic Search] Executing vector similarity search...');
 
-    // Build filter conditions
-    const conditions: string[] = ['cm.is_active = TRUE', 'm.is_active = TRUE'];
-    const params: any[] = [`[${embedding.join(',')}]`]; // $1 - embedding vector
-    let paramIndex = 2;
+    // Build common filter conditions
+    const embeddingVector = `[${embedding.join(',')}]`;
+    const params: any[] = [embeddingVector]; // $1 - embedding vector
 
-    // Add community filter
-    if (communityId) {
-        conditions.push(`cm.community_id = $${paramIndex}::uuid`);
-        params.push(communityId);
-        paramIndex++;
-    } else {
-        // Default to main community for backward compatibility
-        conditions.push(`c.slug = $${paramIndex}`);
-        params.push(DEFAULT_COMMUNITY_SLUG);
-        paramIndex++;
-    }
-
-    // City filter - check in JSONB profile_data
-    if (filters.city) {
-        conditions.push(`(cm.profile_data->>'city' ILIKE $${paramIndex})`);
-        params.push(`%${filters.city}%`);
-        paramIndex++;
-    }
-
-    // Skills filter - use case-insensitive JSONB text search instead of exact match
-    // Note: Don't apply skill filters to semantic search - embeddings already encode this
-    // The filters are too restrictive and cause false negatives due to case sensitivity
-    // if (filters.skills && filters.skills.length > 0) {
-    //     const skillConditions = filters.skills.map(() => {
-    //         const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
-    //         paramIndex++;
-    //         return cond;
-    //     });
-    //     conditions.push(`(${skillConditions.join(' OR ')})`);
-    //     params.push(...filters.skills);
-    // }
-
-    // Services filter - use case-insensitive JSONB text search instead of exact match
-    // Note: Don't apply service filters to semantic search - embeddings already encode this
-    // if (filters.services && filters.services.length > 0) {
-    //     const serviceConditions = filters.services.map(() => {
-    //         const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
-    //         paramIndex++;
-    //         return cond;
-    //     });
-    //     conditions.push(`(${serviceConditions.join(' OR ')})`);
-    //     params.push(...filters.services);
-    // }
-
-    // Year of graduation filter - for alumni only
-    if (filters.yearOfGraduation && filters.yearOfGraduation.length > 0) {
-        conditions.push(`(
-            cm.member_type = 'alumni'
-            AND (cm.profile_data->>'graduation_year')::int = ANY($${paramIndex}::int[])
-        )`);
-        params.push(filters.yearOfGraduation);
-        paramIndex++;
-    }
-
-    // Degree filter - for alumni only
-    if (filters.degree && filters.degree.length > 0) {
-        const degreeConditions = filters.degree.map(() => {
-            const cond = `(cm.profile_data->>'degree' ILIKE $${paramIndex})`;
-            paramIndex++;
-            return cond;
-        });
-        conditions.push(`(cm.member_type = 'alumni' AND (${degreeConditions.join(' OR ')}))`);
-        params.push(...filters.degree.map(d => `%${d}%`));
-    }
+    const filterResult = buildFilterConditions(filters, communityId, 2);
+    const conditions = filterResult.conditions;
+    params.push(...filterResult.params);
 
     // Add limit and offset
-    const limitParam = `$${paramIndex}`;
-    const offsetParam = `$${paramIndex + 1}`;
+    const limitParam = `$${filterResult.nextParamIndex}`;
+    const offsetParam = `$${filterResult.nextParamIndex + 1}`;
     params.push(limit, offset);
 
     const queryText = `
@@ -372,7 +411,13 @@ async function semanticSearchOnly(
 
 /**
  * Execute keyword (full-text) search
- * Updated for multi-community schema
+ * Uses PostgreSQL full-text search for keyword matching
+ *
+ * @param searchQuery - Text query for full-text search
+ * @param filters - Search filters to apply
+ * @param limit - Maximum number of results
+ * @param offset - Pagination offset
+ * @param communityId - Optional community ID for scoping
  */
 async function keywordSearchOnly(
     searchQuery: string,
@@ -383,77 +428,18 @@ async function keywordSearchOnly(
 ): Promise<ScoredMember[]> {
     console.log('[Semantic Search] Executing full-text search...');
 
-    // Build filter conditions
-    const conditions: string[] = [
-        'cm.is_active = TRUE',
-        'm.is_active = TRUE',
+    // Build filter conditions with full-text search condition
+    const params: any[] = [searchQuery]; // $1 - search query
+
+    const filterResult = buildFilterConditions(filters, communityId, 2);
+    const conditions = [
+        ...filterResult.conditions,
         'msi.search_vector @@ plainto_tsquery($1)'
     ];
-    const params: any[] = [searchQuery];
-    let paramIndex = 2;
+    params.push(...filterResult.params);
 
-    // Add community filter
-    if (communityId) {
-        conditions.push(`cm.community_id = $${paramIndex}::uuid`);
-        params.push(communityId);
-        paramIndex++;
-    } else {
-        // Default to main community for backward compatibility
-        conditions.push(`c.slug = $${paramIndex}`);
-        params.push(DEFAULT_COMMUNITY_SLUG);
-        paramIndex++;
-    }
-
-    // Apply same filters as semantic search - using JSONB profile_data
-    if (filters.city) {
-        conditions.push(`(cm.profile_data->>'city' ILIKE $${paramIndex})`);
-        params.push(`%${filters.city}%`);
-        paramIndex++;
-    }
-
-    // DISABLED: Case-sensitive JSONB filters cause false negatives
-    // The keyword search already searches profile text, so these filters are redundant
-    // if (filters.skills && filters.skills.length > 0) {
-    //     const skillConditions = filters.skills.map(() => {
-    //         const cond = `(cm.profile_data->'skills' ? $${paramIndex})`;
-    //         paramIndex++;
-    //         return cond;
-    //     });
-    //     conditions.push(`(${skillConditions.join(' OR ')})`);
-    //     params.push(...filters.skills);
-    // }
-
-    // if (filters.services && filters.services.length > 0) {
-    //     const serviceConditions = filters.services.map(() => {
-    //         const cond = `(cm.profile_data->'services_offered' ? $${paramIndex})`;
-    //         paramIndex++;
-    //         return cond;
-    //     });
-    //     conditions.push(`(${serviceConditions.join(' OR ')})`);
-    //     params.push(...filters.services);
-    // }
-
-    if (filters.yearOfGraduation && filters.yearOfGraduation.length > 0) {
-        conditions.push(`(
-            cm.member_type = 'alumni'
-            AND (cm.profile_data->>'graduation_year')::int = ANY($${paramIndex}::int[])
-        )`);
-        params.push(filters.yearOfGraduation);
-        paramIndex++;
-    }
-
-    if (filters.degree && filters.degree.length > 0) {
-        const degreeConditions = filters.degree.map(() => {
-            const cond = `(cm.profile_data->>'degree' ILIKE $${paramIndex})`;
-            paramIndex++;
-            return cond;
-        });
-        conditions.push(`(cm.member_type = 'alumni' AND (${degreeConditions.join(' OR ')}))`);
-        params.push(...filters.degree.map(d => `%${d}%`));
-    }
-
-    const limitParam = `$${paramIndex}`;
-    const offsetParam = `$${paramIndex + 1}`;
+    const limitParam = `$${filterResult.nextParamIndex}`;
+    const offsetParam = `$${filterResult.nextParamIndex + 1}`;
     params.push(limit, offset);
 
     const queryText = `
@@ -513,57 +499,8 @@ async function keywordSearchOnly(
 }
 
 /**
- * Hybrid search: Combines semantic and keyword search
+ * Hybrid search: Combines semantic and keyword search with multi-community support
  */
-// export async function hybridSearch(
-//     searchQuery: string,
-//     filters: SearchFilters = {},
-//     options: SearchOptions = {}
-// ): Promise<{ members: ScoredMember[]; totalCount: number }> {
-//     const startTime = Date.now();
-
-//     const page = options.page || DEFAULT_PAGE;
-//     const limit = Math.min(options.limit || DEFAULT_LIMIT, MAX_LIMIT);
-//     const offset = (page - 1) * limit;
-
-//     console.log(`[Semantic Search] Starting hybrid search for: "${searchQuery}"`);
-//     console.log(`[Semantic Search] Filters:`, filters);
-//     console.log(`[Semantic Search] Page: ${page}, Limit: ${limit}`);
-
-//     // Generate embedding for the query
-//     const embedding = await generateQueryEmbedding(searchQuery);
-
-//     // Execute both searches in parallel
-//     const [semanticResults, keywordResults] = await Promise.all([
-//         semanticSearchOnly(embedding, filters, limit * 2, 0), // Get more results for merging
-//         keywordSearchOnly(searchQuery, filters, limit * 2, 0)
-//     ]);
-
-//     console.log(`[Semantic Search] Semantic results: ${semanticResults.length}`);
-//     console.log(`[Semantic Search] Keyword results: ${keywordResults.length}`);
-
-//     // Merge and score results
-//     const mergedResults = mergeResults(semanticResults, keywordResults);
-
-//     // Get total count for pagination
-//     const totalCount = await getTotalCount(searchQuery, embedding, filters);
-
-//     // Apply sorting
-//     const sortedResults = sortResults(mergedResults, options.sortBy, options.sortOrder);
-
-//     // Apply pagination
-//     const paginatedResults = sortedResults.slice(0, limit);
-
-//     const duration = Date.now() - startTime;
-//     console.log(`[Semantic Search] Hybrid search completed in ${duration}ms`);
-//     console.log(`[Semantic Search] Returning ${paginatedResults.length} results (total: ${totalCount})`);
-
-//     return {
-//         members: paginatedResults,
-//         totalCount
-//     };
-// }
-
 export async function hybridSearch(
     searchQuery: string,
     filters: SearchFilters = {},
@@ -581,7 +518,8 @@ export async function hybridSearch(
     console.log(`[Semantic Search] Community: ${communityId || DEFAULT_COMMUNITY_SLUG}`);
     console.log(`[Semantic Search] Filters:`, JSON.stringify(filters, null, 2));
 
-    // Light query cleaning - remove only punctuation, keep semantic meaning
+    // Light query cleaning - preserve semantic meaning, remove only punctuation
+    // We don't do aggressive cleaning as it can destroy semantic context
     const cleanedQuery = searchQuery
         .replace(/[?!.,;:]/g, '') // Remove punctuation only
         .trim()
@@ -589,13 +527,14 @@ export async function hybridSearch(
 
     console.log(`[Semantic Search] Cleaned query: "${cleanedQuery}"`);
 
-    // Check if embedding will be cached
+    // Track if embedding was cached (for debug info)
     const wasCached = embeddingCache.get(cleanedQuery) !== null;
 
-    // Generate embedding for the cleaned query
+    // Generate embedding for the cleaned query (uses cache if available)
     const embedding = await generateQueryEmbedding(cleanedQuery);
 
-    // Execute searches in parallel
+    // Execute both search strategies in parallel for optimal performance
+    // Get 2x results from each to allow for better merging and ranking
     const [semanticResults, keywordResults] = await Promise.all([
         semanticSearchOnly(embedding, filters, limit * 2, 0, communityId),
         keywordSearchOnly(cleanedQuery, filters, limit * 2, 0, communityId)
@@ -603,7 +542,7 @@ export async function hybridSearch(
 
     console.log(`[Semantic Search] Results: Semantic=${semanticResults.length}, Keyword=${keywordResults.length}`);
 
-    // Merge results with simple scoring
+    // Merge and deduplicate results with weighted scoring (70% semantic + 30% keyword)
     const mergedResults = mergeResults(semanticResults, keywordResults);
 
     console.log(`[Semantic Search] Merged: ${mergedResults.length} total results`);
@@ -614,8 +553,10 @@ export async function hybridSearch(
         });
     }
 
-    // Sort by relevance
+    // Sort by requested criteria (default: relevance descending)
     const sortedResults = sortResults(mergedResults, options.sortBy, options.sortOrder);
+
+    // Apply pagination to final results
     const paginatedResults = sortedResults.slice(0, limit);
     const totalCount = mergedResults.length;
 
@@ -644,8 +585,13 @@ export async function hybridSearch(
     };
 }
 /**
- * Simplified merge results with weighted scoring
- * No complex exact matching - let the embeddings and ranking do their job
+ * Merge and score results from semantic and keyword searches
+ * Uses weighted scoring: 70% semantic + 30% keyword
+ * Deduplicates members found in both searches
+ *
+ * @param semanticResults - Results from vector similarity search
+ * @param keywordResults - Results from full-text search
+ * @returns Merged and deduplicated results with combined relevance scores
  */
 function mergeResults(
     semanticResults: ScoredMember[],
@@ -690,11 +636,17 @@ function mergeResults(
 
 /**
  * Sort results based on specified criteria
+ * Supports sorting by relevance, name, turnover, or graduation year
+ *
+ * @param members - Members to sort
+ * @param sortBy - Field to sort by (default: 'relevance')
+ * @param sortOrder - Sort direction (default: 'desc')
+ * @returns Sorted array of members
  */
 function sortResults(
     members: ScoredMember[],
-    sortBy: string = 'relevance',
-    sortOrder: string = 'desc'
+    sortBy: 'relevance' | 'name' | 'turnover' | 'year' = 'relevance',
+    sortOrder: 'asc' | 'desc' = 'desc'
 ): ScoredMember[] {
     const sorted = [...members];
 
@@ -739,6 +691,11 @@ async function getTotalCount(
 
 /**
  * Identify which fields matched the search criteria
+ * Used for highlighting and explaining search results to users
+ *
+ * @param row - Database row containing member data
+ * @param filters - Applied search filters
+ * @returns Array of field names that matched the criteria
  */
 function identifyMatchedFields(row: any, filters: SearchFilters): string[] {
     const matched: string[] = [];
@@ -769,7 +726,11 @@ function identifyMatchedFields(row: any, filters: SearchFilters): string[] {
 }
 
 /**
- * Main search function - routes to appropriate search method
+ * Main search function - routes to appropriate search method based on search type
+ * Supports hybrid (default), semantic-only, and keyword-only searches
+ *
+ * @param params - Search parameters including query, filters, options, and community scope
+ * @returns Object containing matched members and total count
  */
 export async function searchMembers(params: SearchParams): Promise<{ members: ScoredMember[]; totalCount: number }> {
     const { query: searchQuery, filters = {}, options = {}, communityId } = params;
