@@ -113,7 +113,7 @@ export async function processNaturalLanguageQuery(
             communityId // Pass community ID for scoping
         };
 
-        const searchResponse = await searchMembers(searchParams);
+        const searchResponse = await searchMembers(searchParams) as { members: any[]; totalCount: number; debug?: any };
         console.log(`[NL Search] ✓ Search completed - ${searchResponse.members.length} results found`);
 
         // Step 4: Generate conversational response
@@ -201,7 +201,9 @@ export async function processNaturalLanguageQuery(
                 extractionMethod: extracted.method,
                 llmUsed: extracted.metadata.llmUsed,
                 searchTime: searchTime
-            }
+            },
+            // Add debug info if available
+            debug: searchResponse.debug
         };
 
         console.log(`[NL Search] ========================================`);

@@ -1,0 +1,26 @@
+--- a/src/tests/regexExtractor.test.ts
++++ b/src/tests/regexExtractor.test.ts
+@@ -265,7 +265,6 @@
+             const result = extractor.extract(testCase.query);
+             const responseTime = Date.now() - startTime;
+             
+-            if (result.needsLLM) metrics.needsLLM++;
+             
+             const entityMatch = compareEntities(testCase.expected.entities, result.entities);
+             
+@@ -286,7 +285,7 @@
+             }
+             
+             // Log individual test results
+-            console.log(`Match: ${entityMatch} | Time: ${responseTime}ms | Confidence: ${result.confidence.toFixed(2)} | Needs LLM: ${result.needsLLM}`);
++            console.log(`Match: ${entityMatch} | Time: ${responseTime}ms | Confidence: ${result.confidence.toFixed(2)}`);
+         });
+ 
+--- a/src/utils/embeddingCache.ts
++++ b/src/utils/embeddingCache.ts
+@@ -77,7 +77,7 @@
+         if (this.cache.size >= this.maxSize) {
+             const oldestKey = this.accessOrder.shift();
+-            this.cache.delete(oldestKey);
++            if (oldestKey) this.cache.delete(oldestKey);
+         }

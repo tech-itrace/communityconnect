@@ -206,23 +206,20 @@ function compareEntities(
         const expectedValue = expected[key as keyof ExtractedEntities];
         const actualValue = actual[key as keyof ExtractedEntities];
 
-        if (Array.isArray(expectedValue) && Array.isArray(actualValue)) {
+        // Handle string | string[] types (e.g., degree, branch)
+        const expectedArray = Array.isArray(expectedValue) ? expectedValue : (expectedValue ? [expectedValue] : []);
+        const actualArray = Array.isArray(actualValue) ? actualValue : (actualValue ? [actualValue] : []);
+
+        if (expectedArray.length > 0 && actualArray.length > 0) {
             // Check for overlap (relaxed matching)
-            const hasOverlap = expectedValue.some(ev =>
-                actualValue.some(av => {
+            const hasOverlap = expectedArray.some(ev =>
+                actualArray.some(av => {
                     const evStr = String(ev).toLowerCase();
                     const avStr = String(av).toLowerCase();
                     return avStr.includes(evStr) || evStr.includes(avStr);
                 })
             );
             if (hasOverlap) matchedFields++;
-        } else if (typeof expectedValue === 'string' && typeof actualValue === 'string') {
-            // Case-insensitive substring match
-            const evLower = expectedValue.toLowerCase();
-            const avLower = actualValue.toLowerCase();
-            if (avLower.includes(evLower) || evLower.includes(avLower)) {
-                matchedFields++;
-            }
         } else if (expectedValue === actualValue) {
             matchedFields++;
         }
@@ -268,7 +265,7 @@ describe('Regex Entity Extraction Tests (15 queries)', () => {
             if (result.needsLLM) metrics.needsLLM++;
 
             // Compare results
-            const entityMatch = compareEntities(testCase.expected.entities, result.entities);
+            const entityMatch = compareEntities(testCase.expected.entities, result.entities as Partial<ExtractedEntities>);
 
             // Update metrics
             if (entityMatch === 'correct') {

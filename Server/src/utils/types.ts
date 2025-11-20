@@ -260,6 +260,7 @@ export interface NLSearchRequest {
         includeResponse?: boolean;
         includeSuggestions?: boolean;
         maxResults?: number;
+        debug?: boolean;  // Return debug information including cache stats
     };
 }
 
@@ -290,6 +291,21 @@ export interface NLSearchResult {
         extractionMethod: 'regex' | 'llm' | 'hybrid' | 'cached';
         llmUsed: boolean;
         searchTime: number;
+    };
+    debug?: {
+        embeddingCached: boolean;
+        embeddingCacheStats?: {
+            size: number;
+            maxSize: number;
+            ttlMinutes: number;
+        };
+        searchStats?: {
+            semanticResults: number;
+            keywordResults: number;
+            mergedResults: number;
+            finalResults: number;
+        };
+        filtersApplied?: any;
     };
 }
 

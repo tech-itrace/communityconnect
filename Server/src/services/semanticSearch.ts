@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import pool, { query } from '../config/db';
+import { embeddingCache } from '../utils/embeddingCache';
 import {
     SearchParams,
     SearchFilters,
@@ -129,10 +130,18 @@ function validateEmbedding(embedding: number[], queryText: string): void {
  * Generate embedding for a search query with fallback support
  * Primary: Gemini (more stable)
  * Fallback: DeepInfra
+ * Includes caching to reduce API calls
  */
 export async function generateQueryEmbedding(queryText: string): Promise<number[]> {
     if (!GOOGLE_API_KEY && !DEEPINFRA_API_KEY) {
         throw new Error('Neither GOOGLE_API_KEY nor DEEPINFRA_API_KEY configured');
+    }
+
+    // Check cache first
+    const cachedEmbedding = embeddingCache.get(queryText);
+    if (cachedEmbedding) {
+        console.log(`[Semantic Search] ✓ Using cached embedding (${cachedEmbedding.length}D)`);
+        return cachedEmbedding;
     }
 
     const startTime = Date.now();
@@ -147,6 +156,9 @@ export async function generateQueryEmbedding(queryText: string): Promise<number[
 
             // Validate embedding quality
             validateEmbedding(embedding, queryText);
+
+            // Cache the embedding
+            embeddingCache.set(queryText, embedding);
 
             console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (Gemini)`);
             return embedding;
@@ -163,6 +175,9 @@ export async function generateQueryEmbedding(queryText: string): Promise<number[
 
                     // Validate embedding quality
                     validateEmbedding(embedding, queryText);
+
+                    // Cache the fallback embedding
+                    embeddingCache.set(queryText, embedding);
 
                     console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (DeepInfra)`);
                     console.warn(`[Semantic Search] ⚠ Using fallback model - results may differ from stored embeddings`);
@@ -186,6 +201,9 @@ export async function generateQueryEmbedding(queryText: string): Promise<number[
             const duration = Date.now() - startTime;
 
             validateEmbedding(embedding, queryText);
+
+            // Cache the embedding
+            embeddingCache.set(queryText, embedding);
 
             console.log(`[Semantic Search] ✓ Generated ${EMBEDDING_DIMENSIONS}D embedding in ${duration}ms (DeepInfra)`);
             return embedding;
@@ -551,7 +569,7 @@ export async function hybridSearch(
     filters: SearchFilters = {},
     options: SearchOptions = {},
     communityId?: string
-): Promise<{ members: ScoredMember[]; totalCount: number }> {
+): Promise<{ members: ScoredMember[]; totalCount: number; debug?: any }> {
     const startTime = Date.now();
 
     const page = options.page || DEFAULT_PAGE;
@@ -570,6 +588,9 @@ export async function hybridSearch(
         .replace(/\s+/g, ' ');
 
     console.log(`[Semantic Search] Cleaned query: "${cleanedQuery}"`);
+
+    // Check if embedding will be cached
+    const wasCached = embeddingCache.get(cleanedQuery) !== null;
 
     // Generate embedding for the cleaned query
     const embedding = await generateQueryEmbedding(cleanedQuery);
@@ -602,9 +623,24 @@ export async function hybridSearch(
     console.log(`[Semantic Search] ✓ Completed in ${duration}ms - returning ${paginatedResults.length} of ${totalCount}`);
     console.log(`[Semantic Search] ========================================\n`);
 
+    // Prepare debug info if needed
+    const debugInfo = {
+        embeddingCached: wasCached,
+        embeddingCacheStats: embeddingCache.getStats(),
+        searchStats: {
+            semanticResults: semanticResults.length,
+            keywordResults: keywordResults.length,
+            mergedResults: mergedResults.length,
+            finalResults: paginatedResults.length
+        },
+        filtersApplied: filters,
+        cleanedQuery: cleanedQuery
+    };
+
     return {
         members: paginatedResults,
-        totalCount
+        totalCount,
+        debug: debugInfo
     };
 }
 /**

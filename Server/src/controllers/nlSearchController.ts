@@ -97,6 +97,7 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
         const includeResponse = body.options?.includeResponse !== false; // Default: true
         const includeSuggestions = body.options?.includeSuggestions !== false; // Default: true
         const maxResults = body.options?.maxResults || VALIDATION.MAX_RESULTS_DEFAULT;
+        const debug = body.options?.debug || false;
 
         // Validate maxResults
         if (maxResults < VALIDATION.MAX_RESULTS_MIN || maxResults > VALIDATION.MAX_RESULTS_MAX) {
@@ -206,9 +207,17 @@ export async function processNLQueryHandler(req: Request, res: Response): Promis
             }
         }
 
+        // Add debug info if requested
+        if (debug && result.debug) {
+            (response as any).debug = result.debug;
+        }
+
         const totalTime = Date.now() - startTime;
         console.log(`[NL Controller] ✓ Request completed in ${totalTime}ms`);
         console.log(`[NL Controller] Results: ${result.results.members.length}, Confidence: ${result.understanding.confidence}`);
+        if (debug && result.debug) {
+            console.log(`[NL Controller] Debug: Embedding cached=${result.debug.embeddingCached}, Cache size=${result.debug.embeddingCacheStats?.size}`);
+        }
         console.log(`[NL Controller] ========================================\n`);
 
         res.status(200).json(response);

@@ -12,6 +12,7 @@ export interface RegexExtractionResult {
   entities: ExtractedEntities;
   confidence: number; // 0.0 - 1.0
   matched_patterns: string[];
+  needsLLM?: boolean;
 }
 
 /**
