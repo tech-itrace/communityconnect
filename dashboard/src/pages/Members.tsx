@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { memberAPI, groupAPI, type Member } from '@/lib/api';
+import { communityAPI, memberAPI, groupAPI, type Member } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,35 +8,47 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BulkImportDialog } from '@/components/BulkImportDialog';
 // import { Badge } from '@/components/ui/badge';
+import { useParams } from 'react-router-dom';
 
 export function Members() {
+    
     const [searchQuery, setSearchQuery] = useState('');
     const [showImportDialog, setShowImportDialog] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const queryClient = useQueryClient();
     
     const groupId = searchParams.get('groupId');
+console.log("groupId:" + groupId)
 
-    const { data: members } = useQuery({
-        queryKey: ['members'],
-        queryFn: async () => {
-            const response = await memberAPI.getAll();
-            return response.data.members || [];
-        },
-    });
-console.log("members:" + JSON.stringify(members))
-const memberId = searchParams.get('memberId')
-console.log("memberId:" + memberId)
+    const { data: membersResponse, isLoading } = useQuery({
+    queryKey: ["communities", groupId],
+    queryFn: async () => {
+   
+      const res = await communityAPI.getAllMembersById(groupId!);
+      return res.data;
+    },
+
+  });
+
+      const { data: communityResponse } = useQuery({
+    queryKey: ["communities", groupId],
+    queryFn: async () => {
+      const res = await communityAPI.getById(groupId!);
+      return res.data;
+    },
+  });
+  
+
+    const totalMembers = membersResponse?.members
+    const communityData = communityResponse?.community
+
+    console.log("membersList-res:" + JSON.stringify(membersResponse))
+console.log("membersList:" + JSON.stringify(totalMembers))
+console.log("communityData-Res :" + JSON.stringify(communityResponse))
+console.log("communityData :" + JSON.stringify(communityData?.name))
+
     // Fetch group details if groupId is present
-    const { data: groupData, isLoading } = useQuery({
-        queryKey: ['group', groupId],
-        queryFn: async () => {
-            if (!groupId) return null;
-            const response = await groupAPI.getById(groupId);
-            return response.data;
-        },
-        enabled: !!groupId,
-    });
+    
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => memberAPI.delete(id),
@@ -47,15 +59,8 @@ console.log("memberId:" + memberId)
             }
         },
     });
-console.log("groupData:" + JSON.stringify(groupData))
-    // Filter members based on group if groupId is present
-    const displayMembers = groupData?.group.members;
-    // if (groupId && groupData?.members) {
-    //     const groupMemberIds = new Set(groupData.members.map((m: any) => m.id));
-    //     displayMembers = groupData?.members?.filter((member) => groupMemberIds.has(member.id));
-    // }
-console.log("displayMembers:" + JSON.stringify(displayMembers))
-    const filteredMembers = displayMembers?.filter((member) =>
+
+    const filteredMembers = totalMembers?.filter((member) =>
         member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.phone.includes(searchQuery) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -90,9 +95,9 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
                     <Button variant="ghost" size="icon">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
-                </Link>Members - {groupData?.group.name}</h1>
-                    <p className="text-muted-foreground mt-2 ">
-                        Manage your community members
+                </Link>Members</h1>
+                    <p className="text-muted-foreground mt-2 pl-10">
+                        {communityData?.name}
                     </p>
                 </div>
                 
@@ -140,7 +145,7 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayMembers?.map((member) => (
+                                {filteredMembers?.map((member) => (
                                     <tr key={member.id} className="border-b hover:bg-muted/50">
                                         <td className="p-3 text-sm font-medium">{member.name}</td>
                                         <td className="p-3 text-sm text-muted-foreground">{member.phone}</td>

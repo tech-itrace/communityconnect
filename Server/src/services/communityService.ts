@@ -30,6 +30,84 @@ export interface Community {
   }>;
 }
 
+export async function getCommunityWithMemebersById(
+  id: string,
+  client?: any
+): Promise<Community | null> {
+  const executor = client
+    ? (sql: string, params?: any[]) => executeQuery(client, sql, params)
+    : query;
+
+  const sql = `
+    SELECT
+      c.id,
+      c.name,
+      c.slug,
+      c.type,
+      c.description,
+      c.whatsapp_number,
+      c.whatsapp_webhook_url,
+      c.subscription_plan,
+      c.member_limit,
+      c.search_limit_monthly,
+      c.is_bot_enabled,
+      c.is_search_enabled,
+      c.is_embedding_enabled,
+      c.created_by,
+      c.is_active,
+      c.created_at,
+      c.updated_at,
+
+      /* === ADMIN LIST === */
+      (
+        SELECT COALESCE(
+          json_agg(
+            jsonb_build_object(
+              'id', m.id,
+              'name', m.name,
+              'phone', m.phone,
+              'email', m.email,
+              'role', cm.role
+            )
+          ), '[]'::json
+        )
+        FROM community_memberships cm
+        JOIN members m ON m.id = cm.member_id
+        WHERE cm.community_id = c.id
+          AND cm.role IN ('admin', 'super_admin')
+          AND cm.is_active = TRUE
+      ) AS admins,
+
+      /* === ALL MEMBERS LIST === */
+      (
+        SELECT COALESCE(
+          json_agg(
+            jsonb_build_object(
+              'id', m.id,
+              'name', m.name,
+              'phone', m.phone,
+              'email', m.email,
+              'role', cm.role
+            )
+          ), '[]'::json
+        )
+        FROM community_memberships cm
+        JOIN members m ON m.id = cm.member_id
+        WHERE cm.community_id = c.id
+      ) AS members
+
+    FROM communities c
+    WHERE c.id = $1
+    GROUP BY c.id
+  `;
+
+  const res = await executor(sql, [id]);
+  if (!res.rows.length) return null;
+
+  return res.rows[0];
+}
+
+
 /** Get community by ID */
 export async function getCommunityById(
   id: string,

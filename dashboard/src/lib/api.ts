@@ -248,6 +248,7 @@ export const memberAPI = {
 export const communityAPI = {
     getAll: () => api.get<CommunitiesResponse>('/api/community'),
     getById: (id: string) => api.get<CommunitiesResponse>(`/api/community/${id}`),
+    getAllMembersById: (id: string) => api.get<CommunitiesResponse>(`/api/community/${id}/members`),
     create: (community: Partial<Community>) => api.post<CommunitiesResponse>('/api/community', community),
     update: (id: string, community: Partial<Community>) =>
         api.put<CommunitiesResponse>(`/api/community/${id}`, community),

@@ -12,6 +12,7 @@
 
 import { Request, Response } from "express";
 import {
+  getCommunityWithMemebersById,
   getCommunityById,
   getAllCommunities,
   createCommunity,
@@ -46,7 +47,7 @@ export const getAllCommunitiesHandler = asyncHandler(async (req: Request, res: R
 export const getCommunityByIdHandler = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const community = await getCommunityById(id);
+  const community = await getCommunityWithMemebersById(id);
 
   if (!community) {
     throw new NotFoundError('Community', id);
