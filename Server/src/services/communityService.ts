@@ -30,7 +30,7 @@ export interface Community {
   }>;
 }
 
-export async function getCommunityWithMemebersById(
+export async function getCommunityWithMembersById(
   id: string,
   client?: any
 ): Promise<Community | null> {
@@ -269,6 +269,15 @@ export async function createCommunity(data: any): Promise<Community> {
     /* 1. ENSURE MEMBER EXISTS (or create) */
     const member = await ensureMember(data.member_type_data);
 
+    function sanitizeSlug(slug: string) {
+  return slug
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")     // spaces → hyphen
+    .replace(/[^a-z0-9-]/g, ""); // remove invalid chars
+}
+
+
     /* 2. CREATE COMMUNITY */
     await executeQuery(
       client,
@@ -283,7 +292,7 @@ export async function createCommunity(data: any): Promise<Community> {
       [
         communityId,
         data.name,
-        data.slug,
+        sanitizeSlug(data.slug), 
         data.type,
         data.description || null,
         data.whatsapp_number || null,

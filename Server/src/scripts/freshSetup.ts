@@ -14,10 +14,12 @@ const execAsync = promisify(exec);
 // Extract database name from DATABASE_URL or use DATABASE_NAME env variable
 function getDatabaseName(): string {
     if (process.env.DATABASE_NAME) {
+        console.log('Using DATABASE_NAME from environment variable.: ', process.env.DATABASE_NAME);
         return process.env.DATABASE_NAME;
     }
 
     if (process.env.DATABASE_URL) {
+        console.log('Extracting database name from DATABASE_URL. : ', process.env.DATABASE_URL);
         // Extract database name from postgresql://user:pass@host:port/dbname
         const match = process.env.DATABASE_URL.match(/\/([^/?]+)(?:\?|$)/);
         if (match && match[1]) {
