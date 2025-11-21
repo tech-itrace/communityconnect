@@ -254,8 +254,7 @@ export const communityAPI = {
         api.put<CommunitiesResponse>(`/api/community/${id}`, community),
     delete: (id: string) => api.delete(`/api/community/${id}`),
     createMember: (id: string, community: Partial<Community>) => api.post<CommunitiesResponse>(`/api/community/${id}/members`, community),
-     updateMember: (id: string, groupId: string, community: Partial<Community>) =>
-        api.put<CommunitiesResponse>(`/api/community/${groupId}/members/${id}/profile`, community),
+     updateMember: (id: string, groupId: string, community: Partial<Community>) => api.put<CommunitiesResponse>(`/api/community/${groupId}/members/${id}/profile`, community),
     getSingleMember: (memberId: string, communityId: string) => api.get(`/api/community/${communityId}/member/${memberId}`)
 };
 

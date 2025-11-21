@@ -141,19 +141,33 @@ export function MemberForm() {
     return profileData;
   };
 
-  /* ------------------ Save Member ------------------ */
+/* ------------------ Save Member ------------------ */
 const saveMutation = useMutation({
   mutationFn: async () => {
     const profileData = buildProfileData(communityType!, formData);
 
-    // ------------------ EDIT MODE ------------------
+    /* ------------------ EDIT MODE ------------------ */
     if (isEdit) {
+      const normalizedPhone =
+        formData.phone.startsWith("+91")
+          ? formData.phone
+          : `+91${formData.phone.replace(/^\+?91/, "").trim()}`;
+
+      // 1️⃣ Update basic member fields (members table)
+      await memberAPI.update(id!, {
+        name: formData.name,
+        email: formData.email,
+        phone: normalizedPhone,
+        // role: formData.role,
+      });
+
+      // 2️⃣ Update only profile_data (community membership table)
       return communityAPI.updateMember(id!, groupId!, {
         profile_data: profileData,
       });
     }
 
-    // ------------------ CREATE MODE ------------------
+    /* ------------------ CREATE MODE ------------------ */
     const normalizedPhone =
       formData.phone.startsWith("+91")
         ? formData.phone
@@ -181,7 +195,6 @@ const saveMutation = useMutation({
     navigate(`/members?groupId=${groupId}`);
   },
 });
-
 
   const handleSubmit = (e: any) => {
     e.preventDefault();

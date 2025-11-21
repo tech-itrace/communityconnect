@@ -352,63 +352,78 @@ export async function createMemberHandler(req: Request, res: Response) {
 export async function updateMemberHandler(req: Request, res: Response) {
     try {
         const { id } = req.params;
+
+        // Allowed update fields for members table
         const {
             name,
             email,
-            city,
-            working_knowledge,
-            degree,
-            branch,
-            organization_name,
-            designation,
-            role
+            phone,
+            is_active
         } = req.body;
 
-        console.log(`[Member Controller] Updating member ID: ${id}`);
+        console.log(`[Member Controller] Updating member ID: ${id}`, req.body);
 
-        // Check if member exists
+        // 1️⃣ Check if member exists
         const existingMember = await getMemberById(id);
 
         if (!existingMember) {
             return res.status(404).json({
                 success: false,
                 error: {
-                    code: 'MEMBER_NOT_FOUND',
-                    message: 'Member not found'
-                }
+                    code: "MEMBER_NOT_FOUND",
+                    message: "Member not found",
+                },
             });
         }
 
-        // Update the member
-        const updatedMember = await updateMember(id, {
-            name,
-            email,
-            city,
-            working_knowledge,
-            degree,
-            branch,
-            organization_name,
-            designation,
-            role
-        });
+        // 2️⃣ Build update object only with fields provided
+        const updateData: any = {};
+
+        if (name !== undefined) updateData.name = name;
+        if (email !== undefined) updateData.email = email;
+        if (phone !== undefined) {
+            // Normalize phone format
+            updateData.phone = phone.startsWith("+91")
+                ? phone
+                : `+91${phone.replace(/^\+?91/, "").trim()}`;
+        }
+        if (is_active !== undefined) updateData.is_active = is_active;
+
+        // Always update timestamp
+        updateData.updated_at = new Date();
+
+        // Avoid empty updates
+        if (Object.keys(updateData).length === 1 && updateData.updated_at) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: "NO_FIELDS_TO_UPDATE",
+                    message: "No valid fields provided for update",
+                },
+            });
+        }
+
+        // 3️⃣ Update member
+        const updatedMember = await updateMember(id, updateData);
 
         res.json({
             success: true,
-            member: updatedMember
+            member: updatedMember,
         });
 
     } catch (error: any) {
-        console.error('[Member Controller] Error updating member:', error);
+        console.error("[Member Controller] Error updating member:", error);
         res.status(500).json({
             success: false,
             error: {
-                code: 'SERVER_ERROR',
-                message: 'Failed to update member',
-                details: error.message
-            }
+                code: "SERVER_ERROR",
+                message: "Failed to update member",
+                details: error.message,
+            },
         });
     }
 }
+
 
 /**
  * DELETE /api/members/:id
