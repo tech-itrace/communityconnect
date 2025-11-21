@@ -188,7 +188,7 @@ export function MemberForm() {
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4">
-        <Link to={`/community/${groupId}`}>
+        <Link to={`/members?groupId=${groupId}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -260,7 +260,7 @@ export function MemberForm() {
             </div>
 
             <div className="flex justify-end gap-2">
-              <Link to={`/community/${groupId}`}>
+              <Link to={`/members?groupId=${groupId}`}>
                 <Button variant="outline">Cancel</Button>
               </Link>
               <Button type="submit">{isEdit ? "Update" : "Save"}</Button>
