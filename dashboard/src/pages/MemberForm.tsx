@@ -142,34 +142,46 @@ export function MemberForm() {
   };
 
   /* ------------------ Save Member ------------------ */
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const normalizedPhone =
-        formData.phone.startsWith("+91")
-          ? formData.phone
-          : `+91${formData.phone.replace(/^\+?91/, "").trim()}`;
+const saveMutation = useMutation({
+  mutationFn: async () => {
+    const profileData = buildProfileData(communityType!, formData);
 
-      const payload = {
-        member_data: {
-          name: formData.name,
-          phone: normalizedPhone,
-          email: formData.email,
-        },
-        member_type: communityType || "generic",
-        profile_data: buildProfileData(communityType!, formData),
-        role: formData.role,
-      };
+    // ------------------ EDIT MODE ------------------
+    if (isEdit) {
+      return communityAPI.updateMember(id!, groupId!, {
+        profile_data: profileData,
+      });
+    }
 
-      if (isEdit) {
-        return communityAPI.updateMember(id!, groupId!, payload);
-      }
-      return communityAPI.createMember(groupId!, payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["community-members", groupId] });
-      navigate(`/community/${groupId}`);
-    },
-  });
+    // ------------------ CREATE MODE ------------------
+    const normalizedPhone =
+      formData.phone.startsWith("+91")
+        ? formData.phone
+        : `+91${formData.phone.replace(/^\+?91/, "").trim()}`;
+
+    const payload = {
+      member_data: {
+        name: formData.name,
+        phone: normalizedPhone,
+        email: formData.email,
+      },
+      member_type: communityType || "generic",
+      profile_data: profileData,
+      role: formData.role,
+    };
+
+    return communityAPI.createMember(groupId!, payload);
+  },
+
+  onSuccess: () => {
+    queryClient.invalidateQueries({
+      queryKey: ["community-members", groupId],
+    });
+
+    navigate(`/members?groupId=${groupId}`);
+  },
+});
+
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
