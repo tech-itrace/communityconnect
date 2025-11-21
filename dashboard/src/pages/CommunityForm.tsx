@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { communityAPI } from "@/lib/api";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Upload, UserPlus, X } from "lucide-react";
+import { ArrowBigDown, ArrowBigUp, ArrowBigUpDash, ArrowBigUpIcon, ArrowLeft, Upload, UserPlus, X } from "lucide-react";
 
 type Member = {
   id: string | number;
@@ -264,7 +264,7 @@ export function CommunityForm() {
     <h2 className="font-semibold text-lg">Members Details</h2>
 
     {/* RIGHT SIDE - Buttons */}
-    <div className="flex gap-2">
+    {/* <div className="flex gap-2">
       <Button
         variant="outline"
         size="sm"
@@ -297,7 +297,7 @@ export function CommunityForm() {
         ref={fileInputRef}
         className="hidden"
       />
-    </div>
+    </div> */}
 
   </div>
 </CardHeader>
@@ -421,6 +421,16 @@ export function CommunityForm() {
     )}
 
   </CardContent>
+  <CardFooter>
+      <Button
+        variant="outline"
+        size="sm"
+        // onClick={() => setShowAddMember(!showAddMember)}
+        onClick={()=>navigateToMembersPage(communityResponse?.community.id)}
+      >
+        <ArrowBigUpDash className="w-4 h-4 mr-1" /> View More
+      </Button>
+  </CardFooter>
 </Card>
 
 

@@ -680,3 +680,41 @@ export async function updateMemberRole(
 
   return result.rows[0];
 }
+
+// GET Single Member of specific community
+export async function getCommunityMemberById(
+  community_id: string,
+  member_id: string,
+  client?: any
+): Promise<any | null> {
+  const executor = client
+    ? (sql: string, params?: any[]) => executeQuery(client, sql, params)
+    : query;
+
+  const sql = `
+    SELECT
+      jsonb_build_object(
+        'id', m.id,
+        'name', m.name,
+        'phone', m.phone,
+        'email', m.email,
+        'member_type', cm.member_type,
+        'role', cm.role,
+        'profile_data', cm.profile_data,
+        'joined_at', cm.joined_at,
+        'updated_at', cm.updated_at,
+        'is_active', cm.is_active
+      ) AS member
+    FROM community_memberships cm
+    JOIN members m ON m.id = cm.member_id
+    WHERE cm.community_id = $1
+      AND cm.member_id = $2
+    LIMIT 1;
+  `;
+
+  const res = await executor(sql, [community_id, member_id]);
+  if (!res.rows.length) return null;
+
+  return res.rows[0].member;
+}
+

@@ -45,7 +45,7 @@ function App() {
            <Route path="/member" element={<Layout><MemberForm /></Layout>} />
           {/* <Route path="/members/:id" element={<Layout><MemberForm /></Layout>} /> */}
            <Route path="/member/:id" element={<Layout><MemberForm /></Layout>} />
-          <Route path="/members/:id/edit" element={<Layout><MemberForm /></Layout>} />
+          <Route path="/member/:id/edit" element={<Layout><MemberForm /></Layout>} />
           <Route path="/chat" element={<Layout><Chat /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
