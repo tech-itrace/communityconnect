@@ -282,12 +282,12 @@
 // }
 
 import { useState, useRef, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, communityAPI } from '@/lib/api';
 
 interface Message {
     id: string;
@@ -331,20 +331,79 @@ const quickQuestionsByType: Record<CommunityType, string[]> = {
     ],
 };
 
-const welcomeMessagesByType: Record<CommunityType, string> = {
-    alumni: 'Hello! I can help you find alumni members. Try asking me "Who graduated in 2020?" or "Find members in Bangalore"',
-    entrepreneur: 'Hello! I can help you find entrepreneurs. Try asking me "Who founded startups?" or "Find investors in the network"',
-    apartment: 'Hello! I can help you find residents. Try asking me "Who lives in Block A?" or "Find families with kids"',
-    mixed: 'Hello! I can help you find community members. Try asking me "Who works in tech?" or "Find members in Chennai"',
+const welcomeMessagesByType: Record<CommunityType, string[]> = {
+    alumni: [
+        'Hello! I can help you find alumni members. Try asking me "Who graduated in 2020?" or "Find members in Bangalore"',
+        'Welcome back! Looking for batchmates? Ask me "Find alumni from my batch" or "Who works at Microsoft?"',
+        'Hi there! Ready to connect with alumni? Try "Show me engineers" or "Members in Chennai"',
+        'Greetings! Let me help you find alumni. Ask "Who has MBA degree?" or "Find members in USA"',
+        'Hello! Reconnect with your network. Try "Alumni from Computer Science" or "Who graduated in 2015?"',
+        'Welcome! Search alumni easily. Ask "Find founders" or "Members working in startups"',
+        'Hi! Your alumni network awaits. Try "Who lives in Hyderabad?" or "Show me doctors"',
+    ],
+    entrepreneur: [
+        'Hello! I can help you find entrepreneurs. Try asking me "Who founded startups?" or "Find investors in the network"',
+        'Welcome! Looking for co-founders? Ask me "Find tech founders" or "Who is raising funding?"',
+        'Hi there! Connect with entrepreneurs. Try "Show me fintech founders" or "Members with exits"',
+        'Greetings! Explore the entrepreneur network. Ask "Find mentors" or "Who works in AI space?"',
+        'Hello! Build your network. Try "Founders in Bangalore" or "Show me angel investors"',
+        'Welcome back! Ask me "Find SaaS founders" or "Who has raised Series A?"',
+        'Hi! Discover opportunities. Try "Entrepreneurs in healthcare" or "Members seeking co-founders"',
+    ],
+    apartment: [
+        'Hello! I can help you find residents. Try asking me "Who lives in Block A?" or "Find families with kids"',
+        'Welcome! Looking for neighbors? Ask me "Show me Floor 3 residents" or "Find pet owners"',
+        'Hi there! Connect with your community. Try "Who is on maintenance committee?" or "Find seniors"',
+        'Greetings! Know your neighbors. Ask "Residents in Tower B" or "Who moved in recently?"',
+        'Hello! Community connections made easy. Try "Find working professionals" or "Families in Block C"',
+        'Welcome back! Ask me "Who has parking issues?" or "Find residents with similar interests"',
+        'Hi! Explore your apartment community. Try "Show me committee members" or "New residents this month"',
+    ],
+    mixed: [
+        'Hello! I can help you find community members. Try asking me "Who works in tech?" or "Find members in Chennai"',
+        'Welcome! Explore your community. Ask me "Show me engineers" or "Find members nearby"',
+        'Hi there! Connect with members. Try "Who has similar interests?" or "Members in my field"',
+        'Greetings! Your community awaits. Ask "Find mentors" or "Who joined recently?"',
+        'Hello! Discover connections. Try "Show me designers" or "Members from IIT"',
+        'Welcome back! Ask me "Find startup founders" or "Who works in finance?"',
+        'Hi! Build your network. Try "Members in Bangalore" or "Show me marketing professionals"',
+    ],
+};
+
+// Function to get message index based on day of year
+const getDailyMessageIndex = (messagesCount: number): number => {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return dayOfYear % messagesCount;
+};
+
+// Function to get today's welcome message for a community type
+const getWelcomeMessage = (type: CommunityType): string => {
+    const messages = welcomeMessagesByType[type];
+    const index = getDailyMessageIndex(messages.length);
+    return messages[index];
 };
 
 export function Chat() {
-  const getInitialMessage = (type: CommunityType): Message => ({
+ const getInitialMessage = (type: CommunityType): Message => ({
         id: '1',
-        text: welcomeMessagesByType[type],
+        text: getWelcomeMessage(type), // Uses the daily rotating message
         sender: 'bot',
         timestamp: new Date(),
     });
+
+     const { data: communityData} = useQuery({
+    queryKey: ["communities"],
+    queryFn: async () => {
+      const response = await communityAPI.getAll();
+      return Array.isArray(response.data)
+        ? response.data
+        : response.data?.communities || [];
+    },
+  });
+console.log("communitiesData:" + JSON.stringify(communityData))
 
 
     const [messages, setMessages] = useState<Message[]>([
@@ -460,10 +519,11 @@ export function Chat() {
                     onChange={(e) => setCommunityType(e.target.value as CommunityType)}
                     className="mb-4 p-2 border rounded"
                 >
-                    <option value="alumni">Alumni Community</option>
-                    <option value="entrepreneur">Entrepreneur Community</option>
-                    <option value="apartment">Apartment Community</option>
-                    <option value="mixed">Mixed Community</option>
+                    {communityData?.map((community) => (
+                      <option key={community.id} value={community.type}>
+                        {community.name}
+                      </option>
+                    ))}
                 </select>
             </div>
 </div>
