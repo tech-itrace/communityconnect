@@ -298,30 +298,86 @@ export async function createMember(memberData: {
 /**
  * Update an existing member
  */
-export async function updateMember(id: string, data: any): Promise<any> {
-  const { name, email, phone, is_active } = data;
+export async function updateMember(
+    id: string,
+    memberData: Partial<{
+        name: string;
+        email: string;
+        city: string;
+        working_knowledge: string;
+        degree: string;
+        branch: string;
+        organization_name: string;
+        designation: string;
+        role: string;
+    }>
+): Promise<Member | null> {
+    console.log(`[Member Service] Updating member ID: ${id}`);
 
-  const sql = `
-    UPDATE members
-    SET
-      name = COALESCE($1, name),
-      email = COALESCE($2, email),
-      phone = COALESCE($3, phone),
-      is_active = COALESCE($4, is_active),
-      updated_at = NOW()
-    WHERE id = $5
-    RETURNING *;
-  `;
+    // Build dynamic update query
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
 
-  const values = [name, email, phone, is_active, id];
+    if (memberData.name !== undefined) {
+        updates.push(`name = $${paramIndex++}`);
+        values.push(memberData.name);
+    }
+    if (memberData.email !== undefined) {
+        updates.push(`email = $${paramIndex++}`);
+        values.push(memberData.email);
+    }
+    if (memberData.city !== undefined) {
+        updates.push(`city = $${paramIndex++}`);
+        values.push(memberData.city);
+    }
+    if (memberData.working_knowledge !== undefined) {
+        updates.push(`working_knowledge = $${paramIndex++}`);
+        values.push(memberData.working_knowledge);
+    }
+    if (memberData.degree !== undefined) {
+        updates.push(`degree = $${paramIndex++}`);
+        values.push(memberData.degree);
+    }
+    if (memberData.branch !== undefined) {
+        updates.push(`branch = $${paramIndex++}`);
+        values.push(memberData.branch);
+    }
+    if (memberData.organization_name !== undefined) {
+        updates.push(`organization_name = $${paramIndex++}`);
+        values.push(memberData.organization_name);
+    }
+    if (memberData.designation !== undefined) {
+        updates.push(`designation = $${paramIndex++}`);
+        values.push(memberData.designation);
+    }
+    if (memberData.role !== undefined) {
+        updates.push(`role = $${paramIndex++}`);
+        values.push(memberData.role);
+    }
 
-  const result = await query(sql, values);
+    if (updates.length === 0) {
+        // No updates to perform, just return the existing member
+        return getMemberById(id);
+    }
 
-  if (result.rows.length === 0) {
-    throw new Error('Member not found');
-  }
+    updates.push(`updated_at = NOW()`);
+    values.push(id);
 
-  return result.rows[0];
+    const queryText = `
+        UPDATE members 
+        SET ${updates.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING *
+    `;
+
+    const result = await query(queryText, values);
+
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    return result.rows[0];
 }
 
 /**

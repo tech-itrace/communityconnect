@@ -22,7 +22,7 @@ import {
   getCommunityMembers,
   updateCommunityMemberProfile,
   removeMemberFromCommunity,
-  updateMemberRole,getCommunityMemberById
+  updateMemberRole,
 } from "../services/communityService";
 import {
   asyncHandler,
@@ -138,26 +138,6 @@ export const getCommunityMembersHandler = asyncHandler(async (req: Request, res:
 
   successResponse(res, { members, count: members.length });
 });
-
-/**
- * GET /api/community/community_id/member/:member_id
- * Update a member's profile data in a community
- * Requires: Admin or Super Admin role, or the member themselves
- */
-export const getSingleCommunityMemberHandler = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { community_id, member_id } = req.params;
-
-    const singleMember = await getCommunityMemberById(community_id, member_id);
-
-    if (!singleMember) {
-      throw new NotFoundError('Community Member', `${community_id}/${member_id}`);
-    }
-
-    return successResponse(res, singleMember);
-  }
-);
-
 
 /**
  * PUT /api/community/:id/members/:member_id/profile

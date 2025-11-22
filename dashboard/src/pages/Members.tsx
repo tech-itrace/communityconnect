@@ -20,32 +20,24 @@ export function Members() {
     const groupId = searchParams.get('groupId');
 console.log("groupId:" + groupId)
 
-   /* ------------------ FETCH MEMBERS ------------------ */
-const {
-  data: membersResponse,
-  isLoading: membersLoading,
-} = useQuery({
-  queryKey: ["members-list", groupId],
-  queryFn: async () => {
-    const res = await communityAPI.getAllMembersById(groupId!);
-    return res.data;
-  },
-  enabled: !!groupId,
-});
+    const { data: membersResponse, isLoading } = useQuery({
+    queryKey: ["communities", groupId],
+    queryFn: async () => {
+   
+      const res = await communityAPI.getAllMembersById(groupId!);
+      return res.data;
+    },
 
-/* ------------------ FETCH COMMUNITY DETAILS ------------------ */
-const {
-  data: communityResponse,
-  isLoading: communityLoading,
-} = useQuery({
-  queryKey: ["community-details", groupId],
-  queryFn: async () => {
-    const res = await communityAPI.getById(groupId!);
-    return res.data;
-  },
-  enabled: !!groupId,
-});
+  });
 
+      const { data: communityResponse } = useQuery({
+    queryKey: ["communities", groupId],
+    queryFn: async () => {
+      const res = await communityAPI.getById(groupId!);
+      return res.data;
+    },
+  });
+  
 
     const totalMembers = membersResponse?.members
     const communityData = communityResponse?.community
@@ -84,14 +76,13 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
         }
     };
 
-   if (membersLoading || communityLoading) {
-  return (
-    <div className="flex items-center justify-center h-96">
-      <div className="text-muted-foreground">Loading members...</div>
-    </div>
-  );
-}
-
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-muted-foreground">Loading members...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
@@ -100,7 +91,7 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
                 <div>
                     
                     <h1 className="text-3xl font-bold"> 
-                        <Link to={`/community/${groupId}`}>
+                        <Link to="/groups">
                     <Button variant="ghost" size="icon">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
@@ -115,7 +106,7 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
                         <Upload className="h-4 w-4 mr-2" />
                         Bulk Import
                     </Button>
-                    <Link to={`/member/new?groupId=${communityData?.id}`}>
+                    <Link to="/members/new">
                         <Button>
                             <Plus className="h-4 w-4 mr-2" />
                             Add Member
@@ -169,18 +160,16 @@ console.log("filteredMembers:" + JSON.stringify(filteredMembers))
                                         </td>
                                         <td className="p-3">
                                             <div className="flex items-center justify-end gap-2">
-                                         <Link to={`/member/${member.id}?groupId=${groupId}`}>
-    <Button variant="ghost" size="icon">
-        <Eye className="h-4 w-4" />
-    </Button>
-</Link>
-
-<Link to={`/member/${member.id}/edit?groupId=${groupId}`}>
-    <Button variant="ghost" size="icon">
-        <Edit className="h-4 w-4" />
-    </Button>
-</Link>
-
+                                                <Link to={`/member/${member.id}?groupId=${groupId}`}>
+                                                    <Button variant="ghost" size="icon">
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                                <Link to={`/members/${member.id}/edit`}>
+                                                    <Button variant="ghost" size="icon">
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"

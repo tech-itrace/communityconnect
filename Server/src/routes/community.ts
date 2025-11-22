@@ -10,13 +10,10 @@ import {
   getCommunityMembersHandler,
   updateCommunityMemberProfileHandler,
   removeMemberFromCommunityHandler,
-  updateMemberRoleHandler,getSingleCommunityMemberHandler
+  updateMemberRoleHandler,
 } from "../controllers/communityController";
 
 const router = Router();
-
-// Single Member in Specific Community
-router.get("/:community_id/member/:member_id", requireAnyRole(["admin", "super_admin"]), getSingleCommunityMemberHandler);
 
 // Community CRUD
 router.get("/", requireAnyRole(["admin", "super_admin"]), getAllCommunitiesHandler);
@@ -31,7 +28,5 @@ router.get("/:id/members", requireAnyRole(["admin", "super_admin", "member"]), g
 router.put("/:id/members/:member_id/profile", requireAnyRole(["admin", "super_admin"]), updateCommunityMemberProfileHandler);
 router.put("/:id/members/:member_id/role", requireAnyRole(["super_admin"]), updateMemberRoleHandler);
 router.delete("/:id/members/:member_id", requireAnyRole(["admin", "super_admin"]), removeMemberFromCommunityHandler);
-
-
 
 export default router;
