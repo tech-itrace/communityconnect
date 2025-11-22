@@ -7,6 +7,7 @@
 ---
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Authentication](#authentication)
 3. [Endpoints](#endpoints)
@@ -22,6 +23,7 @@
 The Community Search API enables natural language querying of business community member data. It supports skill-based, service-based, location-based, and multi-criteria searches.
 
 ### Key Features
+
 - Natural language query processing
 - Semantic search with embeddings
 - Structured filtering
@@ -51,12 +53,14 @@ POST /api/search/query
 **Description**: Process natural language queries and return relevant members.
 
 **Request Headers**:
+
 ```
 Content-Type: application/json
 Authorization: Bearer <token> (optional)
 ```
 
 **Request Body**:
+
 ```json
 {
   "message": "string (required) - Natural language query",
@@ -68,6 +72,7 @@ Authorization: Bearer <token> (optional)
 ```
 
 **Response (200 OK)**:
+
 ```json
 {
   "success": true,
@@ -96,13 +101,12 @@ Authorization: Bearer <token> (optional)
     "confidence": "number (0-1)",
     "queryId": "uuid"
   },
-  "suggestions": [
-    "string - Follow-up questions"
-  ]
+  "suggestions": ["string - Follow-up questions"]
 }
 ```
 
 **Example Request**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/query \
   -H "Content-Type: application/json" \
@@ -113,6 +117,7 @@ curl -X POST http://localhost:3000/api/search/query \
 ```
 
 **Example Response**:
+
 ```json
 {
   "success": true,
@@ -160,6 +165,7 @@ POST /api/search/members
 **Description**: Search members with structured filters.
 
 **Request Body**:
+
 ```json
 {
   "filters": {
@@ -185,6 +191,7 @@ POST /api/search/members
 ```
 
 **Response (200 OK)**:
+
 ```json
 {
   "success": true,
@@ -219,6 +226,7 @@ POST /api/search/members
 ```
 
 **Example Request**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/members \
   -H "Content-Type: application/json" \
@@ -244,9 +252,11 @@ GET /api/members/:id
 **Description**: Retrieve full details of a specific member.
 
 **Path Parameters**:
+
 - `id` (uuid, required) - Member ID
 
 **Response (200 OK)**:
+
 ```json
 {
   "success": true,
@@ -284,11 +294,13 @@ GET /api/members/:id
 ```
 
 **Example Request**:
+
 ```bash
 curl -X GET http://localhost:3000/api/members/550e8400-e29b-41d4-a716-446655440000
 ```
 
 **Response (404 Not Found)**:
+
 ```json
 {
   "success": false,
@@ -310,11 +322,13 @@ GET /api/search/suggestions
 **Description**: Get autocomplete suggestions for search queries.
 
 **Query Parameters**:
+
 - `q` (string, required) - Partial query text (min 2 characters)
 - `type` (string, optional) - Filter by suggestion type (skill|service|location|name)
 - `limit` (number, optional, default: 10) - Max suggestions
 
 **Response (200 OK)**:
+
 ```json
 {
   "success": true,
@@ -330,11 +344,13 @@ GET /api/search/suggestions
 ```
 
 **Example Request**:
+
 ```bash
 curl -X GET "http://localhost:3000/api/search/suggestions?q=IT%20cons&limit=5"
 ```
 
 **Example Response**:
+
 ```json
 {
   "success": true,
@@ -372,6 +388,7 @@ GET /api/members
 **Description**: Get a paginated list of all members.
 
 **Query Parameters**:
+
 - `limit` (number, optional, default: 20, max: 100)
 - `offset` (number, optional, default: 0)
 - `city` (string, optional) - Filter by city
@@ -379,6 +396,7 @@ GET /api/members
 - `sortOrder` (string, optional) - asc|desc
 
 **Response (200 OK)**:
+
 ```json
 {
   "success": true,
@@ -412,6 +430,7 @@ GET /api/members/stats
 **Description**: Get aggregate statistics about community members.
 
 **Response (200 OK)**:
+
 ```json
 {
   "success": true,
@@ -436,9 +455,9 @@ GET /api/members/stats
       "M.E": 5
     },
     "topSkills": [
-      {"skill": "IT Services", "count": 10},
-      {"skill": "Manufacturing", "count": 8},
-      {"skill": "Consulting", "count": 7}
+      { "skill": "IT Services", "count": 10 },
+      { "skill": "Manufacturing", "count": 8 },
+      { "skill": "Consulting", "count": 7 }
     ],
     "averageGraduationYear": 1999
   }
@@ -456,11 +475,13 @@ GET /api/admin/search/analytics
 **Description**: Get search analytics and metrics (requires admin role).
 
 **Query Parameters**:
+
 - `startDate` (ISO date, optional) - Filter from date
 - `endDate` (ISO date, optional) - Filter to date
 - `groupBy` (string, optional) - day|week|month
 
 **Response (200 OK)**:
+
 ```json
 {
   "success": true,
@@ -488,12 +509,10 @@ GET /api/admin/search/analytics
       "multiCriteria": 87
     },
     "searchesByHour": [
-      {"hour": 9, "count": 45},
-      {"hour": 10, "count": 78}
+      { "hour": 9, "count": 45 },
+      { "hour": 10, "count": 78 }
     ],
-    "noResultsQueries": [
-      {"query": "blockchain developer", "count": 5}
-    ]
+    "noResultsQueries": [{ "query": "blockchain developer", "count": 5 }]
   },
   "period": {
     "startDate": "2025-10-01T00:00:00Z",
@@ -510,7 +529,7 @@ GET /api/admin/search/analytics
 
 ```typescript
 interface Member {
-  id: string;                    // UUID
+  id: string; // UUID
   name: string;
   yearOfGraduation: number | null;
   degree: string | null;
@@ -552,7 +571,7 @@ interface SearchResponse {
   members: MemberResult[];
   metadata: {
     totalResults: number;
-    searchType: 'skill' | 'service' | 'location' | 'multi-criteria';
+    searchType: "skill" | "service" | "location" | "multi-criteria";
     processingTime: string;
     confidence: number;
     queryId: string;
@@ -565,7 +584,7 @@ interface SearchResponse {
 
 ```typescript
 interface MemberResult extends Member {
-  relevanceScore: number;  // 0-1
+  relevanceScore: number; // 0-1
   matchedFields?: string[]; // Fields that matched the query
 }
 ```
@@ -589,22 +608,23 @@ interface MemberResult extends Member {
 
 ### Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `INVALID_REQUEST` | 400 | Malformed request body |
-| `MISSING_PARAMETER` | 400 | Required parameter missing |
-| `INVALID_QUERY` | 400 | Query cannot be processed |
-| `MEMBER_NOT_FOUND` | 404 | Member ID does not exist |
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
-| `INTERNAL_ERROR` | 500 | Server error |
-| `LLM_ERROR` | 503 | LLM service unavailable |
-| `DATABASE_ERROR` | 503 | Database connection issue |
+| Code                  | HTTP Status | Description                |
+| --------------------- | ----------- | -------------------------- |
+| `INVALID_REQUEST`     | 400         | Malformed request body     |
+| `MISSING_PARAMETER`   | 400         | Required parameter missing |
+| `INVALID_QUERY`       | 400         | Query cannot be processed  |
+| `MEMBER_NOT_FOUND`    | 404         | Member ID does not exist   |
+| `UNAUTHORIZED`        | 401         | Authentication required    |
+| `FORBIDDEN`           | 403         | Insufficient permissions   |
+| `RATE_LIMIT_EXCEEDED` | 429         | Too many requests          |
+| `INTERNAL_ERROR`      | 500         | Server error               |
+| `LLM_ERROR`           | 503         | LLM service unavailable    |
+| `DATABASE_ERROR`      | 503         | Database connection issue  |
 
 ### Example Error Responses
 
 **400 Bad Request**:
+
 ```json
 {
   "success": false,
@@ -620,6 +640,7 @@ interface MemberResult extends Member {
 ```
 
 **429 Rate Limit Exceeded**:
+
 ```json
 {
   "success": false,
@@ -636,6 +657,7 @@ interface MemberResult extends Member {
 ```
 
 **503 Service Unavailable**:
+
 ```json
 {
   "success": false,
@@ -656,11 +678,11 @@ interface MemberResult extends Member {
 
 ### Limits
 
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| `/api/search/query` | 60 requests | per minute |
-| `/api/search/members` | 100 requests | per minute |
-| `/api/members/:id` | 200 requests | per minute |
+| Endpoint                  | Limit        | Window     |
+| ------------------------- | ------------ | ---------- |
+| `/api/search/query`       | 60 requests  | per minute |
+| `/api/search/members`     | 100 requests | per minute |
+| `/api/members/:id`        | 200 requests | per minute |
 | `/api/search/suggestions` | 300 requests | per minute |
 
 ### Rate Limit Headers
@@ -680,6 +702,7 @@ X-RateLimit-Reset: 1697812345
 **Query**: "Who knows Python?"
 
 **API Call**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/query \
   -H "Content-Type: application/json" \
@@ -693,6 +716,7 @@ curl -X POST http://localhost:3000/api/search/query \
 **Query**: "Show me all members in Chennai"
 
 **API Call**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/query \
   -H "Content-Type: application/json" \
@@ -706,6 +730,7 @@ curl -X POST http://localhost:3000/api/search/query \
 **Query**: "I need someone for industrial automation"
 
 **API Call**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/query \
   -H "Content-Type: application/json" \
@@ -719,6 +744,7 @@ curl -X POST http://localhost:3000/api/search/query \
 **Query**: "Find manufacturing businesses in Chennai with turnover above 10 crores"
 
 **API Call**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/query \
   -H "Content-Type: application/json" \
@@ -730,11 +756,12 @@ curl -X POST http://localhost:3000/api/search/query \
 
 ---
 
-### Example 5: Educational Background
+### Example 5: Educational Information
 
 **Query**: "Show me MCA graduates from 2009"
 
 **API Call**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/query \
   -H "Content-Type: application/json" \
@@ -748,6 +775,7 @@ curl -X POST http://localhost:3000/api/search/query \
 **Query**: Search for IT consultants in Chennai or Bangalore
 
 **API Call**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/members \
   -H "Content-Type: application/json" \
@@ -768,6 +796,7 @@ curl -X POST http://localhost:3000/api/search/members \
 **Query**: "Who works at Thoughtworks?"
 
 **API Call**:
+
 ```bash
 curl -X POST http://localhost:3000/api/search/query \
   -H "Content-Type: application/json" \
@@ -779,6 +808,7 @@ curl -X POST http://localhost:3000/api/search/query \
 ## Versioning
 
 API versioning follows URL-based versioning:
+
 - Current: `/api/v1/...`
 - Future: `/api/v2/...`
 
@@ -789,6 +819,7 @@ The base `/api/...` endpoints currently map to `/api/v1/...`.
 ## Changelog
 
 ### Version 1.0.0 (2025-10-19)
+
 - Initial API specification
 - Natural language search endpoint
 - Structured search endpoint

@@ -195,29 +195,87 @@ async function ensureMember(data: any) {
   }
 }
 
-/** Build profile_data JSONB based on member type */
+/**
+ * Build profile_data JSONB based on member type
+ * 
+ * ALUMNI FIELDS:
+ * - college (M), graduation_year (M), degree (M), department (M)
+ * - current_organization (M), job_title (M), industry_sector, years_of_experience
+ * - linkedin_url, achievements, looking_for[], can_offer[]
+ * 
+ * ENTREPRENEUR FIELDS:
+ * - company_name (M), entrepreneur_industry (M), business_stage, founded_year
+ * - team_size, website_url (M), funding_status, revenue_range
+ * - services_products (M), target_market, looking_for[], can_provide[]
+ * - areas_of_expertise (M), previous_ventures
+ * 
+ * APARTMENT FIELDS:
+ * - apartment_number, floor, block
+ * 
+ * COMMON FIELDS:
+ * - skills[], interests[], bio
+ */
 function buildProfileData(type: string, data: any): object {
   const profileData: any = {};
 
   if (type === "alumni" && data) {
+    // Educational Information
+    profileData.college = data.college || null;
     profileData.graduation_year = data.graduation_year || null;
     profileData.degree = data.degree || null;
     profileData.department = data.department || null;
-    profileData.college = data.college || null;
-  } else if (type === "entrepreneur" && data) {
-    profileData.company = data.company || null;
-    profileData.industry = data.industry || null;
-    profileData.position = data.position || null;
-  } else if (type === "apartment" && data) {
+
+    // Professional Information
+    profileData.current_organization = data.current_organization || null;
+    profileData.job_title = data.job_title || null;
+    profileData.industry_sector = data.industry_sector || null;
+    profileData.years_of_experience = data.years_of_experience || null;
+    profileData.linkedin_url = data.linkedin_url || null;
+    profileData.achievements = data.achievements || null;
+
+    // Networking Preferences
+    profileData.looking_for = Array.isArray(data.looking_for) ? data.looking_for : [];
+    profileData.can_offer = Array.isArray(data.can_offer) ? data.can_offer : [];
+  }
+
+  if (type === "entrepreneur" && data) {
+    // Business Information
+    profileData.company_name = data.company_name || data.company || null;
+    profileData.entrepreneur_industry = data.entrepreneur_industry || data.industry || null;
+    profileData.business_stage = data.business_stage || null;
+    profileData.founded_year = data.founded_year || null;
+    profileData.team_size = data.team_size || null;
+    profileData.website_url = data.website_url || null;
+
+    // Financial & Market Information
+    profileData.funding_status = data.funding_status || null;
+    profileData.revenue_range = data.revenue_range || null;
+    profileData.services_products = data.services_products || null;
+    profileData.target_market = data.target_market || null;
+
+    // Expertise & Networking
+    profileData.areas_of_expertise = data.areas_of_expertise || null;
+    profileData.previous_ventures = data.previous_ventures || null;
+    profileData.looking_for = Array.isArray(data.looking_for) ? data.looking_for : [];
+    profileData.can_provide = Array.isArray(data.can_provide) ? data.can_provide : [];
+  }
+
+  if (type === "apartment" && data) {
     profileData.apartment_number = data.apartment_number || null;
     profileData.floor = data.floor || null;
     profileData.block = data.block || null;
   }
 
   // Add common fields if present
-  if (data?.skills) profileData.skills = data.skills;
-  if (data?.interests) profileData.interests = data.interests;
-  if (data?.bio) profileData.bio = data.bio;
+  if (data?.skills) {
+    profileData.skills = Array.isArray(data.skills) ? data.skills : data.skills;
+  }
+  if (data?.interests) {
+    profileData.interests = Array.isArray(data.interests) ? data.interests : data.interests;
+  }
+  if (data?.bio) {
+    profileData.bio = data.bio;
+  }
 
   return profileData;
 }
@@ -514,7 +572,9 @@ export async function addMemberToCommunity(data: {
     }
 
     /* 5. BUILD PROFILE DATA */
-    const profileData = data.profile_data || buildProfileData(community.type, data.profile_data || {});
+    // Use provided profile_data directly (already built by frontend)
+    // or build from scratch if not provided
+    const profileData = data.profile_data || buildProfileData(community.type, {});
 
     /* 6. CREATE MEMBERSHIP */
     const membershipId = randomUUID();

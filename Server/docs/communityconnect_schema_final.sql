@@ -149,7 +149,7 @@ CREATE TABLE alumni_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     membership_id UUID NOT NULL REFERENCES community_memberships(id) ON DELETE CASCADE,
     
-    -- Educational background (REQUIRED)
+    -- Educational information (REQUIRED)
     college VARCHAR(255) NOT NULL,
     graduation_year INTEGER NOT NULL CHECK (
         graduation_year BETWEEN 1950 AND EXTRACT(YEAR FROM CURRENT_DATE) + 10
