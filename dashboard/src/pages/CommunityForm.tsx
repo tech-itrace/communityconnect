@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { communityAPI } from "@/lib/api";
@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowBigDown, ArrowBigUp, ArrowBigUpDash, ArrowBigUpIcon, ArrowLeft, Upload, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 
 type Member = {
   id: string | number;
@@ -14,13 +14,6 @@ type Member = {
   phone?: string;
   email?: string;
   role?: string;
-};
-
-type NewMember = {
-  name: string;
-  phone: string;
-  email?: string;
-  role: string;
 };
 
 type CommunityPayload = {
@@ -35,8 +28,6 @@ type CommunityPayload = {
   is_search_enabled?: boolean;
   is_embedding_enabled?: boolean;
   member_type_data?: any;
-  new_members?: NewMember[];
-  updated_members?: Member[];
 };
 
 const COMMUNITY_TYPES = [
@@ -51,8 +42,8 @@ export function CommunityForm() {
   const isEdit = id !== "new" && !!id;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Logged user will be automatically added as first member during create
   const loggedUser = {
     id: "099b8946-4d62-4110-9d59-e436a85ad590",
     name: "Anthoniselvi",
@@ -72,18 +63,10 @@ export function CommunityForm() {
     is_search_enabled: true,
     is_embedding_enabled: true,
     member_type_data: {},
-    new_members: [],
   });
 
+  // Only used in Edit mode
   const [existingMembers, setExistingMembers] = useState<Member[]>([]);
-  const [showAddMember, setShowAddMember] = useState(false);
-
-  const [newMemberForm, setNewMemberForm] = useState<NewMember>({
-    name: "",
-    phone: "",
-    email: "",
-    role: "member",
-  });
 
   const { data: communityResponse, isLoading } = useQuery({
     queryKey: ["communities", id],
@@ -114,6 +97,7 @@ export function CommunityForm() {
         member_type_data: c.member_type_data || {},
       }));
 
+      // Set existing members for display in Edit mode
       setExistingMembers(Array.isArray(c.members) ? c.members : []);
     }
   }, [communityResponse]);
@@ -143,59 +127,25 @@ export function CommunityForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleMemberTypeChange = (e: any) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      member_type_data: { ...(prev.member_type_data || {}), [name]: value },
-    }));
-  };
-
   const handleSwitchChange = (name: keyof CommunityPayload, value: boolean) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleNewMemberChange = (e: any) => {
-    const { name, value } = e.target;
-    setNewMemberForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const addNewMemberToList = () => {
-    if (!newMemberForm.name || !newMemberForm.phone) {
-      alert("Please enter name & phone");
-      return;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      new_members: [...(prev.new_members || []), newMemberForm],
-    }));
-
-    setNewMemberForm({ name: "", phone: "", email: "", role: "member" });
-    setShowAddMember(false);
-  };
-
-  const updateExistingMemberRole = (id: any, newRole: string) => {
-    setExistingMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, role: newRole } : m))
-    );
-  };
-
-  const removeExistingMember = (idToRemove: any) => {
-    setExistingMembers((prev) => prev.filter((m) => m.id !== idToRemove));
-  };
-
-  const removeNewMember = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      new_members: prev.new_members?.filter((_, i) => i !== index),
-    }));
-  };
-
   const saveMutation = useMutation({
     mutationFn: async (payload: CommunityPayload) => {
-      if (isEdit) return communityAPI.update(id!, payload);
-      return communityAPI.create(payload);
+      if (isEdit) {
+        return communityAPI.update(id!, payload);
+      }
+      // For create, include logged user data so they become the first member
+      return communityAPI.create({
+        ...payload,
+        member_type_data: {
+          ...payload.member_type_data,
+          name: loggedUser.name,
+          phone: loggedUser.phone,
+          email: loggedUser.email,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communities"] });
@@ -205,323 +155,241 @@ export function CommunityForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const payload: CommunityPayload = {
-      ...formData,
-      updated_members: existingMembers,
-    };
-
-    saveMutation.mutate(payload);
+    saveMutation.mutate(formData);
   };
 
   if (isLoading && isEdit) {
     return <div className="p-10 text-center">Loading...</div>;
   }
 
-  const navigateToSingleMemberPage = (id) => {
-    navigate(`/member?groupId=${id}`)
-  }
+  const navigateToMembersPage = (communityId: string) => {
+    navigate(`/members?groupId=${communityId}`);
+  };
 
-   const navigateToMembersPage = (id) => {
-    navigate(`/members?groupId=${id}`)
-  }
+  const navigateToSingleMemberPage = (memberId: string | number) => {
+    navigate(`/member/${memberId}?groupId=${id}`);
+  };
 
   return (
     <div className="space-y-8">
       {/* HEADER */}
       <div className="flex items-center gap-4">
         <Link to="/community">
-          <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">{isEdit ? "Edit" : "Create"}</h1>
-          <p className="text-muted-foreground">{formData.name}</p>
+          <h1 className="text-3xl font-bold">{isEdit ? "Edit Community" : "Create Community"}</h1>
+          <p className="text-muted-foreground">{formData.name || "New Community"}</p>
         </div>
       </div>
 
       {/* SECTION 1 — COMMUNITY DETAILS */}
       <Card>
-        <CardHeader><h2 className="font-semibold text-lg">Community Details</h2></CardHeader>
+        <CardHeader>
+          <h2 className="font-semibold text-lg">Community Details</h2>
+        </CardHeader>
         <CardContent className="space-y-4">
-          <Input name="name" placeholder="Community Name" value={formData.name} onChange={handleChange} />
-          <Input name="slug" placeholder="Slug" value={formData.slug} readOnly />
-          <textarea name="description" rows={3} className="w-full border rounded-md p-2 text-sm" placeholder="Description"
-            value={formData.description} onChange={handleChange} />
-          <select name="type" value={formData.type} onChange={handleChange}
-            className="flex h-10 w-full rounded-md border px-3 text-sm">
+          <Input
+            name="name"
+            placeholder="Community Name"
+            value={formData.name}
+            onChange={handleChange}
+          />
+          <Input
+            name="slug"
+            placeholder="Slug"
+            value={formData.slug}
+            readOnly
+            className="bg-muted"
+          />
+          <textarea
+            name="description"
+            rows={3}
+            className="w-full border rounded-md p-2 text-sm"
+            placeholder="Description"
+            value={formData.description}
+            onChange={handleChange}
+          />
+          <select
+            name="type"
+            value={formData.type}
+            onChange={handleChange}
+            className="flex h-10 w-full rounded-md border px-3 text-sm"
+          >
             <option value="">Select Type</option>
-            {COMMUNITY_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
+            {COMMUNITY_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </CardContent>
       </Card>
 
-      {/* SECTION 2 — MEMBERS DETAILS */}
-<Card>
-<CardHeader>
-  <div className="flex justify-between items-center w-full">
-
-    {/* LEFT SIDE - Heading */}
-    <h2 className="font-semibold text-lg">Members Details</h2>
-
-    {/* RIGHT SIDE - Buttons */}
-    {/* <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        // onClick={() => setShowAddMember(!showAddMember)}
-        onClick={()=>navigateToMembersPage(communityResponse?.community.id)}
-      >
-        <UserPlus className="w-4 h-4 mr-1" /> View More
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        // onClick={() => setShowAddMember(!showAddMember)}
-        onClick={()=>navigateToSingleMemberPage(communityResponse?.community.id)}
-      >
-        <UserPlus className="w-4 h-4 mr-1" /> Add Member
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <Upload className="w-4 h-4 mr-1" /> Bulk Upload
-      </Button>
-
-      <input
-        type="file"
-        accept=".csv"
-        ref={fileInputRef}
-        className="hidden"
-      />
-    </div> */}
-
-  </div>
-</CardHeader>
-
-
-  <CardContent className="space-y-4">
-
-    {/* --- Add Member (Single Row Layout) --- */}
-    {showAddMember && (
-      <div className="border p-3 rounded-md bg-muted/30">
-        <div className="flex flex-wrap gap-3 items-center">
-
-          <Input
-            name="name"
-            placeholder="Name"
-            value={newMemberForm.name}
-            onChange={handleNewMemberChange}
-            className="w-[180px]"
-          />
-
-          <Input
-            name="phone"
-            placeholder="Phone"
-            value={newMemberForm.phone}
-            onChange={handleNewMemberChange}
-            className="w-[150px]"
-          />
-
-          <Input
-            name="email"
-            placeholder="Email"
-            value={newMemberForm.email}
-            onChange={handleNewMemberChange}
-            className="w-[200px]"
-          />
-
-          <select
-            name="role"
-            value={newMemberForm.role}
-            onChange={handleNewMemberChange}
-            className="border rounded-md p-2 text-sm w-[120px]"
-          >
-            <option value="admin">Admin</option>
-            <option value="member">Member</option>
-          </select>
-
-          <Button size="sm" color="primary" variant="outline" onClick={addNewMemberToList}>Add</Button>
-          <Button size="sm" variant="outline" onClick={() => setShowAddMember(false)}>Cancel</Button>
-        </div>
-      </div>
-    )}
-
-    {/* --- Existing Members (Single Line Layout) --- */}
-    {existingMembers.length > 0 && (
-      <div className="border rounded-md">
-        <div className="bg-muted/40 p-2 border-b font-medium">Existing Members</div>
-
-        <div className="divide-y">
-          {existingMembers.map((m) => (
-            <div key={m.id} className="flex items-center justify-between p-3 gap-3">
-
-              <div className="flex items-center gap-8 flex-wrap flex-1">
-
-                <div className="w-[180px] text-sm font-medium" onClick={()=>navigateToSingleMemberPage(m.id)}>{m.name}</div>
-                <div className="w-[150px] text-xs text-muted-foreground">{m.phone}</div>
-                <div className="w-[220px] text-xs text-muted-foreground">{m.email || "-"}</div>
-
-                <select
-                  className="border rounded-md p-1 text-xs w-[120px]"
-                  value={m.role || "member"}
-                  onChange={(e) => updateExistingMemberRole(m.id, e.target.value)}
-                >
-                  <option value="admin">Admin</option>
-                  <option value="member">Member</option>
-                </select>
-              </div>
-
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => removeExistingMember(m.id)}
-              >
-                <X className="h-4 w-4 text-red-500" />
-              </Button>
+      {/* SECTION 2 — MEMBERS DETAILS (Only show in Edit mode) */}
+      {isEdit && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center w-full">
+              <h2 className="font-semibold text-lg">Members</h2>
+              <span className="text-sm text-muted-foreground">
+                {existingMembers.length} member{existingMembers.length !== 1 ? "s" : ""}
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
-    )}
+          </CardHeader>
 
-    {/* --- New Members Display with Single Line Layout --- */}
-    {formData.new_members && formData.new_members.length > 0 && (
-      <div className="border rounded-md">
-        <div className="bg-green-50 p-2 border-b font-medium">New Members</div>
-
-        <div className="divide-y">
-          {formData.new_members.map((m, i) => (
-            <div key={i} className="flex items-center justify-between p-3 gap-3">
-
-              <div className="flex items-center gap-8 flex-wrap flex-1">
-
-                <div className="w-[180px] text-sm font-medium">{m.name}</div>
-                <div className="w-[150px] text-xs text-muted-foreground">{m.phone}</div>
-                <div className="w-[220px] text-xs text-muted-foreground">{m.email || "-"}</div>
-
-                <div className="w-[120px] text-xs">{m.role}</div>
+          <CardContent className="space-y-4">
+            {/* Show first 5 members as preview */}
+            {existingMembers.length > 0 ? (
+              <div className="border rounded-md">
+                <div className="divide-y">
+                  {existingMembers.slice(0, 5).map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between p-3 gap-3 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => navigateToSingleMemberPage(m.id)}
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-xs font-medium">
+                            {m.name?.charAt(0)?.toUpperCase() || "?"}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{m.name || "Unknown"}</div>
+                          <div className="text-xs text-muted-foreground">{m.phone}</div>
+                        </div>
+                        <div className="text-xs px-2 py-1 rounded-full bg-muted">
+                          {m.role || "member"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No members yet</p>
+              </div>
+            )}
+          </CardContent>
 
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => removeNewMember(i)}
-              >
-                <X className="h-4 w-4 text-red-500" />
-              </Button>
+          <CardFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => communityResponse?.community?.id && navigateToMembersPage(communityResponse.community.id)}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              View All Members
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
 
+      {/* Info message for Create mode */}
+      {!isEdit && (
+        <Card>
+          <CardContent className="py-6">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <Users className="w-5 h-5" />
+              <p className="text-sm">
+                You ({loggedUser.name}) will be automatically added as the first admin member of this community.
+              </p>
             </div>
-          ))}
-        </div>
-      </div>
-    )}
-
-  </CardContent>
-  <CardFooter>
-      <Button
-        variant="outline"
-        size="sm"
-        // onClick={() => setShowAddMember(!showAddMember)}
-        onClick={()=>navigateToMembersPage(communityResponse?.community.id)}
-      >
-        <ArrowBigUpDash className="w-4 h-4 mr-1" /> View More
-      </Button>
-  </CardFooter>
-</Card>
-
+          </CardContent>
+        </Card>
+      )}
 
       {/* SECTION 3 — OTHER DETAILS */}
-    <Card>
-  <CardHeader>
-    <h2 className="font-semibold text-lg">Other Details</h2>
-  </CardHeader>
+      <Card>
+        <CardHeader>
+          <h2 className="font-semibold text-lg">Settings</h2>
+        </CardHeader>
 
-  <CardContent className="space-y-4">
+        <CardContent className="space-y-4">
+          {/* Toggle Row */}
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-2">
+              <label className="text-sm">Bot Enabled</label>
+              <Switch
+                checked={!!formData.is_bot_enabled}
+                onCheckedChange={(v) => handleSwitchChange("is_bot_enabled", v)}
+              />
+            </div>
 
-    {/* --- SINGLE LINE TOGGLE ROW --- */}
-    <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <label className="text-sm">Search Enabled</label>
+              <Switch
+                checked={!!formData.is_search_enabled}
+                onCheckedChange={(v) => handleSwitchChange("is_search_enabled", v)}
+              />
+            </div>
 
-      <div className="flex items-center gap-2">
-        <label className="text-sm w-32">Bot Enabled</label>
-        <Switch
-          checked={!!formData.is_bot_enabled}
-          onCheckedChange={(v) => handleSwitchChange("is_bot_enabled", v)}
-        />
-      </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm">Embedding Enabled</label>
+              <Switch
+                checked={!!formData.is_embedding_enabled}
+                onCheckedChange={(v) => handleSwitchChange("is_embedding_enabled", v)}
+              />
+            </div>
+          </div>
 
-      <div className="flex items-center gap-2">
-        <label className="text-sm w-32">Search Enabled</label>
-        <Switch
-          checked={!!formData.is_search_enabled}
-          onCheckedChange={(v) => handleSwitchChange("is_search_enabled", v)}
-        />
-      </div>
+          {/* Subscription Plan */}
+          <div>
+            <label className="text-sm text-muted-foreground mb-1 block">Subscription Plan</label>
+            <select
+              name="subscription_plan"
+              value={formData.subscription_plan}
+              onChange={handleChange}
+              className="border rounded-md p-2 text-sm w-full"
+            >
+              <option value="free">Free</option>
+              <option value="basic">Basic</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
 
-      <div className="flex items-center gap-2">
-        <label className="text-sm w-40">Embedding Enabled</label>
-        <Switch
-          checked={!!formData.is_embedding_enabled}
-          onCheckedChange={(v) => handleSwitchChange("is_embedding_enabled", v)}
-        />
-      </div>
-
-    </div>
-
-    {/* Other Fields Below */}
-    <select
-      name="subscription_plan"
-      value={formData.subscription_plan}
-      onChange={handleChange}
-      className="border rounded-md p-2 text-sm w-full"
-    >
-      <option value="free">Free</option>
-      <option value="basic">Basic</option>
-      <option value="premium">Premium</option>
-    </select>
-
-    <Input
-      type="number"
-      name="member_limit"
-      value={formData.member_limit}
-      onChange={handleChange}
-      placeholder="Member Limit"
-    />
-
-    <Input
-      type="number"
-      name="search_limit_monthly"
-      value={formData.search_limit_monthly}
-      onChange={handleChange}
-      placeholder="Monthly Search Limit"
-    />
-
-  </CardContent>
-</Card>
-
-
-      {/* SECTION 4 — ADDITIONAL INFORMATION */}
-      {/* <Card>
-        <CardHeader><h2 className="font-semibold text-lg">Additional Information</h2></CardHeader>
-        <CardContent className="space-y-3">
-          <Input name="skills" placeholder="Skills" value={formData.member_type_data.skills || ""} onChange={handleMemberTypeChange} />
-          <Input name="interests" placeholder="Interests" value={formData.member_type_data.interests || ""} onChange={handleMemberTypeChange} />
-
-          <textarea name="bio" rows={4} className="w-full border rounded-md p-2 text-sm"
-            placeholder="Bio" value={formData.member_type_data.bio || ""} onChange={handleMemberTypeChange} />
+          {/* Limits */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Member Limit</label>
+              <Input
+                type="number"
+                name="member_limit"
+                value={formData.member_limit}
+                onChange={handleChange}
+                placeholder="Member Limit"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Monthly Search Limit</label>
+              <Input
+                type="number"
+                name="search_limit_monthly"
+                value={formData.search_limit_monthly}
+                onChange={handleChange}
+                placeholder="Monthly Search Limit"
+              />
+            </div>
+          </div>
         </CardContent>
-      </Card> */}
+      </Card>
 
       {/* SAVE BUTTON */}
       <div className="flex justify-end gap-2">
         <Link to="/community">
           <Button variant="outline">Cancel</Button>
         </Link>
-        <Button className="pg-primary" variant="outline" onClick={handleSubmit}>
-          {isEdit ? "Update Community" : "Create Community"}
+        <Button onClick={handleSubmit} disabled={saveMutation.isPending}>
+          {saveMutation.isPending
+            ? "Saving..."
+            : isEdit
+            ? "Update Community"
+            : "Create Community"}
         </Button>
       </div>
     </div>

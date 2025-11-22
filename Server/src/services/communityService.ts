@@ -30,7 +30,8 @@ export interface Community {
   }>;
 }
 
-export async function getCommunityWithMemebersById(
+// Fixed typo: "Memebers" -> "Members"
+export async function getCommunityWithMembersById(
   id: string,
   client?: any
 ): Promise<Community | null> {
@@ -170,26 +171,28 @@ export async function getCommunityById(
   return res.rows[0];
 }
 
-async function ensureMember(data: any ) {
-    console.log("data-check with members table: " + JSON.stringify(data))
+async function ensureMember(data: any) {
+  console.log("data-check with members table: " + JSON.stringify(data));
   const findSql = `SELECT * FROM members WHERE phone = $1 OR email = $2`;
   const existing = await query(findSql, [data.phone, data.email]);
-  if (existing.rows.length) {return existing.rows[0];
-  }else {
-  const newId = randomUUID();
-  const insertSql = `
-    INSERT INTO members (id, name, phone, email, created_at, updated_at, last_login, is_active)
-    VALUES ($1,$2,$3,$4,NOW(),NOW(), NOW(), TRUE)
-    RETURNING *
-  `;
-  const res = await query(insertSql, [
-    newId,
-    data.name,
-    data.phone,
-    data.email || null
-  ]);
+  if (existing.rows.length) {
+    return existing.rows[0];
+  } else {
+    const newId = randomUUID();
+    const insertSql = `
+      INSERT INTO members (id, name, phone, email, created_at, updated_at, last_login, is_active)
+      VALUES ($1,$2,$3,$4,NOW(),NOW(), NOW(), TRUE)
+      RETURNING *
+    `;
+    const res = await query(insertSql, [
+      newId,
+      data.name,
+      data.phone,
+      data.email || null
+    ]);
 
-  return res.rows[0];}
+    return res.rows[0];
+  }
 }
 
 /** Build profile_data JSONB based on member type */
@@ -532,11 +535,7 @@ export async function addMemberToCommunity(data: {
       data.invited_by || null
     ]);
 
-    /* 7. GENERATE EMBEDDINGS IN BACKGROUND */
-    const { generateMemberEmbeddingsAsync } = await import('./memberEmbeddingService');
-    generateMemberEmbeddingsAsync(membershipId);
-
-    /* 8. RETURN CREATED MEMBERSHIP WITH MEMBER DETAILS */
+    /* 7. RETURN CREATED MEMBERSHIP WITH MEMBER DETAILS */
     return {
       membership: membership.rows[0],
       member: {
@@ -630,13 +629,7 @@ export async function updateCommunityMemberProfile(
     throw new Error('Membership not found');
   }
 
-  const updatedMembership = result.rows[0];
-
-  // Regenerate embeddings in background after profile update
-  const { generateMemberEmbeddingsAsync } = await import('./memberEmbeddingService');
-  generateMemberEmbeddingsAsync(updatedMembership.id);
-
-  return updatedMembership;
+  return result.rows[0];
 }
 
 /**
@@ -717,4 +710,3 @@ export async function getCommunityMemberById(
 
   return res.rows[0].member;
 }
-
